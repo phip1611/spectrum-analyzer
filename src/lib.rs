@@ -1,13 +1,25 @@
-//! Simple spectrum analysis library that follows the KISS (keep it simple, stupid) principle.
-//! The main goal of this crate is to be educational to the world and myself. This is not a
-//! bullet-proof or ideal solution! Feel free to contribute and point out possible
-//! errors/bugs/wrong assumptions.
+//! Simple `no_std` spectrum analysis library that follows the KISS (keep it simple, stupid)
+//! principle. The main goal of this crate is to be educational to the world and myself. This
+//! is not a bullet-proof or ideal solution! Feel free to contribute and point out possible
+//! errors/bugs/wrong assumptions or improvements!
 
+#![no_std]
+
+// use alloc crate, because this is no_std
+// #[macro_use]
+extern crate alloc;
+
+// use std in tests
+#[cfg(test)]
+#[macro_use]
+extern crate std;
+
+use alloc::collections::BTreeMap;
 use rustfft::algorithm::Radix4;
 use rustfft::num_complex::Complex64;
 use rustfft::{Fft, FftDirection};
-use std::collections::BTreeMap;
-use std::f64::consts::PI;
+use core::f64::consts::PI;
+use alloc::vec::Vec;
 
 /// A map from frequency (in Hertz) to the magnitude.
 /// The magnitude is dependent on whether you scaled
@@ -27,8 +39,8 @@ pub type FrequencySpectrumMap = BTreeMap<usize, f64>;
 ///                   frequency spectrum, say 150Hz, this accelerates the calculation.
 ///
 /// ## Returns value
-/// Map from frequency to magnitude.
-pub fn samples_fft_to_raw_spectrum_magnitude(
+/// Map from frequency to magnitude, see [`FrequencySpectrumMap`]
+pub fn samples_fft_to_spectrum(
     samples: &[f64],
     sampling_rate: u32,
     scaling_fn: Option<&dyn Fn(f64) -> f64>,
@@ -110,12 +122,10 @@ fn fft_result_to_magnitudes(
         .into_iter()
         // take first half; half of input length
         .take(fft_len / 2)
-        // START: calc magnitude
-        .map(|c| (c.re as f64, c.im as f64))
-        .map(|(re, im)| re.powi(2) + im.powi(2))
-        .map(|s| s.sqrt())
+        // START: calc magnitude: sqrt(re*re + im*im) (re: real part, im: imaginary part)
+        .map(|c| c.norm())
         // END: calc magnitude
-        // scale
+        // optionally scale
         .map(|s| scaling_fn.unwrap_or(&identity_fn)(s))
         .collect::<Vec<f64>>()
 }
