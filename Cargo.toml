@@ -1,0 +1,15 @@
+[package]
+name = "spectrum-analyzer"
+description = """
+A library to filter out the frequencies of a digital signal (e.g. audio) using FFT. The main goal of this crate
+is to be educational to the world and myself. This is not a bullet-proof or ideal solution! Feel free to contribute
+and point out possible errors/bugs/wrong assumptions.
+"""
+version = "0.1.0"
+authors = ["Philipp Schuster <phip1611@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rustfft = "5.0.1"
