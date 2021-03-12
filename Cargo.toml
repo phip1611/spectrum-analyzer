@@ -8,7 +8,7 @@ improve, and point out possible errors/bugs/wrong assumptions.
 version = "0.1.0"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
-keywords = ["ffi", "spectrum", "frequencies", "audio", "dsp"]
+keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
 categories = ["multimedia", "no-std"]
 readme = "README.md"
 license = "MIT"
