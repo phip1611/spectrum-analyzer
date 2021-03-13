@@ -5,7 +5,7 @@ A library to filter out the frequencies of a digital signal (e.g. audio) using F
 is to be educational to the world and myself. This is not a bullet-proof or ideal solution! Feel free to contribute,
 improve, and point out possible errors/bugs/wrong assumptions.
 """
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
