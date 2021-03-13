@@ -44,5 +44,19 @@ fn main() {
 // values are in logarithmic scale; see scale function above
 ```
 
+## Example visualization
+In the following example you can see a basic visualization of frequencies 0 to 3000 for 
+a layered signal of sine waves at 500, 1000, and 2500 hz. The peaks are colored respectively.
 
+### No window function on samples before FFT
+Much noise.
+![Visualization of spectrum 0-3000Hz of layered sine signal (500, 1000, 2500 hz) with no window function.](spectrum_sine_500_1000_2500hz_no_window.png "Much noise.")
+
+### Hann window function on samples before FFT
+Less overall noise but noisy peaks.
+![Visualization of spectrum 0-3000Hz of layered sine signal (500, 1000, 2500 hz) with Hann window function.](spectrum_sine_500_1000_2500hz_hann_window.png "Less overall noise but noisy peaks.")
+
+### Hamming window function on samples before FFT
+Better SNR compared to no window.
+![Visualization of spectrum 0-3000Hz of layered sine signal (500, 1000, 2500 hz) with Hamming window function.](spectrum_sine_500_1000_2500hz_hamming_window.png "Better SNR compared to no window.")
 

@@ -111,6 +111,20 @@ pub fn hann_window(samples: &[f64]) -> Vec<f64> {
     windowed_samples
 }
 
+/// Applies a Hamming window (https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+/// to an array of samples.
+///
+/// ## Return value
+/// New vector with Hann window applied to the values.
+pub fn hamming_window(samples: &[f64]) -> Vec<f64> {
+    let mut windowed_samples = Vec::with_capacity(samples.len());
+    for i in 0..samples.len() {
+        let multiplier = 0.54 - (0.46 * (2_f64 * PI * i as f64 / (samples.len() - 1) as f64).cos());
+        windowed_samples.push(multiplier * samples[i])
+    }
+    windowed_samples
+}
+
 /// Converts all samples to a complex number (imaginary part is set to two)
 /// as preparation for the FFT.
 ///
