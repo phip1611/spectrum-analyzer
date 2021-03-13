@@ -23,8 +23,15 @@ SOFTWARE.
 */
 use crate::tests::sine::{sine_wave_audio_data, sine_wave_audio_data_multiple};
 use alloc::vec::Vec;
-use crate::{hann_window, samples_fft_to_spectrum};
+use crate::{hann_window, samples_fft_to_spectrum, hamming_window};
+use audio_visualizer::spectrum::staticc::png_file::spectrum_static_png_visualize;
+use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 // use std::prelude::*;
+
+/// Directory with test samples (e.g. mp3) can be found here.
+const TEST_SAMPLES_DIR: &str = "test/samples";
+/// If tests create files, they should be stored here.
+const TEST_OUT_DIR: &str = "test/out";
 
 mod sine;
 
@@ -103,7 +110,87 @@ fn test_output_frequency_spectrum_sine_1000hz() {
 }
 
 #[test]
-fn test_output_frequency_spectrum_sine_50_plus_1000_plus_3777hz() {
+fn test_visualize_frequency_spectrum_sine_50_plus_1000_plus_3777hz() {
+    let sine_audio = sine_wave_audio_data_multiple(
+        // 1000Hz in 100ms => sin wave will have 100 time periods
+        &[50.0, 1000.0, 3777.0],
+        44100,
+        1000
+    );
+
+    let sine_audio = sine_audio.into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+
+    // FFT frequency accuracy is: sample_rate / (N / 2)
+    // 44100/(16384/2) = 5.383Hz
+
+    // get a window that we want to analyze
+    // 1/44100 * 16384 => 0.3715
+    let window = &sine_audio[0..16384];
+
+    // let hann_window = hann_window(window);
+    let hamming_window = hamming_window(window);
+
+    let spectrum = samples_fft_to_spectrum(
+        &hamming_window,
+        44100,
+        Some(&|x| 20.0 * x.log10()),
+        Some(4000.0),
+    );
+
+    spectrum_static_png_visualize(
+        &spectrum,
+        TEST_OUT_DIR,
+        "spectrum_sine_50_100_3777_basic_normalized_to_median.png",
+        &[
+            50.0,
+            1000.0,
+            3777.0,
+        ],
+        true
+    )
+}
+#[test]
+fn test_plotters_visualize_frequency_spectrum_sine_50_plus_1000_plus_3777hz() {
+    let sine_audio = sine_wave_audio_data_multiple(
+        // 1000Hz in 100ms => sin wave will have 100 time periods
+        &[50.0, 1000.0, 3777.0],
+        44100,
+        1000
+    );
+
+    let sine_audio = sine_audio.into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+
+    // FFT frequency accuracy is: sample_rate / (N / 2)
+    // 44100/(16384/2) = 5.383Hz
+
+    // get a window that we want to analyze
+    // 1/44100 * 16384 => 0.3715
+    let window = &sine_audio[0..16384];
+
+    // let hann_window = hann_window(window);
+    let hamming_window = hamming_window(window);
+
+    let spectrum = samples_fft_to_spectrum(
+        &hamming_window,
+        44100,
+        Some(&|x| 20.0 * x.log10()),
+        Some(4000.0),
+    );
+
+    spectrum_static_plotters_png_visualize(
+        &spectrum,
+        TEST_OUT_DIR,
+        "spectrum_sine_50_100_3777_plotters_normalized_to_median.png",
+        true
+    )
+}
+
+#[test]
+fn test_output_spectrum_mp3_sample_bass_drum() {
     let sine_audio = sine_wave_audio_data_multiple(
         // 1000Hz in 100ms => sin wave will have 100 time periods
         &[50.0, 1000.0, 3777.0],
@@ -140,7 +227,7 @@ fn test_output_frequency_spectrum_sine_50_plus_1000_plus_3777hz() {
 }
 
 #[test]
-fn test_spectrum_mp3_sample_bass_drum() {
+fn test_visualize_spectrum_mp3_sample_bass_drum() {
     let sine_audio = sine_wave_audio_data_multiple(
         // 1000Hz in 100ms => sin wave will have 100 time periods
         &[50.0, 1000.0, 3777.0],
@@ -159,19 +246,19 @@ fn test_spectrum_mp3_sample_bass_drum() {
     // 1/44100 * 16384 => 0.3715
     let window = &sine_audio[0..16384];
 
-    let hann_window = hann_window(window);
+    let hamming_window = hamming_window(window);
 
     let spectrum = samples_fft_to_spectrum(
-        &hann_window,
+        &hamming_window,
         44100,
         Some(&|x| 20.0 * x.log10()),
-        None,
+        Some(1000.0),
     );
-    for (fr, vol) in spectrum.iter() {
-        // you will experience inaccuracies here
-        // TODO add further smoothing / noise reduction
-        if *vol > 130.0 {
-            println!("{}Hz => {}", fr, vol);
-        }
-    }
+
+    spectrum_static_plotters_png_visualize(
+        &spectrum,
+        TEST_OUT_DIR,
+        "spectrum_mp3_bass_drum_sample.png",
+        true
+    )
 }
