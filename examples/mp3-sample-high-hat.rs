@@ -44,8 +44,8 @@ fn bass_drum_sample() {
     // next smaller power of two is: 2^14 == 16384 => FFT needs power of 2
     let samples = read_mp3_to_mono("test-res/bass_drum_with_high-hat_at_end-sample.mp3");
     let samples = samples.into_iter()
-        .map(|x| x as f64)
-        .collect::<Vec<f64>>();
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
     let hann_window = hann_window(&samples[0..16384]);
 
     let spectrum = samples_fft_to_spectrum(
@@ -72,8 +72,8 @@ fn clap_beat_sample() {
     // next smaller power of two is: 2^14 == 16384 => FFT needs power of 2
     let samples = read_mp3_to_mono("test-res/clap-beat-sample.mp3");
     let samples = samples.into_iter()
-        .map(|x| x as f64)
-        .collect::<Vec<f64>>();
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
     let hann_window = hann_window(&samples[0..16384]);
 
     let spectrum = samples_fft_to_spectrum(
@@ -101,8 +101,8 @@ fn high_hat_sample() {
 
     let samples = read_mp3_to_mono("test-res/high-hat-sample.mp3");
     let samples = samples.into_iter()
-        .map(|x| x as f64)
-        .collect::<Vec<f64>>();
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
     let hann_window = hann_window(&samples[0..4096]);
 
     let spectrum = samples_fft_to_spectrum(

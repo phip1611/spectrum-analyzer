@@ -38,8 +38,8 @@ fn test_output_frequency_spectrum_sine_50hz() {
     );
 
     let sine_audio = sine_audio.into_iter()
-        .map(|x| x as f64)
-        .collect::<Vec<f64>>();
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
 
     // FFT frequency accuracy is: sample_rate / (N / 2)
     // 44100/(4096/2) = 21.53Hz
@@ -75,8 +75,8 @@ fn test_output_frequency_spectrum_sine_1000hz() {
     );
 
     let sine_audio = sine_audio.into_iter()
-        .map(|x| x as f64)
-        .collect::<Vec<f64>>();
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
 
     // FFT frequency accuracy is: sample_rate / (N / 2)
     // 44100/(16384/2) = 5.383Hz
@@ -112,8 +112,8 @@ fn test_output_frequency_spectrum_sine_50_plus_1000_plus_3777hz() {
     );
 
     let sine_audio = sine_audio.into_iter()
-        .map(|x| x as f64)
-        .collect::<Vec<f64>>();
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
 
     // FFT frequency accuracy is: sample_rate / (N / 2)
     // 44100/(16384/2) = 5.383Hz
@@ -149,8 +149,8 @@ fn test_spectrum_mp3_sample_bass_drum() {
     );
 
     let sine_audio = sine_audio.into_iter()
-        .map(|x| x as f64)
-        .collect::<Vec<f64>>();
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
 
     // FFT frequency accuracy is: sample_rate / (N / 2)
     // 44100/(16384/2) = 5.383Hz

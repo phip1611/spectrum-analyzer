@@ -39,36 +39,36 @@ extern crate std;
 
 use alloc::collections::BTreeMap;
 use rustfft::algorithm::Radix4;
-use rustfft::num_complex::Complex64;
+use rustfft::num_complex::Complex32;
 use rustfft::{Fft, FftDirection};
-use core::f64::consts::PI;
+use core::f32::consts::PI;
 use alloc::vec::Vec;
 
 /// A map from frequency (in Hertz) to the magnitude.
 /// The magnitude is dependent on whether you scaled
 /// the values, e.g to logarithmic scale.
-pub type FrequencySpectrumMap = BTreeMap<usize, f64>;
+pub type FrequencySpectrumMap = BTreeMap<usize, f32>;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using library `rustfft`) on it
 /// and returns all frequencies with their volume/magnitude.
 ///
-/// * `samples` raw audio, e.g. 16bit audio data but as f64.
+/// * `samples` raw audio, e.g. 16bit audio data but as f32.
 ///             You should apply an window function (like hann) on the data first.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `scaling_fn` Optional scaling function. For example transform all values to dB/logarithmic scale:
-///               (`|s| 20_f64 * s.log10()`).
+///               (`|s| 20_f32 * s.log10()`).
 /// * `max_frequency` Optional. If you are interested in a maximum frequency in the final
 ///                   frequency spectrum, say 150Hz, this accelerates the calculation.
 ///
 /// ## Returns value
 /// Map from frequency to magnitude, see [`FrequencySpectrumMap`]
 pub fn samples_fft_to_spectrum(
-    samples: &[f64],
+    samples: &[f32],
     sampling_rate: u32,
-    scaling_fn: Option<&dyn Fn(f64) -> f64>,
-    max_frequency: Option<f64>,
-) -> BTreeMap<usize, f64> {
+    scaling_fn: Option<&dyn Fn(f32) -> f32>,
+    max_frequency: Option<f32>,
+) -> BTreeMap<usize, f32> {
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
     // https://www.youtube.com/watch?v=z7X6jgFnB6Y
@@ -100,11 +100,11 @@ pub fn samples_fft_to_spectrum(
 ///
 /// ## Return value
 /// New vector with Hann window applied to the values.
-pub fn hann_window(samples: &[f64]) -> Vec<f64> {
+pub fn hann_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
     for i in 0..samples.len() {
-        let two_pi_i = 2_f64 * PI * i as f64;
-        let idontknowthename = (two_pi_i / samples.len() as f64).cos();
+        let two_pi_i = 2_f32 * PI * i as f32;
+        let idontknowthename = (two_pi_i / samples.len() as f32).cos();
         let multiplier = 0.5 * (1.0 - idontknowthename);
         windowed_samples.push(multiplier * samples[i])
     }
@@ -116,10 +116,10 @@ pub fn hann_window(samples: &[f64]) -> Vec<f64> {
 ///
 /// ## Return value
 /// New vector with Hann window applied to the values.
-pub fn hamming_window(samples: &[f64]) -> Vec<f64> {
+pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
     for i in 0..samples.len() {
-        let multiplier = 0.54 - (0.46 * (2_f64 * PI * i as f64 / (samples.len() - 1) as f64).cos());
+        let multiplier = 0.54 - (0.46 * (2_f32 * PI * i as f32 / (samples.len() - 1) as f32).cos());
         windowed_samples.push(multiplier * samples[i])
     }
     windowed_samples
@@ -130,11 +130,11 @@ pub fn hamming_window(samples: &[f64]) -> Vec<f64> {
 ///
 /// ## Return value
 /// New vector of samples but as Complex data type.
-fn samples_to_complex(samples: &[f64]) -> Vec<Complex64> {
+fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
     samples
         .iter()
-        .map(|x| Complex64::new(x.clone(), 0.0))
-        .collect::<Vec<Complex64>>()
+        .map(|x| Complex32::new(x.clone(), 0.0))
+        .collect::<Vec<Complex32>>()
 }
 
 /// Transforms the complex numbers of the first half of the FFT results (only the first
@@ -144,15 +144,15 @@ fn samples_to_complex(samples: &[f64]) -> Vec<Complex64> {
 /// * `fft_result` Result buffer from FFT.
 /// * `fft_len` FFT length. A power of 2 or `2* magnitudes.len()`
 /// * `scaling_fn` optional scaling function. For example transform all values to dB/logarithmic scale:
-///               (`|s| 20_f64 * s.log10()`).
+///               (`|s| 20_f32 * s.log10()`).
 /// ## Return value
 /// New vector of all magnitudes. The indices correspond to the indices in the FFT result (first half).
 /// The resulting vector has half the length of the FFT result.
 fn fft_result_to_magnitudes(
-    fft_result: Vec<Complex64>,
+    fft_result: Vec<Complex32>,
     fft_len: usize,
-    scaling_fn: Option<&dyn Fn(f64) -> f64>,
-) -> Vec<f64> {
+    scaling_fn: Option<&dyn Fn(f32) -> f32>,
+) -> Vec<f32> {
     let identity_fn = |x| x;
 
     fft_result
@@ -164,7 +164,7 @@ fn fft_result_to_magnitudes(
         // END: calc magnitude
         // optionally scale
         .map(|s| scaling_fn.unwrap_or(&identity_fn)(s))
-        .collect::<Vec<f64>>()
+        .collect::<Vec<f32>>()
 }
 
 /// Calculates the frequency spectrum from the magnitudes of an FFT. Usually you will
@@ -181,16 +181,16 @@ fn fft_result_to_magnitudes(
 /// Map from frequency to magnitude. Contains either `magnitudes.len()` entries if `max_frequency`
 /// is None, or else maybe less.
 fn magnitudes_to_frequency_spectrum(
-    magnitudes: Vec<f64>,
+    magnitudes: Vec<f32>,
     fft_len: usize,
     sampling_rate: u32,
-    max_frequency: Option<f64>,
+    max_frequency: Option<f32>,
 ) -> FrequencySpectrumMap {
     let mut frequency_to_mag_map = BTreeMap::new();
     for (i, vol) in magnitudes.into_iter().enumerate() {
         // where this line comes from is explained here:
         // https://stackoverflow.com/questions/4364823/
-        let frequency = i as f64 / fft_len as f64 * sampling_rate as f64;
+        let frequency = i as f32 / fft_len as f32 * sampling_rate as f32;
         frequency_to_mag_map.insert(frequency as usize, vol);
 
         // speed up execution; only calc the frequencies we want

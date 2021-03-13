@@ -22,6 +22,7 @@ rustfft = "5.0.1"
 
 [dev-dependencies]
 minimp3 = "0.5.1"
+audio-visualizer = "0.1.4"
 
 # otherwise FFT and other code is too slow
 [profile.dev]

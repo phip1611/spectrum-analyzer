@@ -60,3 +60,8 @@ Less overall noise but noisy peaks.
 Better SNR compared to no window.
 ![Visualization of spectrum 0-3000Hz of layered sine signal (500, 1000, 2500 hz) with Hamming window function.](spectrum_sine_500_1000_2500hz_hamming_window.png "Better SNR compared to no window.")
 
+## Trivia / FAQ
+### Why f64 and no f32?
+I tested f64 but the additional accuracy doesn't pay out the ~40% calculation overhead (on x86_64).
+### What can I do against the noise?
+Apply a window function, like Hann window or Hamming window. But I'm not an expert on this.
