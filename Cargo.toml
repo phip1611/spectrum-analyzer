@@ -1,9 +1,8 @@
 [package]
 name = "spectrum-analyzer"
 description = """
-A library to filter out the frequencies of a digital signal (e.g. audio) using FFT. The main goal of this crate
-is to be educational to the world and myself. This is not a bullet-proof or ideal solution! Feel free to contribute,
-improve, and point out possible errors/bugs/wrong assumptions.
+A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
+It follows the KISS principle and consists of simple building blocks/optional features.
 """
 version = "0.1.1"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
@@ -22,7 +21,7 @@ rustfft = "5.0.1"
 
 [dev-dependencies]
 minimp3 = "0.5.1"
-audio-visualizer = "0.2.0"
+audio-visualizer = "0.2.1"
 
 # otherwise FFT and other code is too slow
 [profile.dev]

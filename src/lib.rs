@@ -31,44 +31,54 @@ SOFTWARE.
 // use alloc crate, because this is no_std
 // #[macro_use]
 extern crate alloc;
-
 // use std in tests
 #[cfg(test)]
 #[macro_use]
 extern crate std;
 
-use alloc::collections::BTreeMap;
-use rustfft::algorithm::Radix4;
-use rustfft::num_complex::Complex32;
-use rustfft::{Fft, FftDirection};
-use core::f32::consts::PI;
 use alloc::vec::Vec;
 
-/// A map from frequency (in Hertz) to the magnitude.
-/// The magnitude is dependent on whether you scaled
-/// the values, e.g to logarithmic scale.
-pub type FrequencySpectrumMap = BTreeMap<usize, f32>;
+use rustfft::{Fft, FftDirection};
+use rustfft::algorithm::Radix4;
+use rustfft::num_complex::Complex32;
+
+pub use crate::frequency::{Frequency, FrequencyValue};
+pub use crate::limit::FrequencyLimit;
+pub use crate::spectrum::{FrequencySpectrum, SpectrumTotalScaleFunctionFactory};
+use core::convert::identity;
+
+pub mod windows;
+mod limit;
+mod frequency;
+mod spectrum;
+#[cfg(test)]
+mod tests;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using library `rustfft`) on it
 /// and returns all frequencies with their volume/magnitude.
 ///
 /// * `samples` raw audio, e.g. 16bit audio data but as f32.
-///             You should apply an window function (like hann) on the data first.
+///             You should apply an window function (like Hann) on the data first.
+///             The final frequency resolution is `sample_rate / (N / 2)`
+///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples => better accuracy
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
-/// * `scaling_fn` Optional scaling function. For example transform all values to dB/logarithmic scale:
-///               (`|s| 20_f32 * s.log10()`).
-/// * `max_frequency` Optional. If you are interested in a maximum frequency in the final
-///                   frequency spectrum, say 150Hz, this accelerates the calculation.
+/// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
+/// * `per_element_scaling_fn` Optional per element scaling function, e.g. `20 * log(x)`.
+///                            To see where this equation comes from, check out
+///                            this paper:
+///                            https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
+/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`].
 ///
 /// ## Returns value
-/// Map from frequency to magnitude, see [`FrequencySpectrumMap`]
+/// New object of type [`FrequencySpectrum`].
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
-    scaling_fn: Option<&dyn Fn(f32) -> f32>,
-    max_frequency: Option<f32>,
-) -> BTreeMap<usize, f32> {
+    frequency_limit: FrequencyLimit,
+    per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
+    total_scaling_fn: Option<SpectrumTotalScaleFunctionFactory>,
+) -> FrequencySpectrum {
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
     // https://www.youtube.com/watch?v=z7X6jgFnB6Y
@@ -89,47 +99,30 @@ pub fn samples_fft_to_spectrum(
     // because of Nyquist theorem. 44100hz sampling frequency
     // => 22050hz maximum detectable frequency
 
-    let magnitudes = fft_result_to_magnitudes(buffer, fft_len, scaling_fn);
-
-    // calc frequency spectrum: map from Frequency to magnitude
-    magnitudes_to_frequency_spectrum(magnitudes, fft_len, sampling_rate, max_frequency)
-}
-
-/// Applies a Hann window (https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
-/// to an array of samples.
-///
-/// ## Return value
-/// New vector with Hann window applied to the values.
-pub fn hann_window(samples: &[f32]) -> Vec<f32> {
-    let mut windowed_samples = Vec::with_capacity(samples.len());
-    for i in 0..samples.len() {
-        let two_pi_i = 2_f32 * PI * i as f32;
-        let idontknowthename = (two_pi_i / samples.len() as f32).cos();
-        let multiplier = 0.5 * (1.0 - idontknowthename);
-        windowed_samples.push(multiplier * samples[i])
-    }
-    windowed_samples
-}
-
-/// Applies a Hamming window (https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
-/// to an array of samples.
-///
-/// ## Return value
-/// New vector with Hann window applied to the values.
-pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
-    let mut windowed_samples = Vec::with_capacity(samples.len());
-    for i in 0..samples.len() {
-        let multiplier = 0.54 - (0.46 * (2_f32 * PI * i as f32 / (samples.len() - 1) as f32).cos());
-        windowed_samples.push(multiplier * samples[i])
-    }
-    windowed_samples
+    // This function:
+    // 1) calculates the corresponding frequency of each index in the FFT result
+    // 2) filters out unwanted frequencies
+    // 3) calculates the magnitude (absolute value) at each frequency index for each complex value
+    // 4) optionally scales the magnitudes
+    // 5) collects everything into the struct "FrequencySpectrum"
+    fft_result_to_frequency_to_magnitude_map(
+        buffer,
+        sampling_rate,
+        frequency_limit,
+        per_element_scaling_fn,
+        total_scaling_fn,
+    )
 }
 
 /// Converts all samples to a complex number (imaginary part is set to two)
 /// as preparation for the FFT.
 ///
+/// ## Parameters
+/// `samples` Input samples.
+///
 /// ## Return value
 /// New vector of samples but as Complex data type.
+#[inline(always)]
 fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
     samples
         .iter()
@@ -141,67 +134,115 @@ fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
 /// half is relevant, Nyquist theorem) to their magnitudes.
 ///
 /// ## Parameters
-/// * `fft_result` Result buffer from FFT.
-/// * `fft_len` FFT length. A power of 2 or `2* magnitudes.len()`
-/// * `scaling_fn` optional scaling function. For example transform all values to dB/logarithmic scale:
-///               (`|s| 20_f32 * s.log10()`).
+/// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
+/// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
+/// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
+/// * `per_element_scaling_fn` Optional per element scaling function, e.g. `20 * log(x)`.
+///                            To see where this equation comes from, check out
+///                            this paper:
+///                            https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
+/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`].
+///
 /// ## Return value
-/// New vector of all magnitudes. The indices correspond to the indices in the FFT result (first half).
-/// The resulting vector has half the length of the FFT result.
-fn fft_result_to_magnitudes(
+/// New object of type [`FrequencySpectrum`].
+#[inline(always)]
+fn fft_result_to_frequency_to_magnitude_map(
     fft_result: Vec<Complex32>,
-    fft_len: usize,
-    scaling_fn: Option<&dyn Fn(f32) -> f32>,
-) -> Vec<f32> {
-    let identity_fn = |x| x;
+    sampling_rate: u32,
+    frequency_limit: FrequencyLimit,
+    per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
+    total_scaling_fn: Option<SpectrumTotalScaleFunctionFactory>,
+) -> FrequencySpectrum {
+    let maybe_min = frequency_limit.maybe_min();
+    let maybe_max = frequency_limit.maybe_max();
 
-    fft_result
+    let samples_len = fft_result.len();
+
+    // collect frequency => frequency value in Vector of Pairs/Tuples
+    let frequency_vec = fft_result
         .into_iter()
         // take first half; half of input length
-        .take(fft_len / 2)
-        // START: calc magnitude: sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|c| c.norm())
-        // END: calc magnitude
-        // optionally scale
-        .map(|s| scaling_fn.unwrap_or(&identity_fn)(s))
-        .collect::<Vec<f32>>()
+        .take(samples_len / 2)
+        // get (index, complex)-pairs
+        .enumerate()
+        // calc index => corresponding frequency
+        .map(|(fft_index, complex)|
+            (
+                fft_index_to_corresponding_frequency(
+                    fft_index,
+                    samples_len as u32,
+                    sampling_rate,
+                ),
+                complex
+            )
+        )
+        // #######################
+        // ### BEGIN filtering: results in lower calculation and memory overhead!
+        // check lower bound frequency (inclusive)
+        .filter(|(fr, _complex)| if let Some(min_fr) = maybe_min {
+            // inclusive!
+            *fr >= min_fr
+        } else {
+            true
+        })
+        // check upper bound frequency (inclusive)
+        .filter(|(fr, _complex)| if let Some(max_fr) = maybe_max {
+            // inclusive!
+            *fr <= max_fr
+        } else {
+            true
+        })
+        // ### END filtering
+        // #######################
+        // calc magnitude: sqrt(re*re + im*im) (re: real part, im: imaginary part)
+        .map(|(fr, complex)| (fr, complex.norm()))
+
+        // apply optionally scale function
+        .map(|(fr, val)|
+            (
+                fr,
+                per_element_scaling_fn.unwrap_or(&identity)(val)
+            )
+        )
+
+        // transform to my thin convenient orderable  f32 wrappers
+        .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
+        .collect::<Vec<(Frequency, FrequencyValue)>>();
+
+    // create spectrum object
+    let fs = FrequencySpectrum::new(frequency_vec);
+    // optionally scale
+    if let Some(total_scaling_fn) = total_scaling_fn {
+        fs.apply_total_scaling_fn(total_scaling_fn)
+    }
+    fs
 }
 
-/// Calculates the frequency spectrum from the magnitudes of an FFT. Usually you will
-/// call this with the result of [`fft_result_to_magnitudes`].
+/// Calculate what index in the FFT result corresponds to what frequency.
 ///
 /// ## Parameters
-/// * `magnitudes` All magnitudes. If you did the FFT with 2048 samples, this vector will be 1024
-///                magnitudes long.
-/// * `fft_len` FFT length. A power of 2 or `2* magnitudes.len()`
+/// * `fft_index` Index in FFT result buffer. If `samples.len() == 2048` then this is in `{0, 1, ..., 1023}`
+/// * `samples_len` Number of samples put into the FFT
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
-/// * `max_frequency` Optional. If you are interested in a maximum frequency, say 150Hz, this
-///                   accelerates the calculation.
+///
 /// ## Return value
-/// Map from frequency to magnitude. Contains either `magnitudes.len()` entries if `max_frequency`
-/// is None, or else maybe less.
-fn magnitudes_to_frequency_spectrum(
-    magnitudes: Vec<f32>,
-    fft_len: usize,
-    sampling_rate: u32,
-    max_frequency: Option<f32>,
-) -> FrequencySpectrumMap {
-    let mut frequency_to_mag_map = BTreeMap::new();
-    for (i, vol) in magnitudes.into_iter().enumerate() {
-        // where this line comes from is explained here:
-        // https://stackoverflow.com/questions/4364823/
-        let frequency = i as f32 / fft_len as f32 * sampling_rate as f32;
-        frequency_to_mag_map.insert(frequency as usize, vol);
+#[inline(always)]
+fn fft_index_to_corresponding_frequency(fft_index: usize, samples_len: u32, sampling_rate: u32) -> f32 {
+    // Explanation for the algorithm:
+    // https://stackoverflow.com/questions/4364823/
 
-        // speed up execution; only calc the frequencies we want
-        if let Some(max) = max_frequency {
-            if frequency > max {
-                break;
-            }
-        }
-    }
-    frequency_to_mag_map
+    // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
+    // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
+    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1023]
+    //                               ^                         ^
+    // Frequency                  : 0Hz, .................... Sampling Rate/2
+    //                              0Hz is also called        (e.g. 22050Hz @ 44100H sampling rate)
+    //                              "DC Component"
+
+    // frequency step/resolution is for example: 1/1024 * 44100
+    // 1024: relevant FFT result, 2048 samples, 44100 sample rate
+
+    fft_index as f32 / samples_len as f32 * sampling_rate as f32
 }
 
-#[cfg(test)]
-mod tests;
+

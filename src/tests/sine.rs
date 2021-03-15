@@ -21,6 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+//! Module for generating synthetic sine waves.
+
 use alloc::boxed::Box;
 use core::f32::consts::PI;
 use alloc::vec::Vec;
@@ -38,6 +40,7 @@ pub fn sine_wave(frequency: f32) -> Box<dyn Fn(f32) -> f32> {
 }
 
 /// See [`sine_wave_audio_data_multiple`]
+#[allow(dead_code)]
 pub fn sine_wave_audio_data(frequency: f32, sampling_rate: u32, duration_ms: u32) -> Vec<i16> {
     sine_wave_audio_data_multiple(&[frequency], sampling_rate, duration_ms)
 }
