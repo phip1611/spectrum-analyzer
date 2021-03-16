@@ -42,7 +42,9 @@ mod sine;
 
 #[test]
 fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
-    let sine_audio = sine_wave_audio_data_multiple(&[3777.0], 44100, 1000);
+    let sine_audio = sine_wave_audio_data_multiple(
+        &[50.0, 1000.0, 3777.0], 44100, 1000
+    );
 
     // visualize waveform
     waveform_static_plotters_png_visualize(
