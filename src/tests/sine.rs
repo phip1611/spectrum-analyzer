@@ -24,8 +24,8 @@ SOFTWARE.
 //! Module for generating synthetic sine waves.
 
 use alloc::boxed::Box;
-use core::f32::consts::PI;
 use alloc::vec::Vec;
+use core::f32::consts::PI;
 
 /// Creates a sine (sinus) wave function for a given frequency.
 /// Don't forget to scale up the value to the audio resolution.
@@ -34,9 +34,7 @@ use alloc::vec::Vec;
 ///
 /// * `frequency` is in Hertz
 pub fn sine_wave(frequency: f32) -> Box<dyn Fn(f32) -> f32> {
-    Box::new(
-        move |t| (t * frequency * 2.0 * PI).sin()
-    )
+    Box::new(move |t| (t * frequency * 2.0 * PI).sin())
 }
 
 /// See [`sine_wave_audio_data_multiple`]
@@ -53,13 +51,18 @@ pub fn sine_wave_audio_data(frequency: f32, sampling_rate: u32, duration_ms: u32
 /// * `frequency` frequency in Hz for the sinus wave
 /// * `sampling_rate` sampling rate, i.e. 44100Hz
 /// * `duration_ms` duration of the audio data in milliseconds
-pub fn sine_wave_audio_data_multiple(frequencies: &[f32], sampling_rate: u32, duration_ms: u32) -> Vec<i16> {
+pub fn sine_wave_audio_data_multiple(
+    frequencies: &[f32],
+    sampling_rate: u32,
+    duration_ms: u32,
+) -> Vec<i16> {
     if frequencies.is_empty() {
         return vec![];
     }
 
     // Generate all sine wave function
-    let sine_waves = frequencies.iter()
+    let sine_waves = frequencies
+        .iter()
         .map(|f| sine_wave(*f))
         .collect::<Vec<Box<dyn Fn(f32) -> f32>>>();
 
@@ -70,7 +73,7 @@ pub fn sine_wave_audio_data_multiple(frequencies: &[f32], sampling_rate: u32, du
     let mut sine_wave = Vec::with_capacity(sample_count);
     for i_sample in 0..sample_count {
         // t: time
-        let t = (1.0/sampling_rate as f32) * i_sample as f32;
+        let t = (1.0 / sampling_rate as f32) * i_sample as f32;
 
         // BEGIN: add sine waves
         let mut acc = 0.0;

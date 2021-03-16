@@ -23,12 +23,14 @@ SOFTWARE.
 */
 #[macro_use]
 extern crate std;
-use std::fs::File;
-use minimp3::{Decoder as Mp3Decoder, Frame as Mp3Frame, Error as Mp3Error};
-use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, SpectrumTotalScaleFunctionFactory};
-use spectrum_analyzer::windows::{blackman_harris_4term, hann_window, hamming_window};
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::test_support::TEST_OUT_DIR;
+use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
+use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
+use spectrum_analyzer::{
+    samples_fft_to_spectrum, FrequencyLimit, SpectrumTotalScaleFunctionFactory,
+};
+use std::fs::File;
 use std::time::Instant;
 
 fn main() {
@@ -52,7 +54,7 @@ fn example__bass_drum_sample() {
     to_spectrum_and_plot(
         &samples[0..16384],
         "example__mp3-samples__bass_drum__spectrum",
-        FrequencyLimit::Max(5000.0)
+        FrequencyLimit::Max(5000.0),
     )
 }
 
@@ -66,7 +68,7 @@ fn example__clap_beat_sample() {
     to_spectrum_and_plot(
         &samples[0..16384],
         "example__mp3-samples__clap_beat__spectrum",
-        FrequencyLimit::Max(5000.0)
+        FrequencyLimit::Max(5000.0),
     )
 }
 
@@ -80,7 +82,7 @@ fn example__high_hat_sample() {
     to_spectrum_and_plot(
         &samples[0..4096],
         "example__mp3-samples__high-hat__spectrum",
-        FrequencyLimit::All
+        FrequencyLimit::All,
     )
 }
 
@@ -91,14 +93,30 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
 
     let now = Instant::now();
     let hann_window = hann_window(&no_window);
-    println!("[Measurement]: Hann-Window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: Hann-Window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
     let now = Instant::now();
     let hamming_window = hamming_window(&no_window);
-    println!("[Measurement]: Hamming-Window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: Hamming-Window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
     let blackman_harris_4term_window = blackman_harris_4term(&no_window);
-    println!("[Measurement]: Blackmann-Harris-4-term-Window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: Blackmann-Harris-4-term-Window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
     let blackman_harris_7term_window = blackman_harris_4term(&no_window);
-    println!("[Measurement]: Blackmann-Harris-7-term-Window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: Blackmann-Harris-7-term-Window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
 
     let now = Instant::now();
     let spectrum_no_window = samples_fft_to_spectrum(
@@ -108,7 +126,11 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         None,
         Some(get_scale_to_one_fn_factory()),
     );
-    println!("[Measurement]: FFT to Spectrum with no window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: FFT to Spectrum with no window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
     let now = Instant::now();
     let spectrum_hamming_window = samples_fft_to_spectrum(
         &hamming_window,
@@ -117,7 +139,11 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         None,
         Some(get_scale_to_one_fn_factory()),
     );
-    println!("[Measurement]: FFT to Spectrum with Hamming window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: FFT to Spectrum with Hamming window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
     let now = Instant::now();
     let spectrum_hann_window = samples_fft_to_spectrum(
         &hann_window,
@@ -126,7 +152,11 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         None,
         Some(get_scale_to_one_fn_factory()),
     );
-    println!("[Measurement]: FFT to Spectrum with Hann window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: FFT to Spectrum with Hann window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
     let now = Instant::now();
     let spectrum_blackman_harris_4term_window = samples_fft_to_spectrum(
         &blackman_harris_4term_window,
@@ -186,21 +216,13 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
     );
 }
 
-fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory{
-    Box::new(
-        move |_min: f32, max: f32, _average: f32, _median: f32| {
-            Box::new(
-                move |x| x/max
-            )
-        }
-    )
+fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory {
+    Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
 }
 
 fn read_mp3(file: &str) -> Vec<f32> {
     let samples = read_mp3_to_mono(file);
-    let samples = samples.into_iter()
-        .map(|x| x as f32)
-        .collect::<Vec<f32>>();
+    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     samples
 }
@@ -211,7 +233,10 @@ fn read_mp3_to_mono(file: &str) -> Vec<i16> {
     let mut lrlr_mp3_samples = vec![];
     loop {
         match decoder.next_frame() {
-            Ok(Mp3Frame { data: samples_of_frame, .. }) => {
+            Ok(Mp3Frame {
+                data: samples_of_frame,
+                ..
+            }) => {
                 for sample in samples_of_frame {
                     lrlr_mp3_samples.push(sample);
                 }

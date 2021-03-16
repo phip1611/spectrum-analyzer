@@ -21,10 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-//! Simple `no_std` spectrum analysis library that follows the KISS (keep it simple, stupid)
-//! principle. The main goal of this crate is to be educational to the world and myself. This
-//! is not a bullet-proof or ideal solution! Feel free to contribute and point out possible
-//! errors/bugs/wrong assumptions or improvements!
+//! A simple and fast `no_std` library to get the frequency spectrum of a digital signal
+//! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
+//! blocks/optional features.
 
 #![no_std]
 
@@ -38,21 +37,21 @@ extern crate std;
 
 use alloc::vec::Vec;
 
-use rustfft::{Fft, FftDirection};
 use rustfft::algorithm::Radix4;
 use rustfft::num_complex::Complex32;
+use rustfft::{Fft, FftDirection};
 
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
 pub use crate::spectrum::{FrequencySpectrum, SpectrumTotalScaleFunctionFactory};
 use core::convert::identity;
 
-pub mod windows;
-mod limit;
 mod frequency;
+mod limit;
 mod spectrum;
 #[cfg(test)]
 mod tests;
+pub mod windows;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using library `rustfft`) on it
@@ -166,45 +165,38 @@ fn fft_result_to_frequency_to_magnitude_map(
         // get (index, complex)-pairs
         .enumerate()
         // calc index => corresponding frequency
-        .map(|(fft_index, complex)|
+        .map(|(fft_index, complex)| {
             (
-                fft_index_to_corresponding_frequency(
-                    fft_index,
-                    samples_len as u32,
-                    sampling_rate,
-                ),
-                complex
+                fft_index_to_corresponding_frequency(fft_index, samples_len as u32, sampling_rate),
+                complex,
             )
-        )
+        })
         // #######################
         // ### BEGIN filtering: results in lower calculation and memory overhead!
         // check lower bound frequency (inclusive)
-        .filter(|(fr, _complex)| if let Some(min_fr) = maybe_min {
-            // inclusive!
-            *fr >= min_fr
-        } else {
-            true
+        .filter(|(fr, _complex)| {
+            if let Some(min_fr) = maybe_min {
+                // inclusive!
+                *fr >= min_fr
+            } else {
+                true
+            }
         })
         // check upper bound frequency (inclusive)
-        .filter(|(fr, _complex)| if let Some(max_fr) = maybe_max {
-            // inclusive!
-            *fr <= max_fr
-        } else {
-            true
+        .filter(|(fr, _complex)| {
+            if let Some(max_fr) = maybe_max {
+                // inclusive!
+                *fr <= max_fr
+            } else {
+                true
+            }
         })
         // ### END filtering
         // #######################
         // calc magnitude: sqrt(re*re + im*im) (re: real part, im: imaginary part)
         .map(|(fr, complex)| (fr, complex.norm()))
-
         // apply optionally scale function
-        .map(|(fr, val)|
-            (
-                fr,
-                per_element_scaling_fn.unwrap_or(&identity)(val)
-            )
-        )
-
+        .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
         // transform to my thin convenient orderable  f32 wrappers
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
         .collect::<Vec<(Frequency, FrequencyValue)>>();
@@ -227,7 +219,11 @@ fn fft_result_to_frequency_to_magnitude_map(
 ///
 /// ## Return value
 #[inline(always)]
-fn fft_index_to_corresponding_frequency(fft_index: usize, samples_len: u32, sampling_rate: u32) -> f32 {
+fn fft_index_to_corresponding_frequency(
+    fft_index: usize,
+    samples_len: u32,
+    sampling_rate: u32,
+) -> f32 {
     // Explanation for the algorithm:
     // https://stackoverflow.com/questions/4364823/
 
@@ -244,5 +240,3 @@ fn fft_index_to_corresponding_frequency(fft_index: usize, samples_len: u32, samp
 
     fft_index as f32 / samples_len as f32 * sampling_rate as f32
 }
-
-

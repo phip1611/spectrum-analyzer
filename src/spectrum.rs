@@ -1,10 +1,33 @@
+/*
+MIT License
+
+Copyright (c) 2021 Philipp Schuster
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 //! Module for the struct [`FrequencySpectrum`].
 
-use alloc::vec::Vec;
 use crate::frequency::{Frequency, FrequencyValue};
-use alloc::collections::BTreeMap;
-use core::cell::{RefCell, Cell, Ref};
 use alloc::boxed::Box;
+use alloc::collections::BTreeMap;
+use alloc::vec::Vec;
+use core::cell::{Cell, Ref, RefCell};
 
 /// Describes the type for a function factory that generates a function that can scale/normalize
 /// the data inside [`FrequencySpectrum`].
@@ -13,8 +36,13 @@ use alloc::boxed::Box;
 /// `(min: f32, max: f32, average: f32, median: f32) -> fn(f32) -> f32`
 /// i.e. you provide a function which generates a function that gets
 /// applied to each element.
-pub type SpectrumTotalScaleFunctionFactory = Box<dyn Fn(f32, f32, f32, f32) -> Box<dyn Fn(f32) -> f32>>;
+pub type SpectrumTotalScaleFunctionFactory =
+    Box<dyn Fn(f32, f32, f32, f32) -> Box<dyn Fn(f32) -> f32>>;
 
+/// Convenient wrapper around the processed FFT result which describes each frequency and
+/// its value/amplitude in the analyzed slice of samples. It only consists of the frequencies
+/// which were desired, e.g. specified via
+/// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`] was called.
 #[derive(Debug)]
 pub struct FrequencySpectrum {
     /// Raw data. Vector is sorted from lowest
@@ -31,7 +59,6 @@ pub struct FrequencySpectrum {
 }
 
 impl FrequencySpectrum {
-
     /// Creates a new object. Calculates several metrics on top of
     /// the passed vector.
     #[inline(always)]
@@ -123,17 +150,20 @@ impl FrequencySpectrum {
     /// New `BTreeMap` from frequency to frequency value.
     #[inline(always)]
     pub fn to_map(&self, scale_fn: Option<&dyn Fn(f32) -> u32>) -> BTreeMap<u32, f32> {
-        self.data.borrow().iter()
+        self.data
+            .borrow()
+            .iter()
             .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
-            .map(|(fr, fr_val)| (
+            .map(|(fr, fr_val)| {
+                (
                     if let Some(fnc) = scale_fn {
                         (fnc)(fr)
                     } else {
                         fr as u32
                     },
-                    fr_val
+                    fr_val,
                 )
-            )
+            })
             .collect()
     }
 
@@ -148,7 +178,8 @@ impl FrequencySpectrum {
     fn calc_statistics(&self) {
         let data = self.data.borrow();
         // first: order all by frequency value in ascending order
-        let mut vals = data.iter()
+        let mut vals = data
+            .iter()
             // map to only value
             .map(|(_fr, val)| val)
             // f64 to prevent overflow
@@ -157,7 +188,8 @@ impl FrequencySpectrum {
         vals.sort();
 
         // sum
-        let sum: f32 = vals.iter()
+        let sum: f32 = vals
+            .iter()
             .map(|fr_val| fr_val.val())
             .fold(0.0, |a, b| a + b);
 
@@ -169,7 +201,7 @@ impl FrequencySpectrum {
             // it must be a power of 2 (for FFT)
             let a = *vals[vals.len() / 2 - 1];
             let b = *vals[vals.len() / 2];
-            (a + b)/2.0.into()
+            (a + b) / 2.0.into()
         };
         let min = *vals[0];
         let max = *vals[vals.len() - 1];
@@ -196,7 +228,6 @@ impl FrequencySpectrum {
     }
 }*/
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -214,24 +245,61 @@ mod tests {
             (450.0, 200.0),
         ];
 
-        let spectrum = spectrum.into_iter()
+        let spectrum = spectrum
+            .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
         let spectrum = FrequencySpectrum::new(spectrum);
 
-        assert_eq!((0.0.into(), 5.0.into()), spectrum.data()[0], "Vector must be ordered");
-        assert_eq!((50.0.into(), 50.0.into()), spectrum.data()[1], "Vector must be ordered");
-        assert_eq!((100.0.into(), 100.0.into()), spectrum.data()[2], "Vector must be ordered");
-        assert_eq!((150.0.into(), 150.0.into()), spectrum.data()[3], "Vector must be ordered");
-        assert_eq!((200.0.into(), 100.0.into()), spectrum.data()[4], "Vector must be ordered");
-        assert_eq!((250.0.into(), 20.0.into()), spectrum.data()[5], "Vector must be ordered");
-        assert_eq!((300.0.into(), 0.0.into()), spectrum.data()[6], "Vector must be ordered");
-        assert_eq!((450.0.into(), 200.0.into()), spectrum.data()[7], "Vector must be ordered");
+        assert_eq!(
+            (0.0.into(), 5.0.into()),
+            spectrum.data()[0],
+            "Vector must be ordered"
+        );
+        assert_eq!(
+            (50.0.into(), 50.0.into()),
+            spectrum.data()[1],
+            "Vector must be ordered"
+        );
+        assert_eq!(
+            (100.0.into(), 100.0.into()),
+            spectrum.data()[2],
+            "Vector must be ordered"
+        );
+        assert_eq!(
+            (150.0.into(), 150.0.into()),
+            spectrum.data()[3],
+            "Vector must be ordered"
+        );
+        assert_eq!(
+            (200.0.into(), 100.0.into()),
+            spectrum.data()[4],
+            "Vector must be ordered"
+        );
+        assert_eq!(
+            (250.0.into(), 20.0.into()),
+            spectrum.data()[5],
+            "Vector must be ordered"
+        );
+        assert_eq!(
+            (300.0.into(), 0.0.into()),
+            spectrum.data()[6],
+            "Vector must be ordered"
+        );
+        assert_eq!(
+            (450.0.into(), 200.0.into()),
+            spectrum.data()[7],
+            "Vector must be ordered"
+        );
 
         assert_eq!(0.0, spectrum.min().val(), "min() must work");
         assert_eq!(200.0, spectrum.max().val(), "max() must work");
         assert_eq!(200.0 - 0.0, spectrum.range().val(), "range() must work");
         assert_eq!(78.125, spectrum.average().val(), "average() must work");
-        assert_eq!((50 + 100) as f32 / 2.0, spectrum.median().val(), "median() must work");
+        assert_eq!(
+            (50 + 100) as f32 / 2.0,
+            spectrum.median().val(),
+            "median() must work"
+        );
     }
 }

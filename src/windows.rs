@@ -1,3 +1,26 @@
+/*
+MIT License
+
+Copyright (c) 2021 Philipp Schuster
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 //! Several window functions which you can apply before doing the FFT.
 //! For more information:
 //! - https://en.wikipedia.org/wiki/Window_function
@@ -53,15 +76,9 @@ pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
 /// ## Return value
 /// New vector with Blackman-Harris 4-term window applied to the values.
 pub fn blackman_harris_4term(samples: &[f32]) -> Vec<f32> {
-
     // constants come from here:
     // https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window
-    const ALPHA: [f32; 4] = [
-        0.35875,
-        -0.48829,
-        0.14128,
-        -0.01168
-    ];
+    const ALPHA: [f32; 4] = [0.35875, -0.48829, 0.14128, -0.01168];
 
     blackman_harris_xterm(samples, &ALPHA)
 }
@@ -85,7 +102,7 @@ pub fn blackman_harris_7term(samples: &[f32]) -> Vec<f32> {
         -0.06592544638803,
         0.01081174209837,
         -0.00077658482522,
-        0.00001388721735
+        0.00001388721735,
     ];
 
     blackman_harris_xterm(samples, &ALPHA)
@@ -116,7 +133,7 @@ fn blackman_harris_xterm(samples: &[f32], alphas: &[f32]) -> Vec<f32> {
             // in 1. iter. 0PI, then 2PI, then 4 PI, then 6 PI
             let two_pi_iteration = 2.0 * alpha_i as f32 * PI;
             let sample = samples[i];
-            let cos = ((two_pi_iteration * sample)/samples_len_f32).cos();
+            let cos = ((two_pi_iteration * sample) / samples_len_f32).cos();
             acc += alphas[alpha_i] * cos;
         }
 

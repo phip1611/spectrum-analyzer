@@ -1,9 +1,32 @@
+/*
+MIT License
+
+Copyright (c) 2021 Philipp Schuster
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 //! Module for the struct [`OrderableF32`] and the two
 //! convenient type definitions [`Frequency`] and [`FrequencyValue`].
 
-use core::fmt::{Display, Formatter, Result};
 use core::cmp::Ordering;
-use core::ops::{Add, Sub, Mul, Div};
+use core::fmt::{Display, Formatter, Result};
+use core::ops::{Add, Div, Mul, Sub};
 
 /// A frequency. A convenient wrapper type around `f32`.
 pub type Frequency = OrderableF32;
@@ -19,7 +42,6 @@ pub type FrequencyValue = OrderableF32;
 pub struct OrderableF32(f32);
 
 impl OrderableF32 {
-
     #[inline(always)]
     pub fn val(&self) -> f32 {
         self.0
@@ -27,7 +49,6 @@ impl OrderableF32 {
 }
 
 impl From<f32> for OrderableF32 {
-
     #[inline(always)]
     fn from(val: f32) -> Self {
         Self(val)
@@ -41,7 +62,6 @@ impl Display for OrderableF32 {
 }
 
 impl Ord for OrderableF32 {
-
     #[inline(always)]
     fn cmp(&self, other: &Self) -> Ordering {
         self.partial_cmp(other).unwrap()
@@ -51,7 +71,6 @@ impl Ord for OrderableF32 {
 impl Eq for OrderableF32 {}
 
 impl PartialEq for OrderableF32 {
-
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
         // self.cmp(other).is_eq()
@@ -63,19 +82,16 @@ impl PartialEq for OrderableF32 {
 }
 
 impl PartialOrd for OrderableF32 {
-
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // self.cmp(other).is_eq()
-        Some(
-            if self.val() < other.val() {
-                Ordering::Less
-            } else if self.val() == other.val() {
-                Ordering::Equal
-            } else {
-                Ordering::Greater
-            }
-        )
+        Some(if self.val() < other.val() {
+            Ordering::Less
+        } else if self.val() == other.val() {
+            Ordering::Equal
+        } else {
+            Ordering::Greater
+        })
     }
 }
 

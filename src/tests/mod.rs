@@ -22,14 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 use crate::tests::sine::sine_wave_audio_data_multiple;
-use alloc::vec::Vec;
+use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
 use crate::{samples_fft_to_spectrum, FrequencyLimit, SpectrumTotalScaleFunctionFactory};
-use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
-use crate::windows::{hann_window, hamming_window, blackman_harris_4term, blackman_harris_7term};
-use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
-use audio_visualizer::Channels;
-use audio_visualizer::waveform::staticc::png_file::waveform_static_png_visualize;
 use alloc::boxed::Box;
+use alloc::vec::Vec;
+use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
+use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
+use audio_visualizer::waveform::staticc::png_file::waveform_static_png_visualize;
+use audio_visualizer::Channels;
 
 /// Directory with test samples (e.g. mp3) can be found here.
 #[allow(dead_code)]
@@ -42,20 +42,18 @@ mod sine;
 
 #[test]
 fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
-    let sine_audio = sine_wave_audio_data_multiple(
-        &[3777.0],
-        44100,
-        1000
-    );
+    let sine_audio = sine_wave_audio_data_multiple(&[3777.0], 44100, 1000);
 
     // visualize waveform
     waveform_static_plotters_png_visualize(
-        &sine_audio, Channels::Mono,
+        &sine_audio,
+        Channels::Mono,
         TEST_OUT_DIR,
-        "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--WAVEFORM.png"
+        "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--WAVEFORM.png",
     );
 
-    let sine_audio = sine_audio.into_iter()
+    let sine_audio = sine_audio
+        .into_iter()
         .map(|x| x as f32)
         .collect::<Vec<f32>>();
 
@@ -95,7 +93,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     );
 
     spectrum_static_plotters_png_visualize(
-    // spectrum_static_png_visualize(
+        // spectrum_static_png_visualize(
         &spectrum_no_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--no-window.png",
@@ -103,7 +101,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     );
 
     spectrum_static_plotters_png_visualize(
-    // spectrum_static_png_visualize(
+        // spectrum_static_png_visualize(
         &spectrum_hamming_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hamming-window.png",
@@ -111,13 +109,12 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     );
 
     spectrum_static_plotters_png_visualize(
-    // spectrum_static_png_visualize(
+        // spectrum_static_png_visualize(
         &spectrum_hann_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hann-window.png",
         false,
     );
-
 
     /*for (fr, vol) in spectrum.iter() {
         // you will experience inaccuracies here
@@ -128,13 +125,6 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     }*/
 }
 
-fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory{
-    Box::new(
-        move |_min: f32, max: f32, _average: f32, _median: f32| {
-            Box::new(
-                move |x| x/max
-            )
-        }
-    )
+fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory {
+    Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
 }
-
