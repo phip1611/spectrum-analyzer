@@ -80,16 +80,16 @@ given frequencies are clearly visible. Each calculation was done with `2048` sam
 **The noise (wrong peaks) also comes from clipping of the added sine waves!**
 
 ### Spectrum without window function on samples
-Peaks (50, 1000, 3777 Hz) are clearly visible but also noise.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with no window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Some noise due to clipping in original signal.")
+Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with no window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.")
 
 ### Hann window function on samples before FFT
-Peaks (50, 1000, 3777 Hz) are clearly visible and overall noise is much smaller, but a few noisy peaks.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Much less noise but noisy peaks.")
+Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ### Hamming window function on samples before FFT
-Peaks (50, 1000, 3777 Hz) are clearly visible and overall noise is smaller.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Less overall noise.")
+Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ## Trivia / FAQ
 ### Why f64 and no f32?
