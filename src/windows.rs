@@ -1,0 +1,127 @@
+//! Several window functions which you can apply before doing the FFT.
+//! For more information:
+//! - https://en.wikipedia.org/wiki/Window_function
+//! - https://www.youtube.com/watch?v=dCeHOf4cJE0
+
+use alloc::vec::Vec;
+use core::f32::consts::PI;
+
+/*/// Describes what window function should be applied to
+/// the `samples` parameter of [`crate::samples_fft_to_spectrum`]
+/// should be applied before the FFT starts. See
+/// https://en.wikipedia.org/wiki/Window_function for more
+/// resources.
+pub enum WindowFn {
+
+}*/
+
+/// Applies a Hann window (https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+/// to an array of samples.
+///
+/// ## Return value
+/// New vector with Hann window applied to the values.
+pub fn hann_window(samples: &[f32]) -> Vec<f32> {
+    let mut windowed_samples = Vec::with_capacity(samples.len());
+    let samples_len_f32 = samples.len() as f32;
+    for i in 0..samples.len() {
+        let two_pi_i = 2.0 * PI * i as f32;
+        let idontknowthename = (two_pi_i / samples_len_f32).cos();
+        let multiplier = 0.5 * (1.0 - idontknowthename);
+        windowed_samples.push(multiplier * samples[i])
+    }
+    windowed_samples
+}
+
+/// Applies a Hamming window (https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+/// to an array of samples.
+///
+/// ## Return value
+/// New vector with Hann window applied to the values.
+pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
+    let mut windowed_samples = Vec::with_capacity(samples.len());
+    let samples_len_f32 = samples.len() as f32;
+    for i in 0..samples.len() {
+        let multiplier = 0.54 - (0.46 * (2.0 * PI * i as f32 / (samples_len_f32 - 1.0).cos()));
+        windowed_samples.push(multiplier * samples[i])
+    }
+    windowed_samples
+}
+
+/// Applies a Blackman-Harris 4-term window (https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window)
+/// to an array of samples.
+///
+/// ## Return value
+/// New vector with Blackman-Harris 4-term window applied to the values.
+pub fn blackman_harris_4term(samples: &[f32]) -> Vec<f32> {
+
+    // constants come from here:
+    // https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window
+    const ALPHA: [f32; 4] = [
+        0.35875,
+        -0.48829,
+        0.14128,
+        -0.01168
+    ];
+
+    blackman_harris_xterm(samples, &ALPHA)
+}
+
+/// Applies a Blackman-Harris 7-term window to an array of samples.
+///
+/// ## More information
+/// * https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window
+/// * https://ieeexplore.ieee.org/document/940309
+/// * https://dsp.stackexchange.com/questions/51095/seven-term-blackman-harris-window
+///
+/// ## Return value
+/// New vector with Blackman-Harris 7-term window applied to the values.
+pub fn blackman_harris_7term(samples: &[f32]) -> Vec<f32> {
+    // constants come from here:
+    // https://dsp.stackexchange.com/questions/51095/seven-term-blackman-harris-window
+    const ALPHA: [f32; 7] = [
+        0.27105140069342,
+        -0.43329793923448,
+        0.21812299954311,
+        -0.06592544638803,
+        0.01081174209837,
+        -0.00077658482522,
+        0.00001388721735
+    ];
+
+    blackman_harris_xterm(samples, &ALPHA)
+}
+
+/// Applies a Blackman-Harris x-term window
+/// (https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window)
+/// to an array of samples. The x is specified by `alphas.len()`.
+///
+/// ## Return value
+/// New vector with Blackman-Harris x-term window applied to the values.
+fn blackman_harris_xterm(samples: &[f32], alphas: &[f32]) -> Vec<f32> {
+    let mut windowed_samples = Vec::with_capacity(samples.len());
+
+    let samples_len_f32 = samples.len() as f32;
+
+    for i in 0..samples.len() {
+        let mut acc = 0.0;
+
+        // Will result in something like that:
+        /* ALPHA0
+            + ALPHA1 * ((2.0 * PI * *samples[i])/samples_len_f32).cos()
+            + ALPHA2 * ((4.0 * PI * *samples[i])/samples_len_f32).cos()
+            + ALPHA3 * ((6.0 * PI * *samples[i])/samples_len_f32).cos()
+        */
+
+        for alpha_i in 0..alphas.len() {
+            // in 1. iter. 0PI, then 2PI, then 4 PI, then 6 PI
+            let two_pi_iteration = 2.0 * alpha_i as f32 * PI;
+            let sample = samples[i];
+            let cos = ((two_pi_iteration * sample)/samples_len_f32).cos();
+            acc += alphas[alpha_i] * cos;
+        }
+
+        windowed_samples.push(acc)
+    }
+
+    windowed_samples
+}
