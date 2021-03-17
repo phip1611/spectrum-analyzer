@@ -83,8 +83,8 @@ pub fn sine_wave_audio_data_multiple(
         // END: add sine waves
 
         // BEGIN: scale
-        // times 0.6 to prevent to harsh clipping if multiple sinus waves are added above each other
-        let acc = acc * i16::max_value() as f32 * 0.6;
+        // times 0.1 to prevent to clipping if multiple sinus waves are added above each other
+        let acc = acc * i16::max_value() as f32 * 0.1;
         // END: scale
 
         // BEGIN: truncate in interval
