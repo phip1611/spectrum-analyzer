@@ -23,7 +23,7 @@ SOFTWARE.
 */
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
-use crate::{samples_fft_to_spectrum, FrequencyLimit, SpectrumTotalScaleFunctionFactory};
+use crate::{samples_fft_to_spectrum, FrequencyLimit, ComplexSpectrumScalingFunction};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
@@ -127,6 +127,6 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     }*/
 }
 
-fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory {
+fn get_scale_to_one_fn_factory() -> ComplexSpectrumScalingFunction {
     Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
 }

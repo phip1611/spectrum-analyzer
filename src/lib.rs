@@ -45,15 +45,25 @@ use rustfft::{Fft, FftDirection};
 
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
-pub use crate::spectrum::{FrequencySpectrum, SpectrumTotalScaleFunctionFactory};
+pub use crate::spectrum::{FrequencySpectrum, ComplexSpectrumScalingFunction};
 use core::convert::identity;
 
 mod frequency;
 mod limit;
 mod spectrum;
+pub mod scaling;
+pub mod windows;
 #[cfg(test)]
 mod tests;
-pub mod windows;
+
+/// Definition of a simple function that gets applied on each frequency magnitude
+/// in the spectrum. This is easier to write, especially for Rust beginners.
+/// Everything that can be achieved with this, can also be achieved with parameter
+/// `total_scaling_fn`.
+///
+/// The scaling only affects the value/amplitude of the frequency
+/// but not the frequency itself.
+pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using library `rustfft`) on it
@@ -65,11 +75,13 @@ pub mod windows;
 ///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples => better accuracy
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
-/// * `per_element_scaling_fn` Optional per element scaling function, e.g. `20 * log(x)`.
-///                            To see where this equation comes from, check out
-///                            this paper:
-///                            https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
-/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`].
+/// * `per_element_scaling_fn` See [`crate::SimpleSpectrumScalingFunction`] for details.
+///                            This is easier to write, especially for Rust beginners. Everything
+///                            that can be achieved with this, can also be achieved with
+///                            parameter `total_scaling_fn`.
+///                            See [`crate::scaling`] for example implementations.
+/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`] for details.
+///                      See [`crate::scaling`] for example implementations.
 ///
 /// ## Returns value
 /// New object of type [`FrequencySpectrum`].
@@ -77,8 +89,8 @@ pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
-    total_scaling_fn: Option<SpectrumTotalScaleFunctionFactory>,
+    per_element_scaling_fn: Option<SimpleSpectrumScalingFunction>,
+    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
 ) -> FrequencySpectrum {
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
@@ -152,7 +164,7 @@ fn fft_result_to_frequency_to_magnitude_map(
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
     per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
-    total_scaling_fn: Option<SpectrumTotalScaleFunctionFactory>,
+    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
 ) -> FrequencySpectrum {
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
@@ -219,7 +231,7 @@ fn fft_result_to_frequency_to_magnitude_map(
 
     // optionally scale
     if let Some(total_scaling_fn) = total_scaling_fn {
-        spectrum.apply_total_scaling_fn(total_scaling_fn)
+        spectrum.apply_complex_scaling_fn(total_scaling_fn)
     }
 
     spectrum
