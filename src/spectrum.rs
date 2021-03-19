@@ -48,6 +48,10 @@ pub struct FrequencySpectrum {
     /// Raw data. Vector is sorted from lowest
     /// frequency to highest.
     data: RefCell<Vec<(Frequency, FrequencyValue)>>,
+    /// Frequency resolution of the examined samples in Hertz,
+    /// i.e the frequency steps between elements in the vector
+    /// inside field [`data`].
+    frequency_resolution: f32,
     /// Average value of frequency value/magnitude/amplitude.
     average: Cell<FrequencyValue>,
     /// Median value of frequency value/magnitude/amplitude.
@@ -61,10 +65,21 @@ pub struct FrequencySpectrum {
 impl FrequencySpectrum {
     /// Creates a new object. Calculates several metrics on top of
     /// the passed vector.
+    ///
+    /// ## Parameters
+    /// * `data` Vector with all ([`Frequency`], [`FrequencyValue`])-tuples
+    /// * `frequency_resolution` Resolution in Hertz. This equals to
+    ///                          `data[1].0 - data[0].0`.
     #[inline(always)]
-    pub fn new(data: Vec<(Frequency, FrequencyValue)>) -> Self {
+    pub fn new(
+        data: Vec<(Frequency, FrequencyValue)>,
+        frequency_resolution: f32,
+    ) -> Self {
         let obj = Self {
             data: RefCell::new(data),
+            frequency_resolution,
+
+            // default/placeholder values
             average: Cell::new(FrequencyValue::from(-1.0)),
             median: Cell::new(FrequencyValue::from(-1.0)),
             min: Cell::new(FrequencyValue::from(-1.0)),
@@ -125,7 +140,7 @@ impl FrequencySpectrum {
         self.min.get()
     }
 
-    /// [`max()`] - [`min()`]
+    /// Returns [`max()`] - [`min()`].
     #[inline(always)]
     pub fn range(&self) -> FrequencyValue {
         self.max() - self.min()
@@ -135,6 +150,12 @@ impl FrequencySpectrum {
     #[inline(always)]
     pub fn data(&self) -> Ref<Vec<(Frequency, FrequencyValue)>> {
         self.data.borrow()
+    }
+
+    /// Getter for `frequency_resolution`.
+    #[inline(always)]
+    pub fn frequency_resolution(&self) -> f32 {
+        self.frequency_resolution
     }
 
     /// Returns a `BTreeMap`. The key is of type u32.
@@ -249,7 +270,10 @@ mod tests {
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(spectrum);
+        let spectrum = FrequencySpectrum::new(
+            spectrum,
+            50.0,
+        );
 
         assert_eq!(
             (0.0.into(), 5.0.into()),
@@ -300,6 +324,12 @@ mod tests {
             (50 + 100) as f32 / 2.0,
             spectrum.median().val(),
             "median() must work"
+        );
+
+        assert_eq!(
+            50.0,
+            spectrum.frequency_resolution(),
+            "frequency resolution must be returned"
         );
     }
 }
