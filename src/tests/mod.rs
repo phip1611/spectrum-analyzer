@@ -60,11 +60,11 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         .collect::<Vec<f32>>();
 
     // FFT frequency accuracy is: sample_rate / (N / 2)
-    // 44100/(16384/2) = 5.383Hz
+    // 44100/(4096/2) = 21.5Hz
 
     // get a window that we want to analyze
-    // 1/44100 * 16384 => 0.3715s
-    let window = &sine_audio[0..2048];
+    // 1/44100 * 4096 => 0.0928s
+    let window = &sine_audio[0..4096];
 
     let no_window = &window[..];
     let hamming_window = hamming_window(no_window);
@@ -117,6 +117,18 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hann-window.png",
         false,
     );
+
+    // test getters match spectrum
+    // we use Hann windowed spectrum because the accuracy is much better than
+    // with no window!
+    assert!(spectrum_hann_window.freq_val_exact(50.0).val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_closest(50.0).1.val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_exact(1000.0).val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_closest(1000.0).1.val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_exact(3777.0).val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_closest(3777.0).1.val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_exact(500.0).val() < 0.00001);
+    assert!(spectrum_hann_window.freq_val_closest(500.0).1.val() < 0.00001);
 
     /*for (fr, vol) in spectrum.iter() {
         // you will experience inaccuracies here

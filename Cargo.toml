@@ -18,6 +18,7 @@ documentation = "https://docs.rs/spectrum-analyzer"
 
 [dependencies]
 rustfft = "5.0.1"
+float-cmp = "0.8.0" # approx. compare floats
 
 [dev-dependencies]
 minimp3 = "0.5.1"
