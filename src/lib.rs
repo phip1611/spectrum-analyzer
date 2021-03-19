@@ -157,6 +157,12 @@ fn fft_result_to_frequency_to_magnitude_map(
 
     let samples_len = fft_result.len();
 
+    // see documentation of fft_calc_frequency_resolution for better explanation
+    let frequency_resolution = fft_calc_frequency_resolution(
+        sampling_rate,
+        samples_len as u32,
+    );
+
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
         .into_iter()
@@ -167,7 +173,9 @@ fn fft_result_to_frequency_to_magnitude_map(
         // calc index => corresponding frequency
         .map(|(fft_index, complex)| {
             (
-                fft_index_to_corresponding_frequency(fft_index, samples_len as u32, sampling_rate),
+                // corresponding frequency of each index of FFT result
+                // see documentation of fft_calc_frequency_resolution for better explanation
+                fft_index as f32 * frequency_resolution,
                 complex,
             )
         })
@@ -202,41 +210,52 @@ fn fft_result_to_frequency_to_magnitude_map(
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
     // create spectrum object
-    let fs = FrequencySpectrum::new(frequency_vec);
+    let spectrum = FrequencySpectrum::new(
+        frequency_vec,
+        frequency_resolution,
+    );
+
     // optionally scale
     if let Some(total_scaling_fn) = total_scaling_fn {
-        fs.apply_total_scaling_fn(total_scaling_fn)
+        spectrum.apply_total_scaling_fn(total_scaling_fn)
     }
-    fs
+
+    spectrum
 }
 
-/// Calculate what index in the FFT result corresponds to what frequency.
+/// Calculate the frequency resolution of the FFT. It is determined by the sampling rate
+/// in Hertz and N, the number of samples given into the FFT. With the frequency resolution,
+/// we can determine the corresponding frequency of each index in the FFT result buffer.
 ///
 /// ## Parameters
-/// * `fft_index` Index in FFT result buffer. If `samples.len() == 2048` then this is in `{0, 1, ..., 1023}`
 /// * `samples_len` Number of samples put into the FFT
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 ///
 /// ## Return value
+/// Frequency resolution in Hertz.
+///
+/// ## More info
+/// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
+/// * https://stackoverflow.com/questions/4364823/
 #[inline(always)]
-fn fft_index_to_corresponding_frequency(
-    fft_index: usize,
-    samples_len: u32,
+fn fft_calc_frequency_resolution(
     sampling_rate: u32,
+    samples_len: u32,
 ) -> f32 {
     // Explanation for the algorithm:
     // https://stackoverflow.com/questions/4364823/
 
     // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
     // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
-    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1023]
+    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1023]      => first N/2 results important
     //                               ^                         ^
     // Frequency                  : 0Hz, .................... Sampling Rate/2
-    //                              0Hz is also called        (e.g. 22050Hz @ 44100H sampling rate)
+    //                              0Hz is also called        (e.g. 22050Hz for 44100H sampling rate)
     //                              "DC Component"
 
-    // frequency step/resolution is for example: 1/1024 * 44100
-    // 1024: relevant FFT result, 2048 samples, 44100 sample rate
+    // frequency step/resolution is for example: 1/2048 * 44100
+    //                                             2048 samples, 44100 sample rate
 
-    fft_index as f32 / samples_len as f32 * sampling_rate as f32
+    // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
+    sampling_rate as f32 / samples_len as f32
 }
