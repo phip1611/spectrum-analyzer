@@ -24,7 +24,7 @@ SOFTWARE.
 //! Several window functions which you can apply before doing the FFT.
 //! For more information:
 //! - https://en.wikipedia.org/wiki/Window_function
-//! - https://www.youtube.com/watch?v=dCeHOf4cJE0
+//! - https://www.youtube.com/watch?v=dCeHOf4cJE0 (FFT and windowing by Texas Instruments)
 
 use alloc::vec::Vec;
 use core::f32::consts::PI;

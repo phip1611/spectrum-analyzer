@@ -27,9 +27,7 @@ use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plot
 use audio_visualizer::test_support::TEST_OUT_DIR;
 use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
-use spectrum_analyzer::{
-    samples_fft_to_spectrum, FrequencyLimit, SpectrumTotalScaleFunctionFactory,
-};
+use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, scaling};
 use std::fs::File;
 use std::time::Instant;
 
@@ -124,7 +122,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         44100,
         frequency_limit,
         None,
-        Some(get_scale_to_one_fn_factory()),
+        Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!(
         "[Measurement]: FFT to Spectrum with no window with {} samples took: {}µs",
@@ -137,7 +135,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         44100,
         frequency_limit,
         None,
-        Some(get_scale_to_one_fn_factory()),
+        Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!(
         "[Measurement]: FFT to Spectrum with Hamming window with {} samples took: {}µs",
@@ -150,7 +148,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         44100,
         frequency_limit,
         None,
-        Some(get_scale_to_one_fn_factory()),
+        Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!(
         "[Measurement]: FFT to Spectrum with Hann window with {} samples took: {}µs",
@@ -163,7 +161,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         44100,
         frequency_limit,
         None,
-        Some(get_scale_to_one_fn_factory()),
+        Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 4-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
     let now = Instant::now();
@@ -172,7 +170,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         44100,
         frequency_limit,
         None,
-        Some(get_scale_to_one_fn_factory()),
+        Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 7-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
 
@@ -214,10 +212,6 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         &format!("{}--blackman-harris-7-term-window.png", filename),
         false,
     );
-}
-
-fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory {
-    Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
 }
 
 fn read_mp3(file: &str) -> Vec<f32> {

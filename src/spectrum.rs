@@ -31,12 +31,23 @@ use core::cell::{Cell, Ref, RefCell};
 
 /// Describes the type for a function factory that generates a function that can scale/normalize
 /// the data inside [`FrequencySpectrum`].
-/// This can be used to subtract `min` value from all values for example , if `min`
-/// is `> 0`. The signature is the following:
+///
+/// **Complex** means it's not basic. It has nothing to do with complex numbers.
+///
+/// This can archive exactly the same as [`crate::SimpleSpectrumScalingFunction`]
+/// but is capable of doing more complex logic, i.e. you have access to min, max,
+/// or median!
+///
+/// This can be used for example to subtract `min` value from all values,
+/// if `min` is `> 0`. The signature is the following:
 /// `(min: f32, max: f32, average: f32, median: f32) -> fn(f32) -> f32`
 /// i.e. you provide a function which generates a function that gets
-/// applied to each element.
-pub type SpectrumTotalScaleFunctionFactory =
+/// applied to each element. The input arguments are automatically calculated
+/// by [`FrequencySpectrum`].
+///
+/// The scaling only affects the value/amplitude of the frequency
+/// but not the frequency itself.
+pub type ComplexSpectrumScalingFunction =
     Box<dyn Fn(f32, f32, f32, f32) -> Box<dyn Fn(f32) -> f32>>;
 
 /// Convenient wrapper around the processed FFT result which describes each frequency and
@@ -96,7 +107,7 @@ impl FrequencySpectrum {
     /// ## Parameters
     /// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`].
     #[inline(always)]
-    pub fn apply_total_scaling_fn(&self, total_scaling_fn: SpectrumTotalScaleFunctionFactory) {
+    pub fn apply_complex_scaling_fn(&self, total_scaling_fn: ComplexSpectrumScalingFunction) {
         let scale_fn = (total_scaling_fn)(
             // into() => FrequencyValue => f32
             self.min.get().val(),
