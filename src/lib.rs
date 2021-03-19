@@ -24,6 +24,8 @@ SOFTWARE.
 //! A simple and fast `no_std` library to get the frequency spectrum of a digital signal
 //! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
 //! blocks/optional features.
+//!
+//! In short, this is a convenient wrapper around the great `rustfft` library.
 
 #![no_std]
 
