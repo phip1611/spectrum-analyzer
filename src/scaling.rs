@@ -33,14 +33,15 @@ pub mod basic {
     ///
     /// ## Usage
     /// ```rust
-    /// use spectrum_analyzer::{samples_fft_to_spectrum, scaling};
-    /// let spectrum = samples_fft_to_spectrum(
+    ///use spectrum_analyzer::{samples_fft_to_spectrum, scaling, FrequencyLimit};
+    ///let window = [0.0, 0.1, 0.2, 0.3]; // add real data here
+    ///let spectrum = samples_fft_to_spectrum(
     ///     &window,
     ///     44100,
-    ///      frequency_limit,
-    ///      Some(&scaling::basic::scale_20_times_log10()),
-    ///      None,
-    ///  );
+    ///     FrequencyLimit::All,
+    ///     Some(&scaling::basic::scale_20_times_log10),
+    ///     None,
+    /// );
     /// ```
     pub fn scale_20_times_log10(frequency_magnitude: f32) -> f32 {
         20.0 * frequency_magnitude.log10()
