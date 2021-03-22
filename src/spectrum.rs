@@ -57,20 +57,27 @@ pub type ComplexSpectrumScalingFunction =
 #[derive(Debug)]
 pub struct FrequencySpectrum {
     /// Raw data. Vector is sorted from lowest
-    /// frequency to highest.
+    /// frequency to highest and data is normalized/scaled
+    /// according to all applied scaling functions.
     data: RefCell<Vec<(Frequency, FrequencyValue)>>,
     /// Frequency resolution of the examined samples in Hertz,
     /// i.e the frequency steps between elements in the vector
     /// inside field [`data`].
     frequency_resolution: f32,
-    /// Average value of frequency value/magnitude/amplitude.
+    /// Average value of frequency value/magnitude/amplitude
+    /// corresponding to data in [`FrequencySpectrum::data`].
     average: Cell<FrequencyValue>,
-    /// Median value of frequency value/magnitude/amplitude.
+    /// Median value of frequency value/magnitude/amplitude
+    /// corresponding to data in [`FrequencySpectrum::data`].
     median: Cell<FrequencyValue>,
-    /// Minimum value of frequency value/magnitude/amplitude.
-    min: Cell<FrequencyValue>,
-    /// Maximum value of frequency value/magnitude/amplitude.
-    max: Cell<FrequencyValue>,
+    /// Pair of (frequency, frequency value/magnitude/amplitude) where
+    /// frequency value is **minimal** inside the spectrum.
+    /// Corresponding to data in [`FrequencySpectrum::data`].
+    min: Cell<(Frequency, FrequencyValue)>,
+    /// Pair of (frequency, frequency value/magnitude/amplitude) where
+    /// frequency value is **maximum** inside the spectrum.
+    /// Corresponding to data in [`FrequencySpectrum::data`].
+    max: Cell<(Frequency, FrequencyValue)>,
 }
 
 impl FrequencySpectrum {
@@ -93,8 +100,14 @@ impl FrequencySpectrum {
             // default/placeholder values
             average: Cell::new(FrequencyValue::from(-1.0)),
             median: Cell::new(FrequencyValue::from(-1.0)),
-            min: Cell::new(FrequencyValue::from(-1.0)),
-            max: Cell::new(FrequencyValue::from(-1.0)),
+            min: Cell::new((
+                Frequency::from(-1.0),
+                FrequencyValue::from(-1.0),
+            )),
+            max: Cell::new((
+                Frequency::from(-1.0),
+                FrequencyValue::from(-1.0),
+            )),
         };
         // IMPORTANT!!
         obj.calc_statistics();
@@ -110,8 +123,8 @@ impl FrequencySpectrum {
     pub fn apply_complex_scaling_fn(&self, total_scaling_fn: ComplexSpectrumScalingFunction) {
         let scale_fn = (total_scaling_fn)(
             // into() => FrequencyValue => f32
-            self.min.get().val(),
-            self.max.get().val(),
+            self.min.get().1.val(),
+            self.max.get().1.val(),
             self.average.get().val(),
             self.median.get().val(),
         );
@@ -127,43 +140,45 @@ impl FrequencySpectrum {
         self.calc_statistics();
     }
 
-    /// Getter for lazily evaluated `average`.
+    /// Getter for [`FrequencySpectrum::average`].
     #[inline(always)]
     pub fn average(&self) -> FrequencyValue {
         self.average.get()
     }
 
-    /// Getter for lazily evaluated `median`.
+    /// Getter for [`FrequencySpectrum::median`].
     #[inline(always)]
     pub fn median(&self) -> FrequencyValue {
         self.median.get()
     }
 
-    /// Getter for lazily evaluated `max`.
+    /// Getter for [`FrequencySpectrum::max`].
     #[inline(always)]
-    pub fn max(&self) -> FrequencyValue {
+    pub fn max(&self) -> (Frequency, FrequencyValue) {
         self.max.get()
     }
 
-    /// Getter for lazily evaluated `min`.
+    /// Getter for [`FrequencySpectrum::min`].
     #[inline(always)]
-    pub fn min(&self) -> FrequencyValue {
+    pub fn min(&self) -> (Frequency, FrequencyValue) {
         self.min.get()
     }
 
-    /// Returns [`max()`] - [`min()`].
+    /// Returns [`FrequencySpectrum::max().1`] - [`FrequencySpectrum::min().1`],
+    /// i.e. the range of the frequency values (not the frequencies itself,
+    /// but their amplitude/value).
     #[inline(always)]
     pub fn range(&self) -> FrequencyValue {
-        self.max() - self.min()
+        self.max().1 - self.min().1
     }
 
-    /// Getter for `data`.
+    /// Getter for [`FrequencySpectrum::data`].
     #[inline(always)]
     pub fn data(&self) -> Ref<Vec<(Frequency, FrequencyValue)>> {
         self.data.borrow()
     }
 
-    /// Getter for `frequency_resolution`.
+    /// Getter for [`FrequencySpectrum::frequency_resolution`].
     #[inline(always)]
     pub fn frequency_resolution(&self) -> f32 {
         self.frequency_resolution
@@ -361,35 +376,35 @@ impl FrequencySpectrum {
     /// Calculates min, max, median and average of the frequency values/magnitudes/amplitudes.
     #[inline(always)]
     fn calc_statistics(&self) {
-        let data = self.data.borrow();
-        // first: order all by frequency value in ascending order
-        let mut vals = data
-            .iter()
-            // map to only value
-            .map(|(_fr, val)| val)
-            // f64 to prevent overflow
-            // .map(|v| v as f64)
-            .collect::<Vec<&FrequencyValue>>();
-        vals.sort();
+        let mut data_sorted = self.data.borrow().clone();
+        data_sorted.sort_by(|(_l_fr, l_fr_val), (_r_fr, r_fr_val)| {
+            // compare by frequency value, from min to max
+            l_fr_val.cmp(r_fr_val)
+        });
 
         // sum
-        let sum: f32 = vals
+        let sum: f32 = data_sorted
             .iter()
-            .map(|fr_val| fr_val.val())
+            .map(|fr_val| fr_val.1.val())
             .fold(0.0, |a, b| a + b);
 
-        let avg = sum / vals.len() as f32;
+        let avg = sum / data_sorted.len() as f32;
         let average: FrequencyValue = avg.into();
 
         let median = {
-            // we assume that vals.length() is always even, because
+            // we assume that data_sorted.length() is always even, because
             // it must be a power of 2 (for FFT)
-            let a = *vals[vals.len() / 2 - 1];
-            let b = *vals[vals.len() / 2];
+            let a = data_sorted[data_sorted.len() / 2 - 1].1;
+            let b = data_sorted[data_sorted.len() / 2].1;
             (a + b) / 2.0.into()
         };
-        let min = *vals[0];
-        let max = *vals[vals.len() - 1];
+        // because we sorted the vector a few lines above
+        // by the value, the following lines are correct
+        let min = data_sorted[0];
+        let max = data_sorted[data_sorted.len() - 1];
+
+        // check that I get the comparison right (and not from max to min)
+        debug_assert!(min.1 <= max.1);
 
         self.min.replace(min);
         self.max.replace(max);
@@ -444,7 +459,6 @@ fn calculate_y_coord_between_points((x1, y1): (f32, f32), (x2, y2): (f32, f32), 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{FrequencyLimit, samples_fft_to_spectrum};
 
     #[test]
     fn test_calculate_point_between_points() {
@@ -542,8 +556,8 @@ mod tests {
 
         // test getters
         {
-            assert_eq!(0.0, spectrum.min().val(), "min() must work");
-            assert_eq!(200.0, spectrum.max().val(), "max() must work");
+            assert_eq!((300.0.into(), 0.0.into()), spectrum.min(), "min() must work");
+            assert_eq!((450.0.into(), 200.0.into()), spectrum.max(), "max() must work");
             assert_eq!(200.0 - 0.0, spectrum.range().val(), "range() must work");
             assert_eq!(78.125, spectrum.average().val(), "average() must work");
             assert_eq!(

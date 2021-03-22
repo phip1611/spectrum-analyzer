@@ -28,7 +28,6 @@ use alloc::boxed::Box;
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
-use audio_visualizer::waveform::staticc::png_file::waveform_static_png_visualize;
 use audio_visualizer::Channels;
 
 /// Directory with test samples (e.g. mp3) can be found here.
