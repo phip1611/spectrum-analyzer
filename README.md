@@ -1,17 +1,21 @@
 # Rust: library for frequency spectrum analysis using FFT
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
-It follows the KISS principle and consists of simple building blocks/optional features.
+It follows the KISS principle and consists of simple building blocks/optional features. In short, this is 
+a convenient wrapper around the great [rustfft](https://crates.io/crates/rustfft)
+library.
 
 **I'm not an expert on digital signal processing. Code contributions are highly welcome! :)**
 
 ## How to use
+Most tips and comments are located inside the code, so please check out the repository on
+Github! Anyway, the most basic usage looks like this:
 ```rust
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use spectrum_analyzer::windows::hann_window;
 
 fn main() {
     // This lib also works in `no_std` environments!
-    let samples: &[f32] = get_samples(); // TODO implement
+    let samples: &[f32] = get_samples(); // TODO you need to implement the samples source
     // apply hann window for smoothing; length must be a power of 2 for the FFT
     let hann_window = hann_window(&samples[0..4096]);
     // calc spectrum
@@ -34,30 +38,10 @@ fn main() {
 }
 ```
 
-### How to scale values
-```rust
-// e.g. like this
-fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory{
-    Box::new(
-        move |min: f32, max: f32, average: f32, median: f32| {
-            Box::new(
-                move |x| x/max
-            )
-        }
-    )
-}
-fn main() {
-    // ...
-    let spectrum_hann_window = samples_fft_to_spectrum(
-        &hann_window,
-        44100,
-        FrequencyLimit::All,
-        None,
-        // optional total scaling at the end; see doc comments
-        Some(get_scale_to_one_fn_factory()),
-    );
-}
-```
+## Scaling the frequency values/amplitudes
+As already mentioned, there are lots of comments in the code. Short story is:
+Type `ComplexSpectrumScalingFunction` can do anything whereas `BasicSpectrumScalingFunction`
+is easier to write, especially for Rust beginners.
 
 ## Performance
 *Measurements taken on i7-8650U @ 3 Ghz (Single-Core) with optimized build*

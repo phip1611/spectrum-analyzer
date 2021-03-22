@@ -24,6 +24,8 @@ SOFTWARE.
 //! A simple and fast `no_std` library to get the frequency spectrum of a digital signal
 //! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
 //! blocks/optional features.
+//!
+//! In short, this is a convenient wrapper around the great `rustfft` library.
 
 #![no_std]
 
@@ -43,15 +45,25 @@ use rustfft::{Fft, FftDirection};
 
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
-pub use crate::spectrum::{FrequencySpectrum, SpectrumTotalScaleFunctionFactory};
+pub use crate::spectrum::{FrequencySpectrum, ComplexSpectrumScalingFunction};
 use core::convert::identity;
 
 mod frequency;
 mod limit;
 mod spectrum;
+pub mod scaling;
+pub mod windows;
 #[cfg(test)]
 mod tests;
-pub mod windows;
+
+/// Definition of a simple function that gets applied on each frequency magnitude
+/// in the spectrum. This is easier to write, especially for Rust beginners.
+/// Everything that can be achieved with this, can also be achieved with parameter
+/// `total_scaling_fn`.
+///
+/// The scaling only affects the value/amplitude of the frequency
+/// but not the frequency itself.
+pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using library `rustfft`) on it
@@ -63,11 +75,13 @@ pub mod windows;
 ///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples => better accuracy
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
-/// * `per_element_scaling_fn` Optional per element scaling function, e.g. `20 * log(x)`.
-///                            To see where this equation comes from, check out
-///                            this paper:
-///                            https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
-/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`].
+/// * `per_element_scaling_fn` See [`crate::SimpleSpectrumScalingFunction`] for details.
+///                            This is easier to write, especially for Rust beginners. Everything
+///                            that can be achieved with this, can also be achieved with
+///                            parameter `total_scaling_fn`.
+///                            See [`crate::scaling`] for example implementations.
+/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`] for details.
+///                      See [`crate::scaling`] for example implementations.
 ///
 /// ## Returns value
 /// New object of type [`FrequencySpectrum`].
@@ -75,8 +89,8 @@ pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
-    total_scaling_fn: Option<SpectrumTotalScaleFunctionFactory>,
+    per_element_scaling_fn: Option<SimpleSpectrumScalingFunction>,
+    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
 ) -> FrequencySpectrum {
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
@@ -150,12 +164,18 @@ fn fft_result_to_frequency_to_magnitude_map(
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
     per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
-    total_scaling_fn: Option<SpectrumTotalScaleFunctionFactory>,
+    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
 ) -> FrequencySpectrum {
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
 
     let samples_len = fft_result.len();
+
+    // see documentation of fft_calc_frequency_resolution for better explanation
+    let frequency_resolution = fft_calc_frequency_resolution(
+        sampling_rate,
+        samples_len as u32,
+    );
 
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
@@ -167,7 +187,9 @@ fn fft_result_to_frequency_to_magnitude_map(
         // calc index => corresponding frequency
         .map(|(fft_index, complex)| {
             (
-                fft_index_to_corresponding_frequency(fft_index, samples_len as u32, sampling_rate),
+                // corresponding frequency of each index of FFT result
+                // see documentation of fft_calc_frequency_resolution for better explanation
+                fft_index as f32 * frequency_resolution,
                 complex,
             )
         })
@@ -202,41 +224,52 @@ fn fft_result_to_frequency_to_magnitude_map(
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
     // create spectrum object
-    let fs = FrequencySpectrum::new(frequency_vec);
+    let spectrum = FrequencySpectrum::new(
+        frequency_vec,
+        frequency_resolution,
+    );
+
     // optionally scale
     if let Some(total_scaling_fn) = total_scaling_fn {
-        fs.apply_total_scaling_fn(total_scaling_fn)
+        spectrum.apply_complex_scaling_fn(total_scaling_fn)
     }
-    fs
+
+    spectrum
 }
 
-/// Calculate what index in the FFT result corresponds to what frequency.
+/// Calculate the frequency resolution of the FFT. It is determined by the sampling rate
+/// in Hertz and N, the number of samples given into the FFT. With the frequency resolution,
+/// we can determine the corresponding frequency of each index in the FFT result buffer.
 ///
 /// ## Parameters
-/// * `fft_index` Index in FFT result buffer. If `samples.len() == 2048` then this is in `{0, 1, ..., 1023}`
 /// * `samples_len` Number of samples put into the FFT
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 ///
 /// ## Return value
+/// Frequency resolution in Hertz.
+///
+/// ## More info
+/// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
+/// * https://stackoverflow.com/questions/4364823/
 #[inline(always)]
-fn fft_index_to_corresponding_frequency(
-    fft_index: usize,
-    samples_len: u32,
+fn fft_calc_frequency_resolution(
     sampling_rate: u32,
+    samples_len: u32,
 ) -> f32 {
     // Explanation for the algorithm:
     // https://stackoverflow.com/questions/4364823/
 
     // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
     // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
-    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1023]
+    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1023]      => first N/2 results important
     //                               ^                         ^
     // Frequency                  : 0Hz, .................... Sampling Rate/2
-    //                              0Hz is also called        (e.g. 22050Hz @ 44100H sampling rate)
+    //                              0Hz is also called        (e.g. 22050Hz for 44100H sampling rate)
     //                              "DC Component"
 
-    // frequency step/resolution is for example: 1/1024 * 44100
-    // 1024: relevant FFT result, 2048 samples, 44100 sample rate
+    // frequency step/resolution is for example: 1/2048 * 44100
+    //                                             2048 samples, 44100 sample rate
 
-    fft_index as f32 / samples_len as f32 * sampling_rate as f32
+    // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
+    sampling_rate as f32 / samples_len as f32
 }

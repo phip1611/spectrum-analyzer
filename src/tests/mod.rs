@@ -23,12 +23,11 @@ SOFTWARE.
 */
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
-use crate::{samples_fft_to_spectrum, FrequencyLimit, SpectrumTotalScaleFunctionFactory};
+use crate::{samples_fft_to_spectrum, FrequencyLimit, ComplexSpectrumScalingFunction};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
-use audio_visualizer::waveform::staticc::png_file::waveform_static_png_visualize;
 use audio_visualizer::Channels;
 
 /// Directory with test samples (e.g. mp3) can be found here.
@@ -60,11 +59,11 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         .collect::<Vec<f32>>();
 
     // FFT frequency accuracy is: sample_rate / (N / 2)
-    // 44100/(16384/2) = 5.383Hz
+    // 44100/(4096/2) = 21.5Hz
 
     // get a window that we want to analyze
-    // 1/44100 * 16384 => 0.3715s
-    let window = &sine_audio[0..2048];
+    // 1/44100 * 4096 => 0.0928s
+    let window = &sine_audio[0..4096];
 
     let no_window = &window[..];
     let hamming_window = hamming_window(no_window);
@@ -118,6 +117,18 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         false,
     );
 
+    // test getters match spectrum
+    // we use Hann windowed spectrum because the accuracy is much better than
+    // with no window!
+    assert!(spectrum_hann_window.freq_val_exact(50.0).val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_closest(50.0).1.val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_exact(1000.0).val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_closest(1000.0).1.val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_exact(3777.0).val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_closest(3777.0).1.val() > 0.85);
+    assert!(spectrum_hann_window.freq_val_exact(500.0).val() < 0.00001);
+    assert!(spectrum_hann_window.freq_val_closest(500.0).1.val() < 0.00001);
+
     /*for (fr, vol) in spectrum.iter() {
         // you will experience inaccuracies here
         // TODO add further smoothing / noise reduction
@@ -127,6 +138,6 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     }*/
 }
 
-fn get_scale_to_one_fn_factory() -> SpectrumTotalScaleFunctionFactory {
+fn get_scale_to_one_fn_factory() -> ComplexSpectrumScalingFunction {
     Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
 }
