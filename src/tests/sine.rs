@@ -67,7 +67,7 @@ pub fn sine_wave_audio_data_multiple(
         .collect::<Vec<Box<dyn Fn(f32) -> f32>>>();
 
     // How many samples to generate with each sine wave function
-    let sample_count = (sampling_rate as f32 * (duration_ms as f32 / 1000_f32)) as usize;
+    let sample_count = (sampling_rate as f32 * (duration_ms as f32 / 1000.0)) as usize;
 
     // Calculate the final sine wave
     let mut sine_wave = Vec::with_capacity(sample_count);
