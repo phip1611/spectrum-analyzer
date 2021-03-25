@@ -16,13 +16,19 @@ homepage = "https://github.com/phip1611/spectrum-analyzer"
 repository = "https://github.com/phip1611/spectrum-analyzer"
 documentation = "https://docs.rs/spectrum-analyzer"
 
+# room for mutliple fft implementations in the future, for example "rustfft" that needs STD
+[features]
+default = ["no-std"]
+no-std = ["microfft", "num-complex"]
+
 [dependencies]
-rustfft = "5.0.1"
-float-cmp = "0.8.0" # approx. compare floats
+microfft = { version = "0.3.1", optional = true }
+num-complex = { version = "0.2", optional = true } # "microfft" uses version "0.2" of this
+float-cmp = "0.8.0" # approx. compare floats; not only in tests but also during runtime
 
 [dev-dependencies]
 minimp3 = "0.5.1"
-audio-visualizer = "0.2.1"
+audio-visualizer = "0.2.2"
 
 # otherwise FFT and other code is too slow
 [profile.dev]

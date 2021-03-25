@@ -99,7 +99,6 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         &spectrum_no_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--no-window.png",
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
@@ -107,7 +106,6 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         &spectrum_hamming_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hamming-window.png",
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
@@ -115,7 +113,6 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         &spectrum_hann_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hann-window.png",
-        false,
     );
 
     // test getters match spectrum

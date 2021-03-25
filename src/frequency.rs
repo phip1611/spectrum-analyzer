@@ -27,6 +27,8 @@ SOFTWARE.
 use core::cmp::Ordering;
 use core::fmt::{Display, Formatter, Result};
 use core::ops::{Add, Div, Mul, Sub};
+use core::f32::NAN;
+use std::f32::INFINITY;
 
 /// A frequency. A convenient wrapper type around `f32`.
 pub type Frequency = OrderableF32;
@@ -51,6 +53,7 @@ impl OrderableF32 {
 impl From<f32> for OrderableF32 {
     #[inline(always)]
     fn from(val: f32) -> Self {
+        debug_assert_ne!(NAN, val, "NaN-values are not supported!");
         Self(val)
     }
 }
@@ -127,7 +130,10 @@ impl Div for OrderableF32 {
 
     #[inline(always)]
     fn div(self, other: Self) -> Self::Output {
-        (self.val() / other.val()).into()
+        let quotient = (self.val() / other.val());
+        debug_assert_ne!(NAN, quotient, "NaN is not allowed");
+        debug_assert_ne!(INFINITY, quotient, "INFINITY is not allowed");
+        quotient.into()
     }
 }
 
