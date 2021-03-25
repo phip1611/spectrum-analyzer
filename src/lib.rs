@@ -127,7 +127,7 @@ pub fn samples_fft_to_spectrum(
     )
 }
 
-/// Converts all samples to a complex number (imaginary part is set to two)
+/// Converts all samples to a complex number (imaginary part is set to zero)
 /// as preparation for the FFT.
 ///
 /// ## Parameters
