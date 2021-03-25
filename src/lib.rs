@@ -118,7 +118,7 @@ pub fn samples_fft_to_spectrum(
     // 3) calculates the magnitude (absolute value) at each frequency index for each complex value
     // 4) optionally scales the magnitudes
     // 5) collects everything into the struct "FrequencySpectrum"
-    fft_result_to_frequency_to_magnitude_map(
+    fft_result_to_spectrum(
         buffer,
         sampling_rate,
         frequency_limit,
@@ -144,7 +144,7 @@ fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
 }
 
 /// Transforms the complex numbers of the first half of the FFT results (only the first
-/// half is relevant, Nyquist theorem) to their magnitudes.
+/// half is relevant, Nyquist theorem) to their magnitudes and builds the spectrum
 ///
 /// ## Parameters
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
@@ -159,7 +159,7 @@ fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
 /// ## Return value
 /// New object of type [`FrequencySpectrum`].
 #[inline(always)]
-fn fft_result_to_frequency_to_magnitude_map(
+fn fft_result_to_spectrum(
     fft_result: Vec<Complex32>,
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
