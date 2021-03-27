@@ -54,6 +54,7 @@ pub type ComplexSpectrumScalingFunction =
 /// its value/amplitude in the analyzed slice of samples. It only consists of the frequencies
 /// which were desired, e.g. specified via
 /// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`] was called.
+/// All results are related to the sampling rate provided to the library function!
 #[derive(Debug)]
 pub struct FrequencySpectrum {
     /// Raw data. Vector is sorted from lowest
@@ -367,6 +368,22 @@ impl FrequencySpectrum {
             .collect()
     }
 
+    /// Getter for the highest frequency that is captured inside this spectrum.
+    /// Shortcut for `spectrum.data()[spectrum.data().len() - 1].0`.
+    #[inline(always)]
+    pub fn max_fr(&self) -> Frequency {
+        let data = self.data.borrow();
+        data[data.len() - 1].0
+    }
+
+    /// Getter for the highest frequency that is captured inside this spectrum.
+    /// Shortcut for `spectrum.data()[0].0`.
+    #[inline(always)]
+    pub fn min_fr(&self) -> Frequency {
+        let data = self.data.borrow();
+        data[0].0
+    }
+
     /*/// Returns an iterator over the underlying vector [`data`].
     #[inline(always)]
     pub fn iter(&self) -> Iter<(Frequency, FrequencyValue)> {
@@ -398,8 +415,10 @@ impl FrequencySpectrum {
             let b = data_sorted[data_sorted.len() / 2].1;
             (a + b) / 2.0.into()
         };
+
         // because we sorted the vector a few lines above
         // by the value, the following lines are correct
+        // i.e. we get min/max value with corresponding frequency
         let min = data_sorted[0];
         let max = data_sorted[data_sorted.len() - 1];
 
@@ -556,6 +575,8 @@ mod tests {
 
         // test getters
         {
+            assert_eq!(0.0, spectrum.min_fr().val(), "min_fr() must work");
+            assert_eq!(450.0, spectrum.max_fr().val(), "max_fr() must work");
             assert_eq!((300.0.into(), 0.0.into()), spectrum.min(), "min() must work");
             assert_eq!((450.0.into(), 200.0.into()), spectrum.max(), "max() must work");
             assert_eq!(200.0 - 0.0, spectrum.range().val(), "range() must work");

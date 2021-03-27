@@ -180,9 +180,18 @@ fn fft_result_to_spectrum(
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
         .into_iter()
-        // take first half; half of input length
-        .take(samples_len / 2)
-        // get (index, complex)-pairs
+        // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
+        // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
+        //
+        // The indices 0 to N/2 (inclusive) are usually the most relevant. Although, index
+        // N/2-1 is declared as the last useful one there (because in typical applications
+        // Nyquist-frequency + above are filtered out), we include everything here.
+        // with 0..(samples_len / 2) (inclusive) we get all frequencies from 0 to Nyquist theorem.
+        //
+        // Indices (samples_len / 2)..len() are mirrored/negative. You can also see this here:
+        // https://www.gaussianwaves.com/gaussianwaves/wp-content/uploads/2015/11/realDFT_complexDFT.png
+        .take(samples_len / 2 + 1)
+        // to (index, fft-result)-pairs
         .enumerate()
         // calc index => corresponding frequency
         .map(|(fft_index, complex)| {
@@ -261,10 +270,10 @@ fn fft_calc_frequency_resolution(
 
     // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
     // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
-    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1023]      => first N/2 results important
+    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1024]      => indices 0 to N/2 (inclusive) are important
     //                               ^                         ^
     // Frequency                  : 0Hz, .................... Sampling Rate/2
-    //                              0Hz is also called        (e.g. 22050Hz for 44100H sampling rate)
+    //                              0Hz is also called        (e.g. 22050Hz for 44100Hz sampling rate)
     //                              "DC Component"
 
     // frequency step/resolution is for example: 1/2048 * 44100
