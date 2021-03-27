@@ -94,6 +94,9 @@ impl FrequencySpectrum {
         data: Vec<(Frequency, FrequencyValue)>,
         frequency_resolution: f32,
     ) -> Self {
+
+        assert!(data.len() >= 2, "Input data of length={} for spectrum makes no sense!", data.len());
+
         let obj = Self {
             data: RefCell::new(data),
             frequency_resolution,
@@ -478,6 +481,7 @@ fn calculate_y_coord_between_points((x1, y1): (f32, f32), (x2, y2): (f32, f32), 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::f32::{NAN, INFINITY};
 
     #[test]
     fn test_calculate_point_between_points() {
@@ -679,6 +683,7 @@ mod tests {
             50.0,
         );
 
+        // -1 not included, expect panic
         spectrum.freq_val_exact(-1.0).val();
     }
 
@@ -699,6 +704,7 @@ mod tests {
             50.0,
         );
 
+        // 451 not included, expect panic
         spectrum.freq_val_exact(451.0).val();
     }
 
@@ -719,6 +725,7 @@ mod tests {
             50.0,
         );
 
+        // -1 not included, expect panic
         spectrum.freq_val_closest(-1.0);
     }
 
@@ -739,6 +746,29 @@ mod tests {
             50.0,
         );
 
+        // 451 not included, expect panic
         spectrum.freq_val_closest(451.0);
+    }
+
+    #[test]
+    fn test_nan_safety() {
+        let spectrum_vector: Vec<(Frequency, FrequencyValue)> = vec![(0.0.into(), 0.0.into()); 8];
+
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector,
+            // not important here, any valu
+            50.0,
+        );
+
+        assert_ne!(NAN, spectrum.min().1.val(), "NaN is not valid, must be 0.0!");
+        assert_ne!(NAN, spectrum.max().1.val(), "NaN is not valid, must be 0.0!");
+        assert_ne!(NAN, spectrum.average().val(), "NaN is not valid, must be 0.0!");
+        assert_ne!(NAN, spectrum.median().val(), "NaN is not valid, must be 0.0!");
+
+
+        assert_ne!(INFINITY, spectrum.min().1.val(), "INFINITY is not valid, must be 0.0!");
+        assert_ne!(INFINITY, spectrum.max().1.val(), "INFINITY is not valid, must be 0.0!");
+        assert_ne!(INFINITY, spectrum.average().val(), "INFINITY is not valid, must be 0.0!");
+        assert_ne!(INFINITY, spectrum.median().val(), "INFINITY is not valid, must be 0.0!");
     }
 }

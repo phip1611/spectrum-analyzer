@@ -72,7 +72,8 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 /// * `samples` raw audio, e.g. 16bit audio data but as f32.
 ///             You should apply an window function (like Hann) on the data first.
 ///             The final frequency resolution is `sample_rate / (N / 2)`
-///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples => better accuracy
+///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples =>
+///             better accuracy/frequency resolution.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
 /// * `per_element_scaling_fn` See [`crate::SimpleSpectrumScalingFunction`] for details.
@@ -85,6 +86,10 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 ///
 /// ## Returns value
 /// New object of type [`FrequencySpectrum`].
+///
+/// ## Panics
+/// * When `samples` contains NaN or infinite values (regarding f32/float).
+/// * When `samples.len()` isn't a power of two
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
@@ -92,6 +97,10 @@ pub fn samples_fft_to_spectrum(
     per_element_scaling_fn: Option<SimpleSpectrumScalingFunction>,
     total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
 ) -> FrequencySpectrum {
+    // check input value doesn't contain any NaN
+    assert!(!samples.iter().any(|x| x.is_nan()), "NaN values in samples not supported!");
+    assert!(!samples.iter().any(|x| x.is_infinite()), "Infinity values in samples not supported!");
+
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
     // https://www.youtube.com/watch?v=z7X6jgFnB6Y
