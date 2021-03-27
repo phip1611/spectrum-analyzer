@@ -54,7 +54,12 @@ pub type ComplexSpectrumScalingFunction =
 /// its value/amplitude in the analyzed slice of samples. It only consists of the frequencies
 /// which were desired, e.g. specified via
 /// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`] was called.
-/// All results are related to the sampling rate provided to the library function!
+///
+/// This means, the spectrum can cover all data from the DC component (0Hz) to the
+/// Nyquist frequency.
+///
+/// All results are related to the sampling rate provided to the library function which
+/// creates objects of this struct!
 #[derive(Debug)]
 pub struct FrequencySpectrum {
     /// Raw data. Vector is sorted from lowest
@@ -186,6 +191,47 @@ impl FrequencySpectrum {
     #[inline(always)]
     pub fn frequency_resolution(&self) -> f32 {
         self.frequency_resolution
+    }
+
+    /// Getter for the highest frequency that is captured inside this spectrum.
+    /// Shortcut for `spectrum.data()[spectrum.data().len() - 1].0`.
+    #[inline(always)]
+    pub fn max_fr(&self) -> Frequency {
+        let data = self.data.borrow();
+        data[data.len() - 1].0
+    }
+
+    /// Getter for the highest frequency that is captured inside this spectrum.
+    /// Shortcut for `spectrum.data()[0].0`.
+    #[inline(always)]
+    pub fn min_fr(&self) -> Frequency {
+        let data = self.data.borrow();
+        data[0].0
+    }
+
+    /// Returns the *DC Component* or also called *DC bias* which corresponds
+    /// to the FFT result at index 0 which corresponds to `0Hz`. This is only
+    /// present if the frequencies were not limited to for example `100 <= f <= 10000`
+    /// when the libraries main function was called.
+    ///
+    /// More information:
+    /// https://dsp.stackexchange.com/questions/12972/discrete-fourier-transform-what-is-the-dc-term-really
+    ///
+    /// Excerpt:
+    /// *As far as practical applications go, the DC or 0 Hz term is not particularly useful.
+    /// In many cases it will be close to zero, as most signal processing applications will
+    /// tend to filter out any DC component at the analogue level. In cases where you might
+    /// be interested it can be calculated directly as an average in the usual way, without
+    /// resorting to a DFT/FFT.* - Paul R.
+    #[inline(always)]
+    pub fn dc_component(&self) -> Option<FrequencyValue> {
+        let data = self.data.borrow();
+        let (maybe_dc_component, dc_value) = &data[0];
+        if maybe_dc_component.val() == 0.0 {
+            Some(*dc_value)
+        } else {
+            None
+        }
     }
 
     /// Returns the value of the given frequency from the spectrum either exactly or approximated.
@@ -369,22 +415,6 @@ impl FrequencySpectrum {
                 )
             })
             .collect()
-    }
-
-    /// Getter for the highest frequency that is captured inside this spectrum.
-    /// Shortcut for `spectrum.data()[spectrum.data().len() - 1].0`.
-    #[inline(always)]
-    pub fn max_fr(&self) -> Frequency {
-        let data = self.data.borrow();
-        data[data.len() - 1].0
-    }
-
-    /// Getter for the highest frequency that is captured inside this spectrum.
-    /// Shortcut for `spectrum.data()[0].0`.
-    #[inline(always)]
-    pub fn min_fr(&self) -> Frequency {
-        let data = self.data.borrow();
-        data[0].0
     }
 
     /*/// Returns an iterator over the underlying vector [`data`].
@@ -576,6 +606,10 @@ mod tests {
                 "Vector must be ordered"
             );
         }
+
+        // test DC component getter
+        assert!(spectrum.dc_component().is_some(), "Spectrum must contain DC component");
+        assert_eq!(5.0, spectrum.dc_component().unwrap().val(), "Spectrum must contain DC component");
 
         // test getters
         {
@@ -770,5 +804,20 @@ mod tests {
         assert_ne!(INFINITY, spectrum.max().1.val(), "INFINITY is not valid, must be 0.0!");
         assert_ne!(INFINITY, spectrum.average().val(), "INFINITY is not valid, must be 0.0!");
         assert_ne!(INFINITY, spectrum.median().val(), "INFINITY is not valid, must be 0.0!");
+    }
+
+    #[test]
+    fn test_no_dc_component() {
+        let spectrum: Vec<(Frequency, FrequencyValue)> = vec![
+            (150.0.into(), 150.0.into()),
+            (200.0.into(), 100.0.into()),
+        ];
+
+        let spectrum = FrequencySpectrum::new(
+            spectrum,
+            50.0,
+        );
+
+        assert!(spectrum.dc_component().is_none(), "This spectrum should not contain a DC component!")
     }
 }
