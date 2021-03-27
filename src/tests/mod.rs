@@ -29,6 +29,7 @@ use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
 use audio_visualizer::Channels;
+use core::f32::NAN;
 
 /// Directory with test samples (e.g. mp3) can be found here.
 #[allow(dead_code)]
@@ -185,6 +186,20 @@ fn test_spectrum_nyquist_theorem2() {
     assert!(spectrum.freq_val_exact(22049.0).val() >= 0.49, "Other frequencies must not be part of the spectrum!");
     assert!(spectrum.freq_val_exact(22040.0).val() <= 0.05, "Other frequencies must not be part of the spectrum!");
     assert!(spectrum.freq_val_exact(22000.0).val() <= 0.01, "Other frequencies must not be part of the spectrum!");
+}
+
+/// Tests that a panic is thrown when samples contain NaN.
+#[test]
+#[should_panic]
+fn test_panic_on_nan_samples() {
+    let samples = vec![0.0, 1.0, 2.0, 3.0, NAN, 4.0, 5.0, 6.0];
+    samples_fft_to_spectrum(
+        &samples,
+        44100,
+        FrequencyLimit::All,
+        None,
+        None,
+    );
 }
 
 fn get_scale_to_one_fn_factory() -> ComplexSpectrumScalingFunction {
