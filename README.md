@@ -80,3 +80,11 @@ Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a
 I tested f64 but the additional accuracy doesn't pay out the ~40% calculation overhead (on x86_64).
 ### What can I do against the noise?
 Apply a window function, like Hann window or Hamming window. But I'm not an expert on this.
+
+## Good resources with more information
+- Interpreting FFT Results: https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
+- FFT basic concepts: https://www.youtube.com/watch?v=z7X6jgFnB6Y
+- „The Fundamentals of FFT-Based Signal Analysis and Measurement“ https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
+- Fast Fourier Transforms (FFTs) and Windowing: https://www.youtube.com/watch?v=dCeHOf4cJE0
+
+Also check out my blog post! https://phip1611.de/2021/03/programmierung-und-skripte/frequency-spectrum-analysis-with-fft-in-rust/
