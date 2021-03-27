@@ -37,8 +37,6 @@ extern crate alloc;
 #[macro_use]
 extern crate std;
 
-use alloc::vec::Vec;
-
 use rustfft::algorithm::Radix4;
 use rustfft::num_complex::Complex32;
 use rustfft::{Fft, FftDirection};
@@ -95,13 +93,13 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 /// ## Panics
 /// * When `samples` contains NaN or infinite values (regarding f32/float).
 /// * When `samples.len()` isn't a power of two
-pub fn samples_fft_to_spectrum(
+pub fn samples_fft_to_spectrum<const N: usize>(
     samples: &[f32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
     per_element_scaling_fn: Option<SimpleSpectrumScalingFunction>,
     total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
-) -> FrequencySpectrum {
+) -> FrequencySpectrum<N> {
     // check input value doesn't contain any NaN
     assert!(!samples.iter().any(|x| x.is_nan()), "NaN values in samples not supported!");
     assert!(!samples.iter().any(|x| x.is_infinite()), "Infinity values in samples not supported!");
@@ -113,7 +111,7 @@ pub fn samples_fft_to_spectrum(
     // FFT result has same length as input
 
     // convert to Complex for FFT
-    let mut buffer = samples_to_complex(samples);
+    let mut buffer = samples_to_complex::<N>(samples);
 
     // a power of 2, like 1024 or 2048
     let fft_len = samples.len();
@@ -133,7 +131,7 @@ pub fn samples_fft_to_spectrum(
     // 4) optionally scales the magnitudes
     // 5) collects everything into the struct "FrequencySpectrum"
     fft_result_to_spectrum(
-        buffer,
+        &buffer,
         sampling_rate,
         frequency_limit,
         per_element_scaling_fn,
@@ -150,11 +148,12 @@ pub fn samples_fft_to_spectrum(
 /// ## Return value
 /// New vector of samples but as Complex data type.
 #[inline(always)]
-fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
-    samples
-        .iter()
-        .map(|x| Complex32::new(x.clone(), 0.0))
-        .collect::<Vec<Complex32>>()
+fn samples_to_complex<const N: usize>(samples: &[f32]) ->[Complex32; N] {
+    let mut complex = [Complex32::default(); N];
+    for (i, f) in samples.iter().enumerate() {
+        complex[i] = Complex32::new(*f, 0.0);
+    }
+    complex
 }
 
 /// Transforms the complex numbers of the first half of the FFT results (only the first
@@ -173,13 +172,13 @@ fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
 /// ## Return value
 /// New object of type [`FrequencySpectrum`].
 #[inline(always)]
-fn fft_result_to_spectrum(
-    fft_result: Vec<Complex32>,
+fn fft_result_to_spectrum<const N: usize>(
+    fft_result: &[Complex32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
     per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
     total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
-) -> FrequencySpectrum {
+) -> FrequencySpectrum<N> {
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
 
@@ -192,7 +191,7 @@ fn fft_result_to_spectrum(
     );
 
     // collect frequency => frequency value in Vector of Pairs/Tuples
-    let frequency_vec = fft_result
+    let frequency_vec: [(Frequency, FrequencyValue); N] = fft_result
         .into_iter()
         // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
         // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
@@ -244,7 +243,7 @@ fn fft_result_to_spectrum(
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
         // transform to my thin convenient orderable  f32 wrappers
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
-        .collect::<Vec<(Frequency, FrequencyValue)>>();
+        .collect();
 
     // create spectrum object
     let spectrum = FrequencySpectrum::new(

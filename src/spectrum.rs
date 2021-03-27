@@ -26,7 +26,6 @@ SOFTWARE.
 use crate::frequency::{Frequency, FrequencyValue};
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
-use alloc::vec::Vec;
 use core::cell::{Cell, Ref, RefCell};
 
 /// Describes the type for a function factory that generates a function that can scale/normalize
@@ -61,11 +60,11 @@ pub type ComplexSpectrumScalingFunction =
 /// All results are related to the sampling rate provided to the library function which
 /// creates objects of this struct!
 #[derive(Debug)]
-pub struct FrequencySpectrum {
+pub struct FrequencySpectrum<const N: usize> {
     /// Raw data. Vector is sorted from lowest
     /// frequency to highest and data is normalized/scaled
     /// according to all applied scaling functions.
-    data: RefCell<Vec<(Frequency, FrequencyValue)>>,
+    data: RefCell<[(Frequency, FrequencyValue); N]>,
     /// Frequency resolution of the examined samples in Hertz,
     /// i.e the frequency steps between elements in the vector
     /// inside field [`data`].
@@ -86,7 +85,7 @@ pub struct FrequencySpectrum {
     max: Cell<(Frequency, FrequencyValue)>,
 }
 
-impl FrequencySpectrum {
+impl<const N: usize> FrequencySpectrum<N> {
     /// Creates a new object. Calculates several metrics on top of
     /// the passed vector.
     ///
@@ -96,9 +95,9 @@ impl FrequencySpectrum {
     ///                          `data[1].0 - data[0].0`.
     #[inline(always)]
     pub fn new(
-        data: Vec<(Frequency, FrequencyValue)>,
+        data: [(Frequency, FrequencyValue); N],
         frequency_resolution: f32,
-    ) -> Self {
+    ) -> FrequencySpectrum<N> {
 
         assert!(data.len() >= 2, "Input data of length={} for spectrum makes no sense!", data.len());
 
@@ -183,7 +182,7 @@ impl FrequencySpectrum {
 
     /// Getter for [`FrequencySpectrum::data`].
     #[inline(always)]
-    pub fn data(&self) -> Ref<Vec<(Frequency, FrequencyValue)>> {
+    pub fn data(&self) -> Ref<[(Frequency, FrequencyValue); N]> {
         self.data.borrow()
     }
 
