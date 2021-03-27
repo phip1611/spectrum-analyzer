@@ -69,6 +69,11 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 /// e.g. 2048, applies an FFT (using library `rustfft`) on it
 /// and returns all frequencies with their volume/magnitude.
 ///
+/// By default, no normalization/scaling is done at all and the results,
+/// i.e. the frequency magnitudes/amplitudes/values are the raw result from
+/// the FFT algorithm, except that complex numbers are transformed
+/// to their magnitude.
+///
 /// * `samples` raw audio, e.g. 16bit audio data but as f32.
 ///             You should apply an window function (like Hann) on the data first.
 ///             The final frequency resolution is `sample_rate / (N / 2)`
