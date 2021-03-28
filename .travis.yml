@@ -13,3 +13,5 @@ script:
   - cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-complex"
   - cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-real"
 
+  # examples
+  - cargo run --release --example mp3-samples
