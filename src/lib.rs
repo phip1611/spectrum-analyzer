@@ -168,17 +168,11 @@ fn fft_result_to_spectrum(
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
         .into_iter()
-        // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
-        // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
-        //
-        // The indices 0 to N/2 (inclusive) are usually the most relevant. Although, index
-        // N/2-1 is declared as the last useful one there (because in typical applications
-        // Nyquist-frequency + above are filtered out), we include everything here.
-        // with 0..(samples_len / 2) (inclusive) we get all frequencies from 0 to Nyquist theorem.
-        //
-        // Indices (samples_len / 2)..len() are mirrored/negative. You can also see this here:
-        // https://www.gaussianwaves.com/gaussianwaves/wp-content/uploads/2015/11/realDFT_complexDFT.png
-        .take(samples_len / 2 + 1)
+        // abstraction over different FFT implementations: how they distribute the actual
+        // corresponding frequencies above the FFT result. See comments of specific implementations
+        // (especially the complex implementation) for more details on this!
+        // TL;DR: for complex this is always (N/2+1), i.e. indices 0 to N/2 (end inclusive)
+        .take(FftImpl::fft_relevant_res_samples_count(samples_len))
         // to (index, fft-result)-pairs
         .enumerate()
         // calc index => corresponding frequency

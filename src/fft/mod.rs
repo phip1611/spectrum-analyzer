@@ -59,4 +59,12 @@ pub(crate) trait Fft<FftResultType> {
         sampling_rate: u32,
         samples_len: u32,
     ) -> f32;
+
+    /// Returns the relevant results of the FFT result. For complex numbers this is
+    /// `N/2 + 1`, i.e. `0..=N/2` (inclusive end). This might be different
+    /// for real FFT implementations.
+    ///
+    /// This function determines together with [`fft_calc_frequency_resolution`] what
+    /// index in the FFT result corresponds to what frequency.
+    fn fft_relevant_res_samples_count(samples_len: usize) -> usize;
 }

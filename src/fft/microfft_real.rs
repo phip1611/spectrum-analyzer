@@ -82,4 +82,12 @@ impl Fft<FftResultType> for FftImpl {
     fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
         sampling_rate as f32 / samples_len as f32 / 2.0
     }
+
+    #[inline(always)]
+    fn fft_relevant_res_samples_count(samples_len: usize) -> usize {
+        // `microfft::real` seems to distribute the spectrum across the whole
+        // FFT result. I can't find scientifically background of this but I found out
+        // by plotting the values.
+        samples_len
+    }
 }
