@@ -32,7 +32,7 @@ SOFTWARE.
 #![no_std]
 
 // use alloc crate, because this is no_std
-// #[macro_use]
+#[macro_use]
 extern crate alloc;
 
 use alloc::vec::Vec;

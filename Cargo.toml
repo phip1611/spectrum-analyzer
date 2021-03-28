@@ -21,8 +21,7 @@ resolver = "2"
 
 # room for mutliple fft implementations in the future, for example "rustfft" that needs STD
 [features]
-# default = ["microfft-complex"]
-default = ["microfft-real"]
+default = ["microfft-complex"]
 # a bit slower but more accurate: uses regular FFT with complex numbers
 microfft-complex = []
 # faster but less accurate: uses an FFT algorithm that only works on real numbers

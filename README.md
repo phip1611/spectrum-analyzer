@@ -111,3 +111,14 @@ Apply a window function, like Hann window or Hamming window. But I'm not an expe
 - Fast Fourier Transforms (FFTs) and Windowing: https://www.youtube.com/watch?v=dCeHOf4cJE0
 
 Also check out my blog post! https://phip1611.de/2021/03/programmierung-und-skripte/frequency-spectrum-analysis-with-fft-in-rust/
+
+### Real vs Complex FFT: Accuracy
+The two FFT implementations have different advantages and your decision for one of 
+them is a tradeoff between accuracy and computation time. The following two 
+screenshots plot a spectrum obtained by real FFT respectively complex FFT.
+The complex FFT result is much smoother.
+#### Real FFT (less accuracy)
+![Spectrum obtained using real FFT: 60 Hz and 100 Hz sine wave signal](real-fft-60_and_100_hz.png "Spectrum obtained using real FFT: 60 Hz and 100 Hz sine wave signal")
+#### Real FFT (more accuracy)
+![Spectrum obtained using complex FFT: 60 Hz and 100 Hz sine wave signal](complex-fft-60_and_100_hz.png "Spectrum obtained complex real FFT: 60 Hz and 100 Hz sine wave signal")
+
