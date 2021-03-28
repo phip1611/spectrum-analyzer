@@ -27,7 +27,7 @@ use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plot
 use audio_visualizer::test_support::TEST_OUT_DIR;
 use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
-use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, scaling};
+use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, scaling, Frequency};
 use std::fs::File;
 use std::time::Instant;
 
@@ -47,10 +47,12 @@ fn example__bass_drum_sample() {
     // this sample is exactly 0,628s long
     // we have 44100samples/s*0,628s == 28695 samples
     // next smaller power of two is: 2^14 == 16384 => FFT needs power of 2
-    let samples = read_mp3("test/samples/bass_drum_with_high-hat_at_end-sample.mp3");
+    let (samples, sampling_rate) = read_mp3_to_mono("test/samples/bass_drum_with_high-hat_at_end-sample.mp3");
+    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
-        &samples[0..16384],
+        &samples[0..4096],
+        sampling_rate,
         "example__mp3-samples__bass_drum__spectrum",
         FrequencyLimit::Max(5000.0),
     )
@@ -61,10 +63,12 @@ fn example__clap_beat_sample() {
     // this sample is exactly 0,379s long
     // we have 44100samples/s*0,379s == 16714 samples
     // next smaller power of two is: 2^14 == 16384 => FFT needs power of 2
-    let samples = read_mp3("test/samples/clap-beat-sample.mp3");
+    let (samples, sampling_rate) = read_mp3_to_mono("test/samples/clap-beat-sample.mp3");
+    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
-        &samples[0..16384],
+        &samples[0..4096],
+        sampling_rate,
         "example__mp3-samples__clap_beat__spectrum",
         FrequencyLimit::Max(5000.0),
     )
@@ -75,10 +79,12 @@ fn example__high_hat_sample() {
     // this sample is exactly 0,149s long
     // we have 44100samples/s*0,149s == 6571 samples
     // next smaller power of two is: 2^12 == 4096 => FFT needs power of 2
-    let samples = read_mp3("test/samples/high-hat-sample.mp3");
+    let (samples, sampling_rate) = read_mp3_to_mono("test/samples/high-hat-sample.mp3");
+    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
         &samples[0..4096],
+        sampling_rate,
         "example__mp3-samples__high-hat__spectrum",
         FrequencyLimit::All,
     )
@@ -86,7 +92,10 @@ fn example__high_hat_sample() {
 
 // Calculates spectrum via FFT for a given set of samples and applies
 // all window functions + plots all
-fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: FrequencyLimit) {
+fn to_spectrum_and_plot(samples: &[f32],
+                        sampling_rate: u32,
+                        filename: &str,
+                        frequency_limit: FrequencyLimit) {
     let no_window = &samples[..];
 
     let now = Instant::now();
@@ -119,7 +128,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
     let now = Instant::now();
     let spectrum_no_window = samples_fft_to_spectrum(
         &no_window,
-        44100,
+        sampling_rate,
         frequency_limit,
         None,
         Some(scaling::complex::scale_to_zero_to_one()),
@@ -132,7 +141,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
     let now = Instant::now();
     let spectrum_hamming_window = samples_fft_to_spectrum(
         &hamming_window,
-        44100,
+        sampling_rate,
         frequency_limit,
         None,
         Some(scaling::complex::scale_to_zero_to_one()),
@@ -145,7 +154,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
     let now = Instant::now();
     let spectrum_hann_window = samples_fft_to_spectrum(
         &hann_window,
-        44100,
+        sampling_rate,
         frequency_limit,
         None,
         Some(scaling::complex::scale_to_zero_to_one()),
@@ -155,10 +164,13 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         samples.len(),
         now.elapsed().as_micros()
     );
+
+    // println!("max is {:?}", spectrum_hann_window.max());
+
     let now = Instant::now();
     let spectrum_blackman_harris_4term_window = samples_fft_to_spectrum(
         &blackman_harris_4term_window,
-        44100,
+        sampling_rate,
         frequency_limit,
         None,
         Some(scaling::complex::scale_to_zero_to_one()),
@@ -167,7 +179,7 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
     let now = Instant::now();
     let spectrum_blackman_harris_7term_window = samples_fft_to_spectrum(
         &blackman_harris_7term_window,
-        44100,
+        sampling_rate,
         frequency_limit,
         None,
         Some(scaling::complex::scale_to_zero_to_one()),
@@ -182,63 +194,75 @@ fn to_spectrum_and_plot(samples: &[f32], filename: &str, frequency_limit: Freque
         &spectrum_no_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--no-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hamming_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--hamming-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hann_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--hann-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_4term_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--blackman-harris-4-term-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_7term_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--blackman-harris-7-term-window.png", filename),
-        false,
     );
 }
 
-fn read_mp3(file: &str) -> Vec<f32> {
-    let samples = read_mp3_to_mono(file);
-    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
-    samples
-}
 
-fn read_mp3_to_mono(file: &str) -> Vec<i16> {
+/// Reads an MP3 and returns the audio data as mono channel + the sample rate in Hertz.
+fn read_mp3_to_mono(file: &str) -> (Vec<i16>, u32) {
     let mut decoder = Mp3Decoder::new(File::open(file).unwrap());
 
-    let mut lrlr_mp3_samples = vec![];
+    let mut sampling_rate = 0;
+    let mut mono_samples = vec![];
     loop {
         match decoder.next_frame() {
             Ok(Mp3Frame {
                 data: samples_of_frame,
+                sample_rate,
+                channels,
                 ..
             }) => {
-                for sample in samples_of_frame {
-                    lrlr_mp3_samples.push(sample);
+                // that's a bird weird of the original API. Why should channels or sampling
+                // rate change from frame to frame?
+
+                // Should be constant throughout the MP3 file.
+                sampling_rate = sample_rate;
+
+                if channels == 2 {
+                    for (i, sample) in samples_of_frame.iter().enumerate().step_by(2) {
+                        let sample = *sample as i32;
+                        let next_sample = samples_of_frame[i + 1] as i32;
+                        mono_samples.push(
+                            ((sample + next_sample) as f32 / 2.0) as i16
+                        );
+                    }
+                } else if channels == 1 {
+                    mono_samples.extend_from_slice(&samples_of_frame);
+                } else {
+                    panic!("Unsupported number of channels={}", channels);
                 }
+
+
             }
             Err(Mp3Error::Eof) => break,
             Err(e) => panic!("{:?}", e),
         }
     }
 
-    lrlr_mp3_samples
+    (mono_samples, sampling_rate as u32)
 }

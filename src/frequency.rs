@@ -51,6 +51,7 @@ impl OrderableF32 {
 impl From<f32> for OrderableF32 {
     #[inline(always)]
     fn from(val: f32) -> Self {
+        debug_assert_ne!(f32::NAN, val, "NaN-values are not supported!");
         Self(val)
     }
 }
@@ -127,7 +128,10 @@ impl Div for OrderableF32 {
 
     #[inline(always)]
     fn div(self, other: Self) -> Self::Output {
-        (self.val() / other.val()).into()
+        let quotient = self.val() / other.val();
+        debug_assert_ne!(f32::NAN, quotient, "NaN is not allowed");
+        debug_assert_ne!(f32::INFINITY, quotient, "INFINITY is not allowed");
+        quotient.into()
     }
 }
 
