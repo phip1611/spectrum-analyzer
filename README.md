@@ -117,6 +117,9 @@ The two FFT implementations have different advantages and your decision for one 
 them is a tradeoff between accuracy and computation time. The following two 
 screenshots plot a spectrum obtained by real FFT respectively complex FFT.
 The complex FFT result is much smoother.
+
+⚠ Because of a frequency resolution of ~10Hz in this example (4096 samples, 44100Hz sampling rate), the peaks are not exactly at 60 Hz. ⚠
+
 #### Real FFT (less accuracy)
 ![Spectrum obtained using real FFT: 60 Hz and 100 Hz sine wave signal](real-fft-60_and_100_hz.png "Spectrum obtained using real FFT: 60 Hz and 100 Hz sine wave signal")
 #### Real FFT (more accuracy)
