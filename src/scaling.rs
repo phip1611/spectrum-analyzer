@@ -26,6 +26,7 @@ SOFTWARE.
 
 /// Practical implementations for [`crate::SimpleSpectrumScalingFunction`].
 pub mod basic {
+
     /// Calculates the base 10 logarithm of each frequency magnitude and
     /// multiplies it with 20. This scaling is quite common, you can
     /// find more information for example here:
@@ -44,7 +45,7 @@ pub mod basic {
     /// );
     /// ```
     pub fn scale_20_times_log10(frequency_magnitude: f32) -> f32 {
-        20.0 * frequency_magnitude.log10()
+        20.0 * libm::log10f(frequency_magnitude)
     }
 }
 

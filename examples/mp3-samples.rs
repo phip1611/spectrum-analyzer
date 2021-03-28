@@ -51,7 +51,7 @@ fn example__bass_drum_sample() {
     let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
-        &samples[0..16384],
+        &samples[0..4096],
         sampling_rate,
         "example__mp3-samples__bass_drum__spectrum",
         FrequencyLimit::Max(5000.0),
@@ -67,7 +67,7 @@ fn example__clap_beat_sample() {
     let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
-        &samples[0..16384],
+        &samples[0..4096],
         sampling_rate,
         "example__mp3-samples__clap_beat__spectrum",
         FrequencyLimit::Max(5000.0),
@@ -194,35 +194,30 @@ fn to_spectrum_and_plot(samples: &[f32],
         &spectrum_no_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--no-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hamming_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--hamming-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hann_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--hann-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_4term_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--blackman-harris-4-term-window.png", filename),
-        false,
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_7term_window.to_map(None),
         TEST_OUT_DIR,
         &format!("{}--blackman-harris-7-term-window.png", filename),
-        false,
     );
 }
 

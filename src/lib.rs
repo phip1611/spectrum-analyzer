@@ -25,34 +25,30 @@ SOFTWARE.
 //! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
 //! blocks/optional features.
 //!
-//! In short, this is a convenient wrapper around the great `rustfft` library.
+//! In short, this is a convenient wrapper around an FFT implementation. You choose the
+//! implementation at compile time via Cargo features. As of version 0.4.0 this uses
+//! "microfft"-crate.
 
 #![no_std]
 
 // use alloc crate, because this is no_std
-// #[macro_use]
-extern crate alloc;
-// use std in tests
-#[cfg(test)]
 #[macro_use]
-extern crate std;
+extern crate alloc;
 
 use alloc::vec::Vec;
-
-use rustfft::algorithm::Radix4;
-use rustfft::num_complex::Complex32;
-use rustfft::{Fft, FftDirection};
 
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
 pub use crate::spectrum::{FrequencySpectrum, ComplexSpectrumScalingFunction};
 use core::convert::identity;
+use crate::fft::{FftImpl, Fft, FftResultType};
 
 mod frequency;
 mod limit;
 mod spectrum;
 pub mod scaling;
 pub mod windows;
+mod fft;
 #[cfg(test)]
 mod tests;
 
@@ -66,7 +62,7 @@ mod tests;
 pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 
 /// Takes an array of samples (length must be a power of 2),
-/// e.g. 2048, applies an FFT (using library `rustfft`) on it
+/// e.g. 2048, applies an FFT (using the specified FFT implementation) on it
 /// and returns all frequencies with their volume/magnitude.
 ///
 /// By default, no normalization/scaling is done at all and the results,
@@ -94,7 +90,8 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 ///
 /// ## Panics
 /// * When `samples` contains NaN or infinite values (regarding f32/float).
-/// * When `samples.len()` isn't a power of two
+/// * When `samples.len()` isn't a power of two and `samples.len() > 4096`
+///   (restriction by `microfft`-crate)
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
@@ -111,20 +108,13 @@ pub fn samples_fft_to_spectrum(
     // https://www.youtube.com/watch?v=z7X6jgFnB6Y
 
     // FFT result has same length as input
+    // (but when we interpret the result, we don't need all indices)
 
-    // convert to Complex for FFT
-    let mut buffer = samples_to_complex(samples);
-
-    // a power of 2, like 1024 or 2048
-    let fft_len = samples.len();
-
-    // apply the fft
-    let fft = Radix4::new(fft_len, FftDirection::Forward);
-    fft.process(&mut buffer);
-
-    // we only need the first half of the results with FFT
-    // because of Nyquist theorem. 44100hz sampling frequency
-    // => 22050hz maximum detectable frequency
+    // applies the f32 samples onto the FFT algorithm implementation
+    // chosen at compile time (via Cargo feature).
+    // If a complex FFT implementation was chosen, this will internally
+    // transform all data to Complex numbers.
+    let buffer = FftImpl::fft_apply(samples);
 
     // This function:
     // 1) calculates the corresponding frequency of each index in the FFT result
@@ -133,7 +123,7 @@ pub fn samples_fft_to_spectrum(
     // 4) optionally scales the magnitudes
     // 5) collects everything into the struct "FrequencySpectrum"
     fft_result_to_spectrum(
-        buffer,
+        &buffer,
         sampling_rate,
         frequency_limit,
         per_element_scaling_fn,
@@ -141,24 +131,9 @@ pub fn samples_fft_to_spectrum(
     )
 }
 
-/// Converts all samples to a complex number (imaginary part is set to zero)
-/// as preparation for the FFT.
-///
-/// ## Parameters
-/// `samples` Input samples.
-///
-/// ## Return value
-/// New vector of samples but as Complex data type.
-#[inline(always)]
-fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
-    samples
-        .iter()
-        .map(|x| Complex32::new(x.clone(), 0.0))
-        .collect::<Vec<Complex32>>()
-}
-
-/// Transforms the complex numbers of the first half of the FFT results (only the first
-/// half is relevant, Nyquist theorem) to their magnitudes and builds the spectrum
+/// Transforms the FFT result into the spectrum by calculating the corresponding frequency of each
+/// FFT result index and optionally calculating the magnitudes of the complex numbers if a complex
+/// FFT implementation is chosen.
 ///
 /// ## Parameters
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
@@ -174,7 +149,7 @@ fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
 /// New object of type [`FrequencySpectrum`].
 #[inline(always)]
 fn fft_result_to_spectrum(
-    fft_result: Vec<Complex32>,
+    fft_result: &[FftResultType],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
     per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
@@ -185,8 +160,7 @@ fn fft_result_to_spectrum(
 
     let samples_len = fft_result.len();
 
-    // see documentation of fft_calc_frequency_resolution for better explanation
-    let frequency_resolution = fft_calc_frequency_resolution(
+    let frequency_resolution = FftImpl::fft_calc_frequency_resolution(
         sampling_rate,
         samples_len as u32,
     );
@@ -194,32 +168,45 @@ fn fft_result_to_spectrum(
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
         .into_iter()
-        // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
-        // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
-        //
-        // The indices 0 to N/2 (inclusive) are usually the most relevant. Although, index
-        // N/2-1 is declared as the last useful one there (because in typical applications
-        // Nyquist-frequency + above are filtered out), we include everything here.
-        // with 0..(samples_len / 2) (inclusive) we get all frequencies from 0 to Nyquist theorem.
-        //
-        // Indices (samples_len / 2)..len() are mirrored/negative. You can also see this here:
-        // https://www.gaussianwaves.com/gaussianwaves/wp-content/uploads/2015/11/realDFT_complexDFT.png
-        .take(samples_len / 2 + 1)
+        // abstraction over different FFT implementations: how they distribute the actual
+        // corresponding frequencies above the FFT result. See comments of specific implementations
+        // (especially the complex implementation) for more details on this!
+        // TL;DR: for complex this is always (N/2+1), i.e. indices 0 to N/2 (end inclusive)
+        .take(FftImpl::fft_relevant_res_samples_count(samples_len))
         // to (index, fft-result)-pairs
         .enumerate()
         // calc index => corresponding frequency
-        .map(|(fft_index, complex)| {
+        .map(|(fft_index, fft_result)| {
             (
-                // corresponding frequency of each index of FFT result
-                // see documentation of fft_calc_frequency_resolution for better explanation
+                // Calculate corresponding frequency of each index of FFT result.
+                // THE FOLLOWING EXAMPLE RELATES TO COMPLEX FFT AND NOT REAL FFT,
+                // (BUT COMPLEX FFT IS ALMOST ALWAYS THE CHOICE ONE SHOULD TAKE)
+                //
+                // Explanation for the algorithm:
+                // https://stackoverflow.com/questions/4364823/
+                //
+                // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
+                // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
+                // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1024]      => indices 0 to N/2 (inclusive) are important
+                //                               ^                         ^
+                // Frequency                  : 0Hz, .................... Sampling Rate/2
+                //                              0Hz is also called        (e.g. 22050Hz for 44100Hz sampling rate)
+                //                              "DC Component"
+                //
+                // frequency step/resolution is for example: 1/2048 * 44100
+                //                                             2048 samples, 44100 sample rate
+                //
+                // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
                 fft_index as f32 * frequency_resolution,
-                complex,
+
+                // in this .map() step we do nothing with this yet
+                fft_result,
             )
         })
         // #######################
         // ### BEGIN filtering: results in lower calculation and memory overhead!
         // check lower bound frequency (inclusive)
-        .filter(|(fr, _complex)| {
+        .filter(|(fr, _fft_result)| {
             if let Some(min_fr) = maybe_min {
                 // inclusive!
                 *fr >= min_fr
@@ -228,7 +215,7 @@ fn fft_result_to_spectrum(
             }
         })
         // check upper bound frequency (inclusive)
-        .filter(|(fr, _complex)| {
+        .filter(|(fr, _fft_result)| {
             if let Some(max_fr) = maybe_max {
                 // inclusive!
                 *fr <= max_fr
@@ -238,12 +225,20 @@ fn fft_result_to_spectrum(
         })
         // ### END filtering
         // #######################
-        // calc magnitude: sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, complex)| (fr, complex.norm()))
+        // iff complex FFT implementation: calc magnitude:
+        //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
+        .map(|(fr, fft_result)| (
+            fr,
+            // if FFT implementation uses complex numbers:
+            // this converts it to f32 by calculating the magnitude
+            // otherwise the value is returned, equal to `identity()`
+            FftImpl::fft_map_result_to_f32(&fft_result))
+        )
         // apply optionally scale function
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
-        // transform to my thin convenient orderable  f32 wrappers
+        // transform to my thin convenient orderable f32 wrappers
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
+        // collect all into an sorted vector (from lowest frequency to highest)
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
     // create spectrum object
@@ -260,39 +255,3 @@ fn fft_result_to_spectrum(
     spectrum
 }
 
-/// Calculate the frequency resolution of the FFT. It is determined by the sampling rate
-/// in Hertz and N, the number of samples given into the FFT. With the frequency resolution,
-/// we can determine the corresponding frequency of each index in the FFT result buffer.
-///
-/// ## Parameters
-/// * `samples_len` Number of samples put into the FFT
-/// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
-///
-/// ## Return value
-/// Frequency resolution in Hertz.
-///
-/// ## More info
-/// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
-/// * https://stackoverflow.com/questions/4364823/
-#[inline(always)]
-fn fft_calc_frequency_resolution(
-    sampling_rate: u32,
-    samples_len: u32,
-) -> f32 {
-    // Explanation for the algorithm:
-    // https://stackoverflow.com/questions/4364823/
-
-    // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
-    // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
-    // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1024]      => indices 0 to N/2 (inclusive) are important
-    //                               ^                         ^
-    // Frequency                  : 0Hz, .................... Sampling Rate/2
-    //                              0Hz is also called        (e.g. 22050Hz for 44100Hz sampling rate)
-    //                              "DC Component"
-
-    // frequency step/resolution is for example: 1/2048 * 44100
-    //                                             2048 samples, 44100 sample rate
-
-    // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
-    sampling_rate as f32 / samples_len as f32
-}
