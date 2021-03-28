@@ -1,5 +1,6 @@
-//! Abstraction over FFT implementation (in future maybe dependent by Cargo features).
-//! This compiles only iff exactly one feature, i.e. one FFT implementation, is activated.
+//! Abstraction over FFT implementation. This is manly necessary because we might have
+//! no_std/std implementations as well as real/complex implementations.
+//! This crate compiles only iff exactly one feature, i.e. one FFT implementation, is activated.
 
 #[cfg(feature = "microfft-complex")]
 mod microfft_complex;
@@ -10,6 +11,11 @@ pub use microfft_complex::*;
 mod microfft_real;
 #[cfg(feature = "microfft-real")]
 pub use microfft_real::*;
+
+#[cfg(feature = "rustfft-complex")]
+mod rustfft_complex;
+#[cfg(feature = "rustfft-complex")]
+pub use rustfft_complex::*;
 
 use alloc::vec::Vec;
 

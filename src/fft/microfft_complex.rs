@@ -1,5 +1,6 @@
-//! Abstraction over FFT implementation (in future maybe dependent by Cargo features).
-//! This compiles only iff exactly one feature, i.e. one FFT implementation, is activated.
+//! Complex FFT using `microfft::complex`. Results should be equal to the ones from `rustfft`.
+//! The difference is that this implementation works in `no_std`-environments but it is
+//! limited to a maximum sample length of 4096.
 
 use alloc::vec::Vec;
 

@@ -21,16 +21,19 @@ resolver = "2"
 
 # room for mutliple fft implementations in the future, for example "rustfft" that needs STD
 [features]
-default = ["microfft-complex"]
+default = ["rustfft-complex"]
+# best option for STD environments, most accurate and performant + more than 4096 samples!
+rustfft-complex = ["rustfft"]
 # a bit slower but more accurate: uses regular FFT with complex numbers
-microfft-complex = []
+microfft-complex = ["microfft"]
 # faster but less accurate: uses an FFT algorithm that only works on real numbers
-microfft-real = []
+microfft-real = ["microfft"]
 
 [dependencies]
-microfft = "0.3.1"
+rustfft = { version = "5.0.1", optional = true }
+microfft = { version = "0.3.1", optional = true }
 # override num-complex dependency of microfft; otherwise build problems :(
-num-complex = { version = "0.4", default-features = false }
+num-complex = { version = "0.3", default-features = false }
 float-cmp = "0.8.0" # approx. compare floats; not only in tests but also during runtime
 # sin() cos() log10() etc for no_std-environments; as of Rust 1.51 the default
 # functions are only part of the standard lib

@@ -1,5 +1,6 @@
-//! Abstraction over FFT implementation (in future maybe dependent by Cargo features).
-//! This compiles only iff exactly one feature, i.e. one FFT implementation, is activated.
+//! Real FFT using `microfft::real`.
+//! Works in `no_std`-environments, maximum sample length is 4096.
+//! Less accurate than complex FFTs.
 
 use alloc::vec::Vec;
 

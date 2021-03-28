@@ -179,6 +179,8 @@ fn fft_result_to_spectrum(
         .map(|(fft_index, fft_result)| {
             (
                 // Calculate corresponding frequency of each index of FFT result.
+                // THE FOLLOWING EXAMPLE RELATES TO COMPLEX FFT AND NOT REAL FFT,
+                // (BUT COMPLEX FFT IS ALMOST ALWAYS THE CHOICE ONE SHOULD TAKE)
                 //
                 // Explanation for the algorithm:
                 // https://stackoverflow.com/questions/4364823/
@@ -234,8 +236,9 @@ fn fft_result_to_spectrum(
         )
         // apply optionally scale function
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
-        // transform to my thin convenient orderable  f32 wrappers
+        // transform to my thin convenient orderable f32 wrappers
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
+        // collect all into an sorted vector (from lowest frequency to highest)
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
     // create spectrum object
