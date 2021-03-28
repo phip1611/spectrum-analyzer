@@ -178,7 +178,6 @@ fn test_spectrum_nyquist_theorem2() {
     assert_eq!(44100.0 / 2.0, spectrum.max_fr().val(), "Maximum frequency must be Nyquist frequency");
     assert!(spectrum.max().1.val() > 0.99, "Nyquist frequency must have a notable peak");
     // because I use 32768 samples, the frequency resolution is really good
-    println!("{}", spectrum.freq_val_exact(22040.0));
     assert!(spectrum.freq_val_exact(22049.9).val() >= 0.94, "Other frequencies must not be part of the spectrum!");
     assert!(spectrum.freq_val_exact(22049.0).val() >= 0.49, "Other frequencies must not be part of the spectrum!");
     assert!(spectrum.freq_val_exact(22040.0).val() <= 0.05, "Other frequencies must not be part of the spectrum!");
