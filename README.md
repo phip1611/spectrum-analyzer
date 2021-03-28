@@ -1,10 +1,10 @@
 # Rust: library for frequency spectrum analysis using FFT
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features. In short, this is 
-a convenient wrapper around the great [rustfft](https://crates.io/crates/rustfft)
-library.
+a convenient wrapper around several FFT implementations which you can choose from during compilation time
+via using Cargo features. As of version 0.4.0 this uses "microfft"-crate.
 
-**I'm not an expert on digital signal processing. Code contributions are highly welcome! :)**
+**I'm not an expert on digital signal processing. Code contributions are highly welcome! 🙂**
 
 ## How to use
 Most tips and comments are located inside the code, so please check out the repository on

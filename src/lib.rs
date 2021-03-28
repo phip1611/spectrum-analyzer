@@ -25,21 +25,17 @@ SOFTWARE.
 //! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
 //! blocks/optional features.
 //!
-//! In short, this is a convenient wrapper around the great `rustfft` library.
+//! In short, this is a convenient wrapper around an FFT implementation. You choose the
+//! implementation at compile time via Cargo features. As of version 0.4.0 this uses
+//! "microfft"-crate.
 
 #![no_std]
 
 // use alloc crate, because this is no_std
 // #[macro_use]
 extern crate alloc;
-// use std in tests
-#[cfg(test)]
-#[macro_use]
-extern crate std;
 
 use alloc::vec::Vec;
-
-use num_complex::Complex32;
 
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
@@ -66,7 +62,7 @@ mod tests;
 pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 
 /// Takes an array of samples (length must be a power of 2),
-/// e.g. 2048, applies an FFT (using library `rustfft`) on it
+/// e.g. 2048, applies an FFT (using the specified FFT implementation) on it
 /// and returns all frequencies with their volume/magnitude.
 ///
 /// By default, no normalization/scaling is done at all and the results,
@@ -94,7 +90,8 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 ///
 /// ## Panics
 /// * When `samples` contains NaN or infinite values (regarding f32/float).
-/// * When `samples.len()` isn't a power of two
+/// * When `samples.len()` isn't a power of two and `samples.len() > 4096`
+///   (restriction by `microfft`-crate)
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
@@ -134,8 +131,9 @@ pub fn samples_fft_to_spectrum(
     )
 }
 
-/// Transforms the complex numbers of the first half of the FFT results (only the first
-/// half is relevant, Nyquist theorem) to their magnitudes and builds the spectrum
+/// Transforms the FFT result into the spectrum by calculating the corresponding frequency of each
+/// FFT result index and optionally calculating the magnitudes of the complex numbers if a complex
+/// FFT implementation is chosen.
 ///
 /// ## Parameters
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
@@ -184,7 +182,7 @@ fn fft_result_to_spectrum(
         // to (index, fft-result)-pairs
         .enumerate()
         // calc index => corresponding frequency
-        .map(|(fft_index, complex)| {
+        .map(|(fft_index, fft_result)| {
             (
                 // Calculate corresponding frequency of each index of FFT result.
                 //
@@ -204,13 +202,15 @@ fn fft_result_to_spectrum(
                 //
                 // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
                 fft_index as f32 * frequency_resolution,
-                complex,
+
+                // in this .map() step we do nothing with this yet
+                fft_result,
             )
         })
         // #######################
         // ### BEGIN filtering: results in lower calculation and memory overhead!
         // check lower bound frequency (inclusive)
-        .filter(|(fr, _complex)| {
+        .filter(|(fr, _fft_result)| {
             if let Some(min_fr) = maybe_min {
                 // inclusive!
                 *fr >= min_fr
@@ -219,7 +219,7 @@ fn fft_result_to_spectrum(
             }
         })
         // check upper bound frequency (inclusive)
-        .filter(|(fr, _complex)| {
+        .filter(|(fr, _fft_result)| {
             if let Some(max_fr) = maybe_max {
                 // inclusive!
                 *fr <= max_fr
@@ -229,11 +229,14 @@ fn fft_result_to_spectrum(
         })
         // ### END filtering
         // #######################
-        // calc magnitude: sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, complex)| (
+        // iff complex FFT implementation: calc magnitude:
+        //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
+        .map(|(fr, fft_result)| (
             fr,
-            // map Complex number back to f32
-            FftImpl::fft_map_result_to_f32(&complex))
+            // if FFT implementation uses complex numbers:
+            // this converts it to f32 by calculating the magnitude
+            // otherwise the value is returned, equal to `identity()`
+            FftImpl::fft_map_result_to_f32(&fft_result))
         )
         // apply optionally scale function
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))

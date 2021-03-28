@@ -1,10 +1,15 @@
 //! Abstraction over FFT implementation (in future maybe dependent by Cargo features).
 //! This compiles only iff exactly one feature, i.e. one FFT implementation, is activated.
 
-#[cfg(feature = "no-std")]
-mod no_std;
-#[cfg(feature = "no-std")]
-pub use no_std::*;
+#[cfg(feature = "microfft-complex")]
+mod microfft_complex;
+#[cfg(feature = "microfft-complex")]
+pub use microfft_complex::*;
+
+#[cfg(feature = "microfft-real")]
+mod microfft_real;
+#[cfg(feature = "microfft-real")]
+pub use microfft_real::*;
 
 use alloc::vec::Vec;
 

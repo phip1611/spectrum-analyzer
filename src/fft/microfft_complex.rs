@@ -10,7 +10,7 @@ use core::convert::TryInto;
 pub type FftResultType = Complex32;
 
 /// Dummy struct with no properties but used as a type
-/// to implement a concrete strategy (`microfft::complex`).
+/// to implement a concrete FFT strategy using (`microfft::complex`).
 pub struct FftImpl;
 
 impl FftImpl {
@@ -86,14 +86,17 @@ impl Fft<FftResultType> for FftImpl {
             complex::cfft_4096(&mut buffer);
             buffer.to_vec()
         } else {
-            panic!("`microfft::complex` only supports powers of 2 between 2and 4096!");
+            panic!("`microfft::complex` only supports powers of 2 between and 4096!");
         }
     }
 
     #[inline(always)]
     fn fft_map_result_to_f32(val: &FftResultType) -> f32 {
         // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
-        val.norm()
+        let sum = (val.re * val.re + val.im * val.im);
+        let sqrt = sum.sqrt();
+        debug_assert!(sqrt != f32::NAN, "sqrt is NaN!");
+        sqrt
     }
 
     #[inline(always)]

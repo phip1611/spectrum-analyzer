@@ -11,15 +11,18 @@ keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
 categories = ["multimedia", "no-std"]
 readme = "README.md"
 license = "MIT"
-
 homepage = "https://github.com/phip1611/spectrum-analyzer"
 repository = "https://github.com/phip1611/spectrum-analyzer"
 documentation = "https://docs.rs/spectrum-analyzer"
 
 # room for mutliple fft implementations in the future, for example "rustfft" that needs STD
 [features]
-default = ["no-std"]
-no-std = ["microfft", "num-complex"]
+# default = ["microfft-complex"]
+default = ["microfft-real"]
+# a bit slower but more accurate: uses regular FFT with complex numbers
+microfft-complex = []
+# faster but less accurate: uses an FFT algorithm that only works on real numbers
+microfft-real = []
 
 [dependencies]
 microfft = { version = "0.3.1", optional = true }
