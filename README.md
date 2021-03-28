@@ -6,9 +6,32 @@ via using Cargo features. As of version 0.4.0 this uses "microfft"-crate.
 
 **I'm not an expert on digital signal processing. Code contributions are highly welcome! 🙂**
 
+**The MSRV (minimum supported Rust version) is 1.51 Stable because this Crate needs the "resolver" feature of Cargo.**
+
 ## How to use
 Most tips and comments are located inside the code, so please check out the repository on
 Github! Anyway, the most basic usage looks like this:
+
+### FFT implementation as compile time configuration via Cargo features
+This crate offers two FFT implementations from the `microfft`-crate. One feature is called `microfft-complex` and uses 
+a "typical/regular" complex FFT which results in results of higher accuracy whereas `microfft-real` doesn't need 
+complex numbers which is faster but less accurate. It depends on your use case. Plot the results to see the differences.
+On today's hardware, the complex version should always be fine and fast enough.
+
+### Cargo.toml
+```Cargo.toml
+# fixes build problems of wrong feature resolution in microfft crate, see
+# https://gitlab.com/ra_kete/microfft-rs/-/merge_requests/11
+# this requires Rust Stable 1.51
+resolver = "2"
+
+# by default feature "microfft-complex" is used
+spectrum-analyzer = { version = "0.3.0" }
+# or
+spectrum-analyzer = { version = "0.3.0", default-features = false, features = "microfft-real" }
+```
+
+### your_binary.rs
 ```rust
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use spectrum_analyzer::windows::hann_window;
