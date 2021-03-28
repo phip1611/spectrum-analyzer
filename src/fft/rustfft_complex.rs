@@ -5,7 +5,6 @@
 use alloc::vec::Vec;
 
 use crate::fft::Fft as FftAbstraction;
-use core::convert::TryInto;
 use rustfft::algorithm::Radix4;
 use rustfft::{FftDirection, Fft};
 use rustfft::num_complex::Complex32;
