@@ -28,10 +28,9 @@ or look into the screenshots of this README.
 
 ### Cargo.toml
 ```Cargo.toml
-# only needed when using "microfft"-feature
-# fixes build problems of wrong feature resolution in microfft crate, see
-# https://gitlab.com/ra_kete/microfft-rs/-/merge_requests/11
-# this requires Rust Stable 1.51
+# ONLY NEEDED FOR `no_std`-builds!
+# fixes `no_std` build problems caused by wrong feature resolution of Cargo
+# This works since Rust 1.51 (stable)
 resolver = "2"
 
 # by default feature "rustfft-complex" is used
