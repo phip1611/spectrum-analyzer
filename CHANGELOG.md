@@ -1,5 +1,8 @@
 # Changelog
 
+## v.0.4.5
+Added MIT to file headers where it was missing.
+
 ## v0.4.4
 Fixed wrong usage of `microfft::real` + bumped version of `microfft` to `0.4.0`. 
 **Currently it seems like with this implementation you only can get
