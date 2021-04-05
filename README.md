@@ -86,8 +86,9 @@ is easier to write, especially for Rust beginners.
 | Hamming Window with 4096 samples              | ≈10µs  |
 | Hann Window with 16384 samples                | ≈175µs |
 | Hamming Window with 16384 samples             | ≈44µs  |
-| FFT to spectrum with 4096 samples @ 44100Hz   | ≈240µs |
-| FFT to spectrum with 16384 samples @ 44100Hz  | ≈740µs |
+| FFT (complex) to spectrum with 4096 samples @ 44100Hz   | ≈240µs |
+| FFT (complex) to spectrum with 16384 samples @ 44100Hz  | ≈740µs |
+| FFT (real) to spectrum with 4096 samples @ 44100Hz   | ≈120µs |
 
 ## Example visualization
 In the following example you can see a basic visualization of frequencies `0 to 4000Hz` for 
@@ -121,18 +122,3 @@ Apply a window function, like Hann window or Hamming window. But I'm not an expe
 - Fast Fourier Transforms (FFTs) and Windowing: https://www.youtube.com/watch?v=dCeHOf4cJE0
 
 Also check out my blog post! https://phip1611.de/2021/03/programmierung-und-skripte/frequency-spectrum-analysis-with-fft-in-rust/
-
-### Real vs Complex FFT: Accuracy
-The FFT implementations have different advantages and your decision for one of 
-them is a tradeoff between accuracy and computation time. The following two 
-screenshots (60 and 100 Hz sine waves) visualize a spectrum obtained by real FFT 
-respectively complex FFT. The complex FFT result is much smoother and more accurate 
-as you can clearly see.
-
-⚠ Because of a frequency resolution of ~10Hz in this example (4096 samples, 44100Hz sampling rate), the peaks are not exactly at 60/100 Hz. ⚠
-
-#### Real FFT (less accuracy)
-![Spectrum obtained using real FFT: 60 Hz and 100 Hz sine wave signal](real-fft-60_and_100_hz.png "Spectrum obtained using real FFT: 60 Hz and 100 Hz sine wave signal")
-#### Complex FFT (more accuracy)
-![Spectrum obtained using complex FFT: 60 Hz and 100 Hz sine wave signal](complex-fft-60_and_100_hz.png "Spectrum obtained complex real FFT: 60 Hz and 100 Hz sine wave signal")
-
