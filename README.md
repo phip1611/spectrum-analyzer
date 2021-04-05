@@ -65,7 +65,7 @@ fn main() {
         None,
     );
 
-    for (fr, fr_val) in spectrum_hamming_window.raw_data().iter() {
+    for (fr, fr_val) in spectrum_hann_window.data().iter() {
         println!("{}Hz => {}", fr, fr_val)
     }
 }
