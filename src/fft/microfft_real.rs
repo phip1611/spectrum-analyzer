@@ -126,7 +126,8 @@ impl Fft<Complex32> for FftImpl {
         //   of the DC bin.
         //
         // But as you can see in apply_fft() I manually add the Nyquist frequency
-        // therefore "+1"
+        // therefore "+1". For this real-FFT implementation this equals to the total
+        // length of fft_apply()-result
         samples_len / 2 + 1
     }
 }
