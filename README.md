@@ -91,7 +91,7 @@ is easier to write, especially for Rust beginners.
 
 ## Example visualization
 In the following example you can see a basic visualization of frequencies `0 to 4000Hz` for 
-a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `41000Hz` sampling rate. The peaks for the 
+a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `44100Hz` sampling rate. The peaks for the 
 given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms.
 
 **The noise (wrong peaks) also comes from clipping of the added sine waves!**
