@@ -35,10 +35,8 @@ resolver = "2"
 
 # by default feature "rustfft-complex" is used
 spectrum-analyzer = "<latest>"
-# or for no_std/microcontrollers
+# or any of the other features/FFT implementations; see module documentation for more information about them
 spectrum-analyzer = { version = "<latest>", default-features = false, features = "microfft-complex" }
-# or
-spectrum-analyzer = { version = "<latest>", default-features = false, features = "microfft-real" }
 ```
 
 ### your_binary.rs

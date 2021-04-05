@@ -20,7 +20,7 @@ documentation = "https://docs.rs/spectrum-analyzer"
 resolver = "2"
 
 [features]
-default = ["rustfft-complex"]
+default = ["microfft-real"]
 # best option for STD environments, most accurate and performant + more than 4096 samples!
 rustfft-complex = ["rustfft"]
 # a bit slower but more accurate: uses regular FFT with complex numbers
