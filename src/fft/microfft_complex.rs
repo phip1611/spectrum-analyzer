@@ -100,7 +100,7 @@ impl Fft<Complex32> for FftImpl {
             let mut buffer: [_; 4096] = buffer.try_into().unwrap();
             complex::cfft_4096(&mut buffer).to_vec()
         } else {
-            panic!("`microfft::complex` only supports powers of 2 between and 4096!");
+            panic!("`microfft::complex` only supports powers of 2 between 2 and 4096!");
         }
     }
 
