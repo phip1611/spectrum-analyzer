@@ -129,6 +129,7 @@ pub fn samples_fft_to_spectrum(
     // 4) optionally scales the magnitudes
     // 5) collects everything into the struct "FrequencySpectrum"
     fft_result_to_spectrum(
+        samples.len(),
         &buffer,
         sampling_rate,
         frequency_limit,
@@ -142,6 +143,9 @@ pub fn samples_fft_to_spectrum(
 /// FFT implementation is chosen.
 ///
 /// ## Parameters
+/// * `samples_len` Length of samples. This is a dedicated field because it can't always be
+///                 derived from `fft_result.len()`. There are for example differences for
+///                  `fft_result.len()` in real and complex FFT.
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
@@ -155,6 +159,7 @@ pub fn samples_fft_to_spectrum(
 /// New object of type [`FrequencySpectrum`].
 #[inline(always)]
 fn fft_result_to_spectrum(
+    samples_len: usize,
     fft_result: &[Complex32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
@@ -163,8 +168,6 @@ fn fft_result_to_spectrum(
 ) -> FrequencySpectrum {
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
-
-    let samples_len = fft_result.len();
 
     let frequency_resolution =
         FftImpl::fft_calc_frequency_resolution(sampling_rate, samples_len as u32);

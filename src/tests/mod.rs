@@ -154,7 +154,7 @@ fn test_spectrum_nyquist_theorem() {
     assert_eq!(
         0.0,
         spectrum.min_fr().val(),
-        "Maximum frequency must be Nyquist 0 Hz (DS Component/DC bias/Gleichwert)"
+        "Minimum frequency must be 0 Hz (DS Component/DC bias/Gleichwert)"
     );
     assert_eq!(
         44100.0 / 2.0,

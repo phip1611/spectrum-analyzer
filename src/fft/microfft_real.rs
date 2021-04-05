@@ -93,7 +93,10 @@ impl Fft<Complex32> for FftImpl {
 
         // `microfft::real` documentation says: the Nyquist frequency real value is
         // packed inside the imaginary part of the DC component.
+        let nyquist_fr_pos_val = res[0].im;
         res[0].im = 0.0;
+        // manually add the nyquist frequency
+        res.push(Complex32::new(nyquist_fr_pos_val, 0.0));
         res
     }
 
@@ -121,6 +124,9 @@ impl Fft<Complex32> for FftImpl {
         //   `N/2 - 1` positive-frequency terms. Additionally, the real-valued
         //   coefficient at the Nyquist frequency is packed into the imaginary part
         //   of the DC bin.
-        samples_len / 2
+        //
+        // But as you can see in apply_fft() I manually add the Nyquist frequency
+        // therefore "+1"
+        samples_len / 2 + 1
     }
 }

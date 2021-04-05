@@ -27,7 +27,13 @@ SOFTWARE.
 //!
 //! This crate compiles only iff exactly one feature, i.e. one FFT implementation, is activated.
 //!
-//! Tips for development/testing: Usually I do all tests against "rustfft" because it is the
+//! ## What FFT implementation to choose?
+//! "microfft-real" should be in any way the fastest implementation and fine in any case.
+//! I added multiple implementations primarily for educational reasons to myself to learn
+//! differences between real and complex FFT.
+//!
+//! ## Tips for development/testing
+//! Usually I do all tests against "rustfft" because it is the
 //! most actively developed implementation and also the fastest and most accurate, at least
 //! in `std`-environments on modern processors. To test other implementations I usually
 //! plot the results using the function
