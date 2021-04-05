@@ -23,7 +23,7 @@ SOFTWARE.
 */
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
-use crate::{samples_fft_to_spectrum, FrequencyLimit, ComplexSpectrumScalingFunction};
+use crate::{samples_fft_to_spectrum, ComplexSpectrumScalingFunction, FrequencyLimit};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
@@ -42,9 +42,7 @@ mod sine;
 
 #[test]
 fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
-    let sine_audio = sine_wave_audio_data_multiple(
-        &[50.0, 1000.0, 3777.0], 44100, 1000
-    );
+    let sine_audio = sine_wave_audio_data_multiple(&[50.0, 1000.0, 3777.0], 44100, 1000);
 
     // visualize waveform
     waveform_static_plotters_png_visualize(
@@ -140,24 +138,29 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
 #[test]
 fn test_spectrum_nyquist_theorem() {
     let dummy_audio_samples = vec![0.0; 4096];
-    let spectrum = samples_fft_to_spectrum(
-        &dummy_audio_samples,
-        44100,
-        FrequencyLimit::All,
-        None,
-        None,
-    );
+    let spectrum =
+        samples_fft_to_spectrum(&dummy_audio_samples, 44100, FrequencyLimit::All, None, None);
     assert_eq!(
         // because indices 0..N/2 (inclusive) are relevant
         4096 / 2 + 1,
-        spectrum.data().iter()
+        spectrum
+            .data()
+            .iter()
             .map(|x| x.1)
             .filter(|x| x.val() == 0.0)
             .count(),
         "All frequency values must be exactly zero because the input signal is zero!"
     );
-    assert_eq!(0.0, spectrum.min_fr().val(), "Maximum frequency must be Nyquist 0 Hz (DS Component/DC bias/Gleichwert)");
-    assert_eq!(44100.0 / 2.0, spectrum.max_fr().val(), "Maximum frequency must be Nyquist frequency");
+    assert_eq!(
+        0.0,
+        spectrum.min_fr().val(),
+        "Maximum frequency must be Nyquist 0 Hz (DS Component/DC bias/Gleichwert)"
+    );
+    assert_eq!(
+        44100.0 / 2.0,
+        spectrum.max_fr().val(),
+        "Maximum frequency must be Nyquist frequency"
+    );
 }
 /// Tests that the spectrum contains the Nyquist frequency using a sine wave at almost Nyquist
 /// frequency.
@@ -165,8 +168,13 @@ fn test_spectrum_nyquist_theorem() {
 fn test_spectrum_nyquist_theorem2() {
     let sine_audio = sine_wave_audio_data_multiple(
         // 22050.0 results in aliasing and no good results
-        &[22049.9], 44100, 1000
-    ).into_iter().map(|x| x as f32).collect::<Vec<f32>>();
+        &[22049.9],
+        44100,
+        1000,
+    )
+    .into_iter()
+    .map(|x| x as f32)
+    .collect::<Vec<f32>>();
     let spectrum = samples_fft_to_spectrum(
         &sine_audio[0..4096],
         44100,
@@ -174,16 +182,42 @@ fn test_spectrum_nyquist_theorem2() {
         None,
         Some(get_scale_to_one_fn_factory()),
     );
-    assert_eq!(0.0, spectrum.min_fr().val(), "Maximum frequency must be Nyquist 0 Hz (DS Component/DC bias/Gleichwert)");
-    assert_eq!(44100.0 / 2.0, spectrum.max_fr().val(), "Maximum frequency must be Nyquist frequency");
-    assert!(spectrum.max().1.val() > 0.99, "Nyquist frequency must have a notable peak");
+    assert_eq!(
+        0.0,
+        spectrum.min_fr().val(),
+        "Maximum frequency must be Nyquist 0 Hz (DS Component/DC bias/Gleichwert)"
+    );
+    assert_eq!(
+        44100.0 / 2.0,
+        spectrum.max_fr().val(),
+        "Maximum frequency must be Nyquist frequency"
+    );
+    assert!(
+        spectrum.max().1.val() > 0.99,
+        "Nyquist frequency must have a notable peak"
+    );
 
     // frequency resolution is: 44100/4096 = ~ 11hz
-    assert!(spectrum.freq_val_exact(22049.9).val() >= 0.94, "Other frequencies must not be part of the spectrum!");
-    assert!(spectrum.freq_val_exact(22049.0).val() >= 0.49, "Other frequencies must not be part of the spectrum!");
-    assert!(spectrum.freq_val_exact(22035.0).val() <= 0.26, "Other frequencies must not be part of the spectrum!");
-    assert!(spectrum.freq_val_exact(22000.0).val() <= 0.07, "Other frequencies must not be part of the spectrum!");
-    assert!(spectrum.freq_val_exact(21500.0).val() <= 0.01, "Other frequencies must not be part of the spectrum!");
+    assert!(
+        spectrum.freq_val_exact(22049.9).val() >= 0.94,
+        "Other frequencies must not be part of the spectrum!"
+    );
+    assert!(
+        spectrum.freq_val_exact(22049.0).val() >= 0.49,
+        "Other frequencies must not be part of the spectrum!"
+    );
+    assert!(
+        spectrum.freq_val_exact(22035.0).val() <= 0.26,
+        "Other frequencies must not be part of the spectrum!"
+    );
+    assert!(
+        spectrum.freq_val_exact(22000.0).val() <= 0.07,
+        "Other frequencies must not be part of the spectrum!"
+    );
+    assert!(
+        spectrum.freq_val_exact(21500.0).val() <= 0.01,
+        "Other frequencies must not be part of the spectrum!"
+    );
 }
 
 /// Tests that a panic is thrown when samples contain NaN.
@@ -191,13 +225,7 @@ fn test_spectrum_nyquist_theorem2() {
 #[should_panic]
 fn test_panic_on_nan_samples() {
     let samples = vec![0.0, 1.0, 2.0, 3.0, NAN, 4.0, 5.0, 6.0];
-    samples_fft_to_spectrum(
-        &samples,
-        44100,
-        FrequencyLimit::All,
-        None,
-        None,
-    );
+    samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None, None);
 }
 
 fn get_scale_to_one_fn_factory() -> ComplexSpectrumScalingFunction {

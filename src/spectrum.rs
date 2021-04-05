@@ -95,12 +95,12 @@ impl FrequencySpectrum {
     /// * `frequency_resolution` Resolution in Hertz. This equals to
     ///                          `data[1].0 - data[0].0`.
     #[inline(always)]
-    pub fn new(
-        data: Vec<(Frequency, FrequencyValue)>,
-        frequency_resolution: f32,
-    ) -> Self {
-
-        assert!(data.len() >= 2, "Input data of length={} for spectrum makes no sense!", data.len());
+    pub fn new(data: Vec<(Frequency, FrequencyValue)>, frequency_resolution: f32) -> Self {
+        assert!(
+            data.len() >= 2,
+            "Input data of length={} for spectrum makes no sense!",
+            data.len()
+        );
 
         let obj = Self {
             data: RefCell::new(data),
@@ -109,14 +109,8 @@ impl FrequencySpectrum {
             // default/placeholder values
             average: Cell::new(FrequencyValue::from(-1.0)),
             median: Cell::new(FrequencyValue::from(-1.0)),
-            min: Cell::new((
-                Frequency::from(-1.0),
-                FrequencyValue::from(-1.0),
-            )),
-            max: Cell::new((
-                Frequency::from(-1.0),
-                FrequencyValue::from(-1.0),
-            )),
+            min: Cell::new((Frequency::from(-1.0), FrequencyValue::from(-1.0))),
+            max: Cell::new((Frequency::from(-1.0), FrequencyValue::from(-1.0))),
         };
         // IMPORTANT!!
         obj.calc_statistics();
@@ -275,7 +269,12 @@ impl FrequencySpectrum {
         }
         // bounds check
         if search_fr < min_fr.val() || search_fr > max_fr.val() {
-            panic!("Frequency {}Hz is out of bounds [{}; {}]!", search_fr, min_fr.val(), max_fr.val());
+            panic!(
+                "Frequency {}Hz is out of bounds [{}; {}]!",
+                search_fr,
+                min_fr.val(),
+                max_fr.val()
+            );
         }
 
         // We search for Point C (x=search_fr, y=???) between Point A and Point B iteratively.
@@ -303,8 +302,9 @@ impl FrequencySpectrum {
                     (point_a_x, point_a_y.val()),
                     (point_b_x, point_b_y),
                     search_fr,
-                ).into()
-            }
+                )
+                .into()
+            };
         }
 
         panic!("Here be dragons");
@@ -352,7 +352,12 @@ impl FrequencySpectrum {
 
         // bounds check
         if search_fr < min_fr.val() || search_fr > max_fr.val() {
-            panic!("Frequency {}Hz is out of bounds [{}; {}]!", search_fr, min_fr.val(), max_fr.val());
+            panic!(
+                "Frequency {}Hz is out of bounds [{}; {}]!",
+                search_fr,
+                min_fr.val(),
+                max_fr.val()
+            );
         }
 
         for two_points in data.iter().as_slice().windows(2) {
@@ -381,7 +386,7 @@ impl FrequencySpectrum {
                 } else {
                     (point_b_x, point_b_y)
                 }
-            }
+            };
         }
 
         panic!("Here be dragons");
@@ -492,16 +497,19 @@ impl FrequencySpectrum {
 /// ## Return Value
 /// y coordinate of searched point C
 #[inline(always)]
-fn calculate_y_coord_between_points((x1, y1): (f32, f32), (x2, y2): (f32, f32), x_coord: f32) -> f32 {
+fn calculate_y_coord_between_points(
+    (x1, y1): (f32, f32),
+    (x2, y2): (f32, f32),
+    x_coord: f32,
+) -> f32 {
     // e.g. Points (100, 1.0) and (200, 0.0)
     // y=f(x)=-0.01x + c
     // 1.0 = f(100) = -0.01x + c
     // c = 1.0 + 0.01*100 = 2.0
     // y=f(180)=-0.01*180 + 2.0
 
-
     // gradient, anstieg
-    let slope = (y2 - y1)/(x2 - x1);
+    let slope = (y2 - y1) / (x2 - x1);
     // calculate c in y=f(x)=slope * x + c
     let c = y1 - slope * x1;
 
@@ -511,7 +519,7 @@ fn calculate_y_coord_between_points((x1, y1): (f32, f32), (x2, y2): (f32, f32), 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use core::f32::{NAN, INFINITY};
+    use core::f32::{INFINITY, NAN};
 
     #[test]
     fn test_calculate_point_between_points() {
@@ -558,10 +566,7 @@ mod tests {
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(
-            spectrum,
-            50.0,
-        );
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
 
         // test inner vector is ordered
         {
@@ -608,15 +613,30 @@ mod tests {
         }
 
         // test DC component getter
-        assert!(spectrum.dc_component().is_some(), "Spectrum must contain DC component");
-        assert_eq!(5.0, spectrum.dc_component().unwrap().val(), "Spectrum must contain DC component");
+        assert!(
+            spectrum.dc_component().is_some(),
+            "Spectrum must contain DC component"
+        );
+        assert_eq!(
+            5.0,
+            spectrum.dc_component().unwrap().val(),
+            "Spectrum must contain DC component"
+        );
 
         // test getters
         {
             assert_eq!(0.0, spectrum.min_fr().val(), "min_fr() must work");
             assert_eq!(450.0, spectrum.max_fr().val(), "max_fr() must work");
-            assert_eq!((300.0.into(), 0.0.into()), spectrum.min(), "min() must work");
-            assert_eq!((450.0.into(), 200.0.into()), spectrum.max(), "max() must work");
+            assert_eq!(
+                (300.0.into(), 0.0.into()),
+                spectrum.min(),
+                "min() must work"
+            );
+            assert_eq!(
+                (450.0.into(), 200.0.into()),
+                spectrum.max(),
+                "max() must work"
+            );
             assert_eq!(200.0 - 0.0, spectrum.range().val(), "range() must work");
             assert_eq!(78.125, spectrum.average().val(), "average() must work");
             assert_eq!(
@@ -633,50 +653,20 @@ mod tests {
 
         // test get frequency exact
         {
-            assert_eq!(
-                5.0,
-                spectrum.freq_val_exact(0.0).val(),
-            );
-            assert_eq!(
-                50.0,
-                spectrum.freq_val_exact(50.0).val(),
-            );
-            assert_eq!(
-                150.0,
-                spectrum.freq_val_exact(150.0).val(),
-            );
-            assert_eq!(
-                100.0,
-                spectrum.freq_val_exact(200.0).val(),
-            );
-            assert_eq!(
-                20.0,
-                spectrum.freq_val_exact(250.0).val(),
-            );
-            assert_eq!(
-                0.0,
-                spectrum.freq_val_exact(300.0).val(),
-            );
-            assert_eq!(
-                100.0,
-                spectrum.freq_val_exact(375.0).val(),
-            );
-            assert_eq!(
-                200.0,
-                spectrum.freq_val_exact(450.0).val(),
-            );
+            assert_eq!(5.0, spectrum.freq_val_exact(0.0).val(),);
+            assert_eq!(50.0, spectrum.freq_val_exact(50.0).val(),);
+            assert_eq!(150.0, spectrum.freq_val_exact(150.0).val(),);
+            assert_eq!(100.0, spectrum.freq_val_exact(200.0).val(),);
+            assert_eq!(20.0, spectrum.freq_val_exact(250.0).val(),);
+            assert_eq!(0.0, spectrum.freq_val_exact(300.0).val(),);
+            assert_eq!(100.0, spectrum.freq_val_exact(375.0).val(),);
+            assert_eq!(200.0, spectrum.freq_val_exact(450.0).val(),);
         }
 
         // test get frequency closest
         {
-            assert_eq!(
-                (0.0.into(), 5.0.into()),
-                spectrum.freq_val_closest(0.0),
-            );
-            assert_eq!(
-                (50.0.into(), 50.0.into()),
-                spectrum.freq_val_closest(50.0),
-            );
+            assert_eq!((0.0.into(), 5.0.into()), spectrum.freq_val_closest(0.0),);
+            assert_eq!((50.0.into(), 50.0.into()), spectrum.freq_val_closest(50.0),);
             assert_eq!(
                 (450.0.into(), 200.0.into()),
                 spectrum.freq_val_closest(450.0),
@@ -689,33 +679,21 @@ mod tests {
                 (450.0.into(), 200.0.into()),
                 spectrum.freq_val_closest(400.0),
             );
-            assert_eq!(
-                (50.0.into(), 50.0.into()),
-                spectrum.freq_val_closest(47.3),
-            );
-            assert_eq!(
-                (50.0.into(), 50.0.into()),
-                spectrum.freq_val_closest(51.3),
-            );
+            assert_eq!((50.0.into(), 50.0.into()), spectrum.freq_val_closest(47.3),);
+            assert_eq!((50.0.into(), 50.0.into()), spectrum.freq_val_closest(51.3),);
         }
     }
 
     #[test]
     #[should_panic]
     fn test_spectrum_get_frequency_value_exact_panic_below_min() {
-        let spectrum_vector = vec![
-            (0.0_f32, 5.0_f32),
-            (450.0, 200.0),
-        ];
+        let spectrum_vector = vec![(0.0_f32, 5.0_f32), (450.0, 200.0)];
 
         let spectrum = spectrum_vector
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(
-            spectrum,
-            50.0,
-        );
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
 
         // -1 not included, expect panic
         spectrum.freq_val_exact(-1.0).val();
@@ -724,19 +702,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_spectrum_get_frequency_value_exact_panic_below_max() {
-        let spectrum_vector = vec![
-            (0.0_f32, 5.0_f32),
-            (450.0, 200.0),
-        ];
+        let spectrum_vector = vec![(0.0_f32, 5.0_f32), (450.0, 200.0)];
 
         let spectrum = spectrum_vector
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(
-            spectrum,
-            50.0,
-        );
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
 
         // 451 not included, expect panic
         spectrum.freq_val_exact(451.0).val();
@@ -745,19 +717,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_spectrum_get_frequency_value_closest_panic_below_min() {
-        let spectrum_vector = vec![
-            (0.0_f32, 5.0_f32),
-            (450.0, 200.0),
-        ];
+        let spectrum_vector = vec![(0.0_f32, 5.0_f32), (450.0, 200.0)];
 
         let spectrum = spectrum_vector
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(
-            spectrum,
-            50.0,
-        );
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
 
         // -1 not included, expect panic
         spectrum.freq_val_closest(-1.0);
@@ -766,19 +732,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_spectrum_get_frequency_value_closest_panic_below_max() {
-        let spectrum_vector = vec![
-            (0.0_f32, 5.0_f32),
-            (450.0, 200.0),
-        ];
+        let spectrum_vector = vec![(0.0_f32, 5.0_f32), (450.0, 200.0)];
 
         let spectrum = spectrum_vector
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(
-            spectrum,
-            50.0,
-        );
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
 
         // 451 not included, expect panic
         spectrum.freq_val_closest(451.0);
@@ -794,30 +754,59 @@ mod tests {
             50.0,
         );
 
-        assert_ne!(NAN, spectrum.min().1.val(), "NaN is not valid, must be 0.0!");
-        assert_ne!(NAN, spectrum.max().1.val(), "NaN is not valid, must be 0.0!");
-        assert_ne!(NAN, spectrum.average().val(), "NaN is not valid, must be 0.0!");
-        assert_ne!(NAN, spectrum.median().val(), "NaN is not valid, must be 0.0!");
+        assert_ne!(
+            NAN,
+            spectrum.min().1.val(),
+            "NaN is not valid, must be 0.0!"
+        );
+        assert_ne!(
+            NAN,
+            spectrum.max().1.val(),
+            "NaN is not valid, must be 0.0!"
+        );
+        assert_ne!(
+            NAN,
+            spectrum.average().val(),
+            "NaN is not valid, must be 0.0!"
+        );
+        assert_ne!(
+            NAN,
+            spectrum.median().val(),
+            "NaN is not valid, must be 0.0!"
+        );
 
-
-        assert_ne!(INFINITY, spectrum.min().1.val(), "INFINITY is not valid, must be 0.0!");
-        assert_ne!(INFINITY, spectrum.max().1.val(), "INFINITY is not valid, must be 0.0!");
-        assert_ne!(INFINITY, spectrum.average().val(), "INFINITY is not valid, must be 0.0!");
-        assert_ne!(INFINITY, spectrum.median().val(), "INFINITY is not valid, must be 0.0!");
+        assert_ne!(
+            INFINITY,
+            spectrum.min().1.val(),
+            "INFINITY is not valid, must be 0.0!"
+        );
+        assert_ne!(
+            INFINITY,
+            spectrum.max().1.val(),
+            "INFINITY is not valid, must be 0.0!"
+        );
+        assert_ne!(
+            INFINITY,
+            spectrum.average().val(),
+            "INFINITY is not valid, must be 0.0!"
+        );
+        assert_ne!(
+            INFINITY,
+            spectrum.median().val(),
+            "INFINITY is not valid, must be 0.0!"
+        );
     }
 
     #[test]
     fn test_no_dc_component() {
-        let spectrum: Vec<(Frequency, FrequencyValue)> = vec![
-            (150.0.into(), 150.0.into()),
-            (200.0.into(), 100.0.into()),
-        ];
+        let spectrum: Vec<(Frequency, FrequencyValue)> =
+            vec![(150.0.into(), 150.0.into()), (200.0.into(), 100.0.into())];
 
-        let spectrum = FrequencySpectrum::new(
-            spectrum,
-            50.0,
-        );
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
 
-        assert!(spectrum.dc_component().is_none(), "This spectrum should not contain a DC component!")
+        assert!(
+            spectrum.dc_component().is_none(),
+            "This spectrum should not contain a DC component!"
+        )
     }
 }

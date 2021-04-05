@@ -29,7 +29,7 @@ use alloc::vec::Vec;
 
 use crate::fft::Fft as FftAbstraction;
 use rustfft::algorithm::Radix4;
-use rustfft::{FftDirection, Fft};
+use rustfft::{Fft, FftDirection};
 
 /// The result of a FFT is always complex but because different FFT crates might
 /// use different versions of "num-complex", each implementation exports
@@ -59,7 +59,6 @@ impl FftImpl {
 }
 
 impl FftAbstraction<Complex32> for FftImpl {
-
     #[inline(always)]
     fn fft_apply(samples: &[f32]) -> Vec<Complex32> {
         let mut samples = Self::samples_to_complex(samples);

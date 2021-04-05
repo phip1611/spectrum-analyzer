@@ -27,9 +27,9 @@ SOFTWARE.
 
 use alloc::vec::Vec;
 
-use microfft::complex;
 use crate::fft::Fft;
 use core::convert::TryInto;
+use microfft::complex;
 
 /// The result of a FFT is always complex but because different FFT crates might
 /// use different versions of "num-complex", each implementation exports
@@ -59,7 +59,6 @@ impl FftImpl {
 }
 
 impl Fft<Complex32> for FftImpl {
-
     #[inline(always)]
     fn fft_apply(samples: &[f32]) -> Vec<Complex32> {
         let buffer = Self::samples_to_complex(samples);

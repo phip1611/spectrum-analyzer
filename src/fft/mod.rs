@@ -94,10 +94,7 @@ pub(crate) trait Fft<ComplexType> {
     /// ## More info
     /// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
     /// * https://stackoverflow.com/questions/4364823/
-    fn fft_calc_frequency_resolution(
-        sampling_rate: u32,
-        samples_len: u32,
-    ) -> f32;
+    fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32;
 
     /// Returns the relevant results of the FFT result. For complex numbers this is
     /// `N/2 + 1`, i.e. `0..=N/2` (inclusive end). This might be different

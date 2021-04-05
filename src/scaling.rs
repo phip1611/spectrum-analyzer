@@ -51,18 +51,12 @@ pub mod basic {
 
 /// Practical implementations for [`crate::spectrum::ComplexSpectrumScalingFunction`].
 pub mod complex {
-    use alloc::boxed::Box;
     use crate::ComplexSpectrumScalingFunction;
+    use alloc::boxed::Box;
 
     /// Returns a function factory that generates a function that scales
     /// each frequency value/amplitude in the spectrum to interval `[0.0; 1.0]`.
     pub fn scale_to_zero_to_one() -> ComplexSpectrumScalingFunction {
-        Box::new(
-            move |_min: f32, max: f32, _average: f32, _median: f32| {
-                Box::new(
-                    move |x| x / max
-                )
-            }
-        )
+        Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
     }
 }

@@ -37,20 +37,20 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 
+use crate::fft::{Complex32, Fft, FftImpl};
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
-pub use crate::spectrum::{FrequencySpectrum, ComplexSpectrumScalingFunction};
+pub use crate::spectrum::{ComplexSpectrumScalingFunction, FrequencySpectrum};
 use core::convert::identity;
-use crate::fft::{FftImpl, Fft, Complex32};
 
+mod fft;
 mod frequency;
 mod limit;
-mod spectrum;
 pub mod scaling;
-pub mod windows;
-mod fft;
+mod spectrum;
 #[cfg(test)]
 mod tests;
+pub mod windows;
 
 /// Definition of a simple function that gets applied on each frequency magnitude
 /// in the spectrum. This is easier to write, especially for Rust beginners.
@@ -100,8 +100,14 @@ pub fn samples_fft_to_spectrum(
     total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
 ) -> FrequencySpectrum {
     // check input value doesn't contain any NaN
-    assert!(!samples.iter().any(|x| x.is_nan()), "NaN values in samples not supported!");
-    assert!(!samples.iter().any(|x| x.is_infinite()), "Infinity values in samples not supported!");
+    assert!(
+        !samples.iter().any(|x| x.is_nan()),
+        "NaN values in samples not supported!"
+    );
+    assert!(
+        !samples.iter().any(|x| x.is_infinite()),
+        "Infinity values in samples not supported!"
+    );
 
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
@@ -160,10 +166,8 @@ fn fft_result_to_spectrum(
 
     let samples_len = fft_result.len();
 
-    let frequency_resolution = FftImpl::fft_calc_frequency_resolution(
-        sampling_rate,
-        samples_len as u32,
-    );
+    let frequency_resolution =
+        FftImpl::fft_calc_frequency_resolution(sampling_rate, samples_len as u32);
 
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
@@ -204,7 +208,6 @@ fn fft_result_to_spectrum(
                 //
                 // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
                 fft_index as f32 * frequency_resolution,
-
                 // in this .map() step we do nothing with this yet
                 fft_result,
             )
@@ -233,11 +236,13 @@ fn fft_result_to_spectrum(
         // #######################
         // FFT result is always complex: calc magnitude
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, complex_res)| (
-            fr,
-            // calc magnitude of compelx number
-            FftImpl::fft_map_result_to_f32(&complex_res))
-        )
+        .map(|(fr, complex_res)| {
+            (
+                fr,
+                // calc magnitude of compelx number
+                FftImpl::fft_map_result_to_f32(&complex_res),
+            )
+        })
         // apply optionally scale function
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
         // transform to my thin convenient orderable f32 wrappers
@@ -246,10 +251,7 @@ fn fft_result_to_spectrum(
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
     // create spectrum object
-    let spectrum = FrequencySpectrum::new(
-        frequency_vec,
-        frequency_resolution,
-    );
+    let spectrum = FrequencySpectrum::new(frequency_vec, frequency_resolution);
 
     // optionally scale
     if let Some(total_scaling_fn) = total_scaling_fn {
@@ -258,4 +260,3 @@ fn fft_result_to_spectrum(
 
     spectrum
 }
-
