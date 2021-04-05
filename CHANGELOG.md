@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.2
+Typo in README.md code example.
+
+## v0.4.1
+Typo in README.md.
+
 ## v0.4.0
 - MSRV is now Rust 1.51 (sorry but that's the only way I can make it `no_std`-compatible)
 - This crate is now really `no_std`
