@@ -22,9 +22,9 @@ the original creators and all contributors! `spectrum-analyzer` offers three fea
 is allowed to be activated, otherwise the build breaks! To see differences between the implementations, plot the results
 or look into the screenshots of this README.
 
-- `rustfft-complex` **default**, **std (recommended)**: for regular applications, most accurate and most performance
-- `microfft-complex` **no_std (recommended)**: more accurate than `microfft-real`
-- `microfft-real` **no_std**, less accurate but faster than `microfft-complex`
+- `rustfft-complex` **default feature**, **std (recommended)**: for regular applications, most accurate and most performance
+- `microfft-complex` **no_std (recommended)**: see doc comments in `spectrum_analyzer::fft::microfft_complex` to see limitations and advantages
+- `microfft-real` **no_std**, see doc comments in `spectrum_analyzer::fft::microfft_real` to see limitations and advantages
 
 ### Cargo.toml
 ```toml

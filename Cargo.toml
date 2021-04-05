@@ -4,7 +4,7 @@ description = """
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features.
 """
-version = "0.4.3"
+version = "0.4.4"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
@@ -19,7 +19,6 @@ documentation = "https://docs.rs/spectrum-analyzer"
 # This works since Rust 1.51 (stable)
 resolver = "2"
 
-# room for mutliple fft implementations in the future, for example "rustfft" that needs STD
 [features]
 default = ["rustfft-complex"]
 # best option for STD environments, most accurate and performant + more than 4096 samples!
@@ -31,9 +30,7 @@ microfft-real = ["microfft"]
 
 [dependencies]
 rustfft = { version = "5.0.1", optional = true }
-microfft = { version = "0.3.1", optional = true }
-# override num-complex dependency of microfft; otherwise build problems :(
-num-complex = { version = "0.3", default-features = false }
+microfft = { version = "0.4.0", optional = true }
 float-cmp = "0.8.0" # approx. compare floats; not only in tests but also during runtime
 # sin() cos() log10() etc for no_std-environments; as of Rust 1.51 the default
 # functions are only part of the standard lib

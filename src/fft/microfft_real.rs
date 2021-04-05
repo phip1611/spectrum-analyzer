@@ -1,6 +1,11 @@
 //! Real FFT using `microfft::real`.
-//! Works in `no_std`-environments, maximum sample length is 4096.
-//! Less accurate than complex FFTs.
+//! Works in `no_std`-environments, maximum sample length is 4096 (with microfft version 0.4.0)
+//! and it's faster than a "typical" complex FFT.
+//!
+//! **Currently it seems like with this implementation you only can get
+//! the frequencies zero to `sampling_rate/4`, i.e. half of Nyquist frequency!**
+//! I found out so by plotting the values. Wait until
+//! https://gitlab.com/ra_kete/microfft-rs/-/issues/9 gets resolved (TODO!)
 
 use alloc::vec::Vec;
 
@@ -8,75 +13,75 @@ use microfft::real;
 use crate::fft::Fft;
 use core::convert::TryInto;
 
-pub type FftResultType = f32;
+/// The result of a FFT is always complex but because different FFT crates might
+/// use different versions of "num-complex", each implementation exports
+/// it's own version that gets used in lib.rs for binary compatibility.
+pub use microfft::Complex32;
 
 /// Dummy struct with no properties but used as a type
 /// to implement a concrete FFT strategy using (`microfft::real`).
 pub struct FftImpl;
 
-
-impl Fft<FftResultType> for FftImpl {
+impl Fft<Complex32> for FftImpl {
 
     #[inline(always)]
-    fn fft_apply(samples: &[f32]) -> Vec<FftResultType> {
+    fn fft_apply(samples: &[f32]) -> Vec<Complex32> {
         let buffer = samples;
-        if buffer.len() == 2 {
-            let mut buffer: [_; 2] = buffer.try_into().unwrap();
-            real::rfft_2(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 4 {
-            let mut buffer: [_; 4] = buffer.try_into().unwrap();
-            real::rfft_4(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 8 {
-            let mut buffer: [_; 8] = buffer.try_into().unwrap();
-            real::rfft_8(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 16 {
-            let mut buffer: [_; 16] = buffer.try_into().unwrap();
-            real::rfft_16(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 32 {
-            let mut buffer: [_; 32] = buffer.try_into().unwrap();
-            real::rfft_32(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 64 {
-            let mut buffer: [_; 64] = buffer.try_into().unwrap();
-            real::rfft_64(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 128 {
-            let mut buffer: [_; 128] = buffer.try_into().unwrap();
-            real::rfft_128(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 256 {
-            let mut buffer: [_; 256] = buffer.try_into().unwrap();
-            real::rfft_256(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 512 {
-            let mut buffer: [_; 512] = buffer.try_into().unwrap();
-            real::rfft_512(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 1024 {
-            let mut buffer: [_; 1024] = buffer.try_into().unwrap();
-            real::rfft_1024(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 2048 {
-            let mut buffer: [_; 2048] = buffer.try_into().unwrap();
-            real::rfft_2048(&mut buffer);
-            buffer.to_vec()
-        } else if buffer.len() == 4096 {
-            let mut buffer: [_; 4096] = buffer.try_into().unwrap();
-            real::rfft_4096(&mut buffer);
-            buffer.to_vec()
-        } else {
-            panic!("`microfft::complex` only supports powers of 2 between and 4096!");
-        }
+        let mut res = {
+            if buffer.len() == 2 {
+                let mut buffer: [_; 2] = buffer.try_into().unwrap();
+                real::rfft_2(&mut buffer).to_vec()
+            } else if buffer.len() == 4 {
+                let mut buffer: [_; 4] = buffer.try_into().unwrap();
+                real::rfft_4(&mut buffer).to_vec()
+            } else if buffer.len() == 8 {
+                let mut buffer: [_; 8] = buffer.try_into().unwrap();
+                real::rfft_8(&mut buffer).to_vec()
+            } else if buffer.len() == 16 {
+                let mut buffer: [_; 16] = buffer.try_into().unwrap();
+                real::rfft_16(&mut buffer).to_vec()
+            } else if buffer.len() == 32 {
+                let mut buffer: [_; 32] = buffer.try_into().unwrap();
+                real::rfft_32(&mut buffer).to_vec()
+            } else if buffer.len() == 64 {
+                let mut buffer: [_; 64] = buffer.try_into().unwrap();
+                real::rfft_64(&mut buffer).to_vec()
+            } else if buffer.len() == 128 {
+                let mut buffer: [_; 128] = buffer.try_into().unwrap();
+                real::rfft_128(&mut buffer).to_vec()
+            } else if buffer.len() == 256 {
+                let mut buffer: [_; 256] = buffer.try_into().unwrap();
+                real::rfft_256(&mut buffer).to_vec()
+            } else if buffer.len() == 512 {
+                let mut buffer: [_; 512] = buffer.try_into().unwrap();
+                real::rfft_512(&mut buffer).to_vec()
+            } else if buffer.len() == 1024 {
+                let mut buffer: [_; 1024] = buffer.try_into().unwrap();
+                real::rfft_1024(&mut buffer).to_vec()
+            } else if buffer.len() == 2048 {
+                let mut buffer: [_; 2048] = buffer.try_into().unwrap();
+                real::rfft_2048(&mut buffer).to_vec()
+            } else if buffer.len() == 4096 {
+                let mut buffer: [_; 4096] = buffer.try_into().unwrap();
+                real::rfft_4096(&mut buffer).to_vec()
+            } else {
+                panic!("`microfft::complex` only supports powers of 2 between and 4096!");
+            }
+        };
+
+        // `microfft::real` documentation says: the Nyquist frequency real value is
+        // packed inside the imaginary part of the DC component.
+        res[0].im = 0.0;
+        res
     }
 
     #[inline(always)]
-    fn fft_map_result_to_f32(val: &FftResultType) -> f32 {
-        // original value, identity
-        *val
+    fn fft_map_result_to_f32(val: &Complex32) -> f32 {
+        // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
+        let sum = val.re * val.re + val.im * val.im;
+        let sqrt = libm::sqrtf(sum);
+        debug_assert!(sqrt != f32::NAN, "sqrt is NaN!");
+        sqrt
     }
 
     #[inline(always)]
@@ -86,9 +91,14 @@ impl Fft<FftResultType> for FftImpl {
 
     #[inline(always)]
     fn fft_relevant_res_samples_count(samples_len: usize) -> usize {
-        // `microfft::real` seems to distribute the spectrum across the whole
-        // FFT result. I can't find scientifically background of this but I found out
-        // by plotting the values.
-        samples_len
+        // `microfft::real` uses a real FFT and the result is exactly
+        // N/2 elements of type Complex<f32> long. The documentation of
+        // `microfft::real` says about this:
+        //   The produced output is the first half out the output returned by
+        //   the corresponding `N`-point CFFT, i.e. the real DC value and
+        //   `N/2 - 1` positive-frequency terms. Additionally, the real-valued
+        //   coefficient at the Nyquist frequency is packed into the imaginary part
+        //   of the DC bin.
+        samples_len / 2
     }
 }
