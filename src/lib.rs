@@ -32,7 +32,7 @@ SOFTWARE.
 #![no_std]
 
 // use alloc crate, because this is no_std
-#[macro_use]
+#[cfg_attr(test, macro_use)]
 extern crate alloc;
 
 use alloc::vec::Vec;
@@ -41,7 +41,7 @@ pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
 pub use crate::spectrum::{FrequencySpectrum, ComplexSpectrumScalingFunction};
 use core::convert::identity;
-use crate::fft::{FftImpl, Fft, FftResultType};
+use crate::fft::{FftImpl, Fft, Complex32};
 
 mod frequency;
 mod limit;
@@ -149,7 +149,7 @@ pub fn samples_fft_to_spectrum(
 /// New object of type [`FrequencySpectrum`].
 #[inline(always)]
 fn fft_result_to_spectrum(
-    fft_result: &[FftResultType],
+    fft_result: &[Complex32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
     per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
@@ -168,10 +168,16 @@ fn fft_result_to_spectrum(
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
         .into_iter()
-        // abstraction over different FFT implementations: how they distribute the actual
-        // corresponding frequencies above the FFT result. See comments of specific implementations
-        // (especially the complex implementation) for more details on this!
-        // TL;DR: for complex this is always (N/2+1), i.e. indices 0 to N/2 (end inclusive)
+        // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
+        // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
+        //
+        // The indices 0 to N/2 (inclusive) are usually the most relevant. Although, index
+        // N/2-1 is declared as the last useful one on stackoverflow (because in typical applications
+        // Nyquist-frequency + above are filtered out), we include everything here.
+        // with 0..=(samples_len / 2) (inclusive) we get all frequencies from 0 to Nyquist theorem.
+        //
+        // Indices (samples_len / 2)..len() are mirrored/negative. You can also see this here:
+        // https://www.gaussianwaves.com/gaussianwaves/wp-content/uploads/2015/11/realDFT_complexDFT.png
         .take(FftImpl::fft_relevant_res_samples_count(samples_len))
         // to (index, fft-result)-pairs
         .enumerate()
@@ -225,14 +231,12 @@ fn fft_result_to_spectrum(
         })
         // ### END filtering
         // #######################
-        // iff complex FFT implementation: calc magnitude:
+        // FFT result is always complex: calc magnitude
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, fft_result)| (
+        .map(|(fr, complex_res)| (
             fr,
-            // if FFT implementation uses complex numbers:
-            // this converts it to f32 by calculating the magnitude
-            // otherwise the value is returned, equal to `identity()`
-            FftImpl::fft_map_result_to_f32(&fft_result))
+            // calc magnitude of compelx number
+            FftImpl::fft_map_result_to_f32(&complex_res))
         )
         // apply optionally scale function
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))

@@ -27,7 +27,7 @@ use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plot
 use audio_visualizer::test_support::TEST_OUT_DIR;
 use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
-use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, scaling, Frequency};
+use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, scaling};
 use std::fs::File;
 use std::time::Instant;
 

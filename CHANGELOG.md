@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.4.4
+Fixed wrong usage of `microfft::real` + bumped version of `microfft` to `0.4.0`. 
+**Currently it seems like with this implementation you only can get
+the frequencies zero to `sampling_rate/4`, i.e. half of Nyquist frequency!**
+I found out so by plotting the values. Wait until
+https://gitlab.com/ra_kete/microfft-rs/-/issues/9 gets resolved (TODO!)
+
 ## v0.4.3
 README fix.
 

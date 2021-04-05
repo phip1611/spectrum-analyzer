@@ -7,9 +7,11 @@ use alloc::vec::Vec;
 use crate::fft::Fft as FftAbstraction;
 use rustfft::algorithm::Radix4;
 use rustfft::{FftDirection, Fft};
-use rustfft::num_complex::Complex32;
 
-pub type FftResultType = Complex32;
+/// The result of a FFT is always complex but because different FFT crates might
+/// use different versions of "num-complex", each implementation exports
+/// it's own version that gets used in lib.rs for binary compatibility.
+pub use rustfft::num_complex::Complex32;
 
 /// Dummy struct with no properties but used as a type
 /// to implement a concrete FFT strategy using (`rustfft::algorithm::Radix4`).
@@ -33,10 +35,10 @@ impl FftImpl {
     }
 }
 
-impl FftAbstraction<FftResultType> for FftImpl {
+impl FftAbstraction<Complex32> for FftImpl {
 
     #[inline(always)]
-    fn fft_apply(samples: &[f32]) -> Vec<FftResultType> {
+    fn fft_apply(samples: &[f32]) -> Vec<Complex32> {
         let mut samples = Self::samples_to_complex(samples);
         let fft = Radix4::new(samples.len(), FftDirection::Forward);
         fft.process(&mut samples);
@@ -44,7 +46,7 @@ impl FftAbstraction<FftResultType> for FftImpl {
     }
 
     #[inline(always)]
-    fn fft_map_result_to_f32(val: &FftResultType) -> f32 {
+    fn fft_map_result_to_f32(val: &Complex32) -> f32 {
         // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
         let sum = val.re * val.re + val.im * val.im;
         let sqrt = sum.sqrt();

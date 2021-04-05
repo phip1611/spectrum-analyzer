@@ -6,6 +6,8 @@ cache: cargo
 
 script:
   - cargo build --all-targets
+  - cargo build --all-targets --no-default-features --features "microfft-complex"
+  - cargo build --all-targets --no-default-features --features "microfft-real"
 #  - cargo build --all-targets --release
   - cargo test --all-targets
 #  - cargo test --all-targets --release
