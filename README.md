@@ -27,7 +27,7 @@ or look into the screenshots of this README.
 - `microfft-real` **no_std**, less accurate but faster than `microfft-complex`
 
 ### Cargo.toml
-```Cargo.toml
+```toml
 # ONLY NEEDED FOR `no_std`-builds!
 # fixes `no_std` build problems caused by wrong feature resolution of Cargo
 # This works since Rust 1.51 (stable)

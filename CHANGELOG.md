@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.4.3
+README fix.
+
 ## v0.4.2
 Typo in README.md code example.
 
