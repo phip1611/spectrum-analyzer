@@ -77,18 +77,18 @@ Type `ComplexSpectrumScalingFunction` can do anything like `BasicSpectrumScaling
 is easier to write, especially for Rust beginners.
 
 ## Performance
-*Measurements taken on i7-8650U @ 3 Ghz (Single-Core) with optimized build and using `rustfft` as FFT implementation*
+*Measurements taken on i7-8650U @ 3 Ghz (Single-Core) with optimized build*
 
 
-| Operation                                     | Time   |
-| --------------------------------------------- | ------:|
-| Hann Window with 4096 samples                 | ≈70µs  |
-| Hamming Window with 4096 samples              | ≈10µs  |
-| Hann Window with 16384 samples                | ≈175µs |
-| Hamming Window with 16384 samples             | ≈44µs  |
-| FFT (complex) to spectrum with 4096 samples @ 44100Hz   | ≈240µs |
-| FFT (complex) to spectrum with 16384 samples @ 44100Hz  | ≈740µs |
-| FFT (real) to spectrum with 4096 samples @ 44100Hz   | ≈120µs |
+| Operation                                              | Time   |
+| ------------------------------------------------------ | ------:|
+| Hann Window with 4096 samples                          | ≈70µs  |
+| Hamming Window with 4096 samples                       | ≈10µs  |
+| Hann Window with 16384 samples                         | ≈175µs |
+| Hamming Window with 16384 samples                      | ≈44µs  |
+| FFT (`rustfft/complex`) to spectrum with 4096 samples  | ≈240µs |
+| FFT (`rustfft/complex`) to spectrum with 16384 samples | ≈740µs |
+| FFT (`microfft/real`) to spectrum with 4096 samples    | ≈120µs |
 
 ## Example visualization
 In the following example you can see a basic visualization of frequencies `0 to 4000Hz` for 
@@ -97,17 +97,17 @@ given frequencies are clearly visible. Each calculation was done with `2048` sam
 
 **The noise (wrong peaks) also comes from clipping of the added sine waves!**
 
-### Spectrum without window function on samples
+### Spectrum *without window function* on samples
 Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with no window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.")
 
-### Hann window function on samples before FFT
+### Spectrum with *Hann window function* on samples before FFT
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](spectrum_sine_waves_50_1000_3777hz--hann-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
-### Hamming window function on samples before FFT
+### Spectrum with *Hamming window function* on samples before FFT
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ## Trivia / FAQ
 ### Why f64 and no f32?
