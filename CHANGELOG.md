@@ -1,6 +1,11 @@
 # Changelog
 
-## v.0.4.5
+## v0.5.0
+This crate now uses `microfft::real` as default FFT implementation. It is by far the fastest implementation
+and there are no disadvantages. This crate works now in `no_std`-environments by default. It's also
+faster in `std`-environments compared to the previous release due to the `real` FFT.
+
+## v0.4.5
 Added MIT to file headers where it was missing.
 
 ## v0.4.4

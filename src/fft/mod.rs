@@ -27,7 +27,15 @@ SOFTWARE.
 //!
 //! This crate compiles only iff exactly one feature, i.e. one FFT implementation, is activated.
 //!
-//! Tips for development/testing: Usually I do all tests against "rustfft" because it is the
+//! ## What FFT implementation to choose?
+//! "microfft-real" should be in any way the fastest implementation and fine in any case.
+//! I added multiple implementations primarily for educational reasons to myself to learn
+//! differences between real and complex FFT. As of release 0.5.0 there is no valid case
+//! why you should switch to another FFT implementation. They are primarily useful to me
+//! during development to test different FFT implementations and see if my code is correct.
+//!
+//! ## Tips for development/testing
+//! Usually I do all tests against "rustfft" because it is the
 //! most actively developed implementation and also the fastest and most accurate, at least
 //! in `std`-environments on modern processors. To test other implementations I usually
 //! plot the results using the function
@@ -67,48 +75,21 @@ pub(crate) trait Fft<ComplexType> {
     /// Vector of FFT results.
     fn fft_apply(samples: &[f32]) -> Vec<ComplexType>;
 
-    /// Maps a single result from [`fft_apply`] and maps it to `f32`.
-    /// For real FFT implementations, this is equal to identity.
-    /// For complex FFT implementations, this is the magnitude,
-    /// e.g. `sqrt(re*re + im*im)`.
+    /// Returns the relevant results of the FFT result. For complex FFT this is
+    /// `N/2 + 1`, i.e. indices `0..=N/2` (inclusive end) are relevant. Real FFT
+    /// implementations might be different here, because they may only have
+    /// `N/2` results.
     ///
-    /// ## Parameters
-    /// * `val` A single value from the FFT output buffer of type [`FftResultType`].
-    fn fft_map_result_to_f32(val: &ComplexType) -> f32;
-
-    /// Calculate the frequency resolution of the FFT. It is determined by the sampling rate
-    /// in Hertz and N, the number of samples given into the FFT. With the frequency resolution,
-    /// we can determine the corresponding frequency of each index in the FFT result buffer.
+    /// The return value of this multiplied with `frequency_resolution` usually
+    /// refers to the Nyquist frequency.
     ///
-    /// In some FFT implementations, e.g. real instead of complex, this is a little bit different.
-    /// `microfft::real` slits the spectrum across the indices 0..N in output buffer  rather than
-    /// 0..N/2.
-    ///
-    /// ## Parameters
-    /// * `samples_len` Number of samples put into the FFT
-    /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
-    ///
-    /// ## Return value
-    /// Frequency resolution in Hertz.
+    /// For complex FFT we don't need the second half because it refers to
+    /// negative frequency values (mirrored to first half with pos frequency values),
+    /// therefore we skip it; the return value is smaller than `complex_samples.len()`.
     ///
     /// ## More info
     /// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
     /// * https://stackoverflow.com/questions/4364823/
-    fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32;
-
-    /// Returns the relevant results of the FFT result. For complex numbers this is
-    /// `N/2 + 1`, i.e. `0..=N/2` (inclusive end). This might be different
-    /// for real FFT implementations.
-    ///
-    /// For complex FFT we usually don't need the second half because it refers to
-    /// negative frequency values.
-    ///
-    /// ## More info
-    /// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
-    /// * https://stackoverflow.com/questions/4364823/
-    ///
-    /// This function determines together with [`fft_calc_frequency_resolution`] what
-    /// index in the FFT result corresponds to what frequency.
     ///
     /// ## Parameters
     /// * `samples_len` Number of samples put into the FFT

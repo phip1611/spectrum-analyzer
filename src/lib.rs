@@ -129,6 +129,7 @@ pub fn samples_fft_to_spectrum(
     // 4) optionally scales the magnitudes
     // 5) collects everything into the struct "FrequencySpectrum"
     fft_result_to_spectrum(
+        samples.len(),
         &buffer,
         sampling_rate,
         frequency_limit,
@@ -142,6 +143,9 @@ pub fn samples_fft_to_spectrum(
 /// FFT implementation is chosen.
 ///
 /// ## Parameters
+/// * `samples_len` Length of samples. This is a dedicated field because it can't always be
+///                 derived from `fft_result.len()`. There are for example differences for
+///                  `fft_result.len()` in real and complex FFT.
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
@@ -155,6 +159,7 @@ pub fn samples_fft_to_spectrum(
 /// New object of type [`FrequencySpectrum`].
 #[inline(always)]
 fn fft_result_to_spectrum(
+    samples_len: usize,
     fft_result: &[Complex32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
@@ -164,10 +169,7 @@ fn fft_result_to_spectrum(
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
 
-    let samples_len = fft_result.len();
-
-    let frequency_resolution =
-        FftImpl::fft_calc_frequency_resolution(sampling_rate, samples_len as u32);
+    let frequency_resolution = fft_calc_frequency_resolution(sampling_rate, samples_len as u32);
 
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
@@ -189,21 +191,22 @@ fn fft_result_to_spectrum(
         .map(|(fft_index, fft_result)| {
             (
                 // Calculate corresponding frequency of each index of FFT result.
-                // THE FOLLOWING EXAMPLE RELATES TO COMPLEX FFT AND NOT REAL FFT,
-                // (BUT COMPLEX FFT IS ALMOST ALWAYS THE CHOICE ONE SHOULD TAKE)
                 //
                 // Explanation for the algorithm:
                 // https://stackoverflow.com/questions/4364823/
                 //
-                // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
-                // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
+                // N complex samples          : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
+                //   (Or N real samples packed
+                //   into N/2 complex samples
+                //   (real FFT algorithm))
+                // Complex FFT Result         : [0], [1], [2], [3], ... , ..., [2047]
                 // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1024]      => indices 0 to N/2 (inclusive) are important
                 //                               ^                         ^
-                // Frequency                  : 0Hz, .................... Sampling Rate/2
+                // Frequency                  : 0Hz, .................... Sampling Rate/2 => "Nyquist frequency"
                 //                              0Hz is also called        (e.g. 22050Hz for 44100Hz sampling rate)
                 //                              "DC Component"
                 //
-                // frequency step/resolution is for example: 1/2048 * 44100
+                // frequency step/resolution is for example: 1/2048 * 44100 = 21.53 Hz
                 //                                             2048 samples, 44100 sample rate
                 //
                 // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
@@ -236,13 +239,7 @@ fn fft_result_to_spectrum(
         // #######################
         // FFT result is always complex: calc magnitude
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, complex_res)| {
-            (
-                fr,
-                // calc magnitude of compelx number
-                FftImpl::fft_map_result_to_f32(&complex_res),
-            )
-        })
+        .map(|(fr, complex_res)| (fr, complex_to_magnitude(&complex_res)))
         // apply optionally scale function
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
         // transform to my thin convenient orderable f32 wrappers
@@ -259,4 +256,39 @@ fn fft_result_to_spectrum(
     }
 
     spectrum
+}
+
+/// Calculate the frequency resolution of the FFT. It is determined by the sampling rate
+/// in Hertz and N, the number of samples given into the FFT. With the frequency resolution,
+/// we can determine the corresponding frequency of each index in the FFT result buffer.
+///
+/// For "real FFT" implementations
+///
+/// ## Parameters
+/// * `samples_len` Number of samples put into the FFT
+/// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
+///
+/// ## Return value
+/// Frequency resolution in Hertz.
+///
+/// ## More info
+/// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
+/// * https://stackoverflow.com/questions/4364823/
+#[inline(always)]
+fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
+    sampling_rate as f32 / samples_len as f32
+}
+
+/// Maps a [`Complex32`] to it's magnitude as `f32`. This is done
+/// by calculating `sqrt(re*re + im*im)`. This is required to convert
+/// the complex FFT result back to real values.
+///
+/// ## Parameters
+/// * `val` A single value from the FFT output buffer of type [`Complex32`].
+fn complex_to_magnitude(val: &Complex32) -> f32 {
+    // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
+    let sum = val.re * val.re + val.im * val.im;
+    let sqrt = libm::sqrtf(sum);
+    debug_assert!(sqrt != f32::NAN, "sqrt is NaN!");
+    sqrt
 }
