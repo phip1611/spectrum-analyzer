@@ -192,21 +192,22 @@ fn fft_result_to_spectrum(
         .map(|(fft_index, fft_result)| {
             (
                 // Calculate corresponding frequency of each index of FFT result.
-                // THE FOLLOWING EXAMPLE RELATES TO COMPLEX FFT AND NOT REAL FFT,
-                // (BUT COMPLEX FFT IS ALMOST ALWAYS THE CHOICE ONE SHOULD TAKE)
                 //
                 // Explanation for the algorithm:
                 // https://stackoverflow.com/questions/4364823/
                 //
-                // samples                    : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
-                // FFT Result                 : [0], [1], [2], [3], ... , ..., [2047]
+                // N complex samples          : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
+                // -(Or N real samples packed
+                // -into N/2 Complex Samples
+                // -(real FFT algorithm))
+                // -Complex FFT Result        : [0], [1], [2], [3], ... , ..., [2047]
                 // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1024]      => indices 0 to N/2 (inclusive) are important
                 //                               ^                         ^
-                // Frequency                  : 0Hz, .................... Sampling Rate/2
+                // Frequency                  : 0Hz, .................... Sampling Rate/2 "Nyquist frequency"
                 //                              0Hz is also called        (e.g. 22050Hz for 44100Hz sampling rate)
                 //                              "DC Component"
                 //
-                // frequency step/resolution is for example: 1/2048 * 44100
+                // frequency step/resolution is for example: 1/2048 * 44100 = 21.53 Hz
                 //                                             2048 samples, 44100 sample rate
                 //
                 // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
@@ -242,7 +243,7 @@ fn fft_result_to_spectrum(
         .map(|(fr, complex_res)| {
             (
                 fr,
-                // calc magnitude of compelx number
+                // calc magnitude of complex number
                 FftImpl::fft_map_result_to_f32(&complex_res),
             )
         })

@@ -141,7 +141,8 @@ fn test_spectrum_nyquist_theorem() {
     let spectrum =
         samples_fft_to_spectrum(&dummy_audio_samples, 44100, FrequencyLimit::All, None, None);
     assert_eq!(
-        // because indices 0..N/2 (inclusive) are relevant
+        // because indices 0..N/2 (inclusive) of the FFT result are relevant
+        // => DC component to Nyquist frequency
         4096 / 2 + 1,
         spectrum
             .data()

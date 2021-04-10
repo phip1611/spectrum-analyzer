@@ -111,7 +111,7 @@ impl Fft<Complex32> for FftImpl {
 
     #[inline(always)]
     fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
-        sampling_rate as f32 / samples_len as f32 / 2.0
+        sampling_rate as f32 / samples_len as f32
     }
 
     #[inline(always)]

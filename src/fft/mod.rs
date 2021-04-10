@@ -86,9 +86,7 @@ pub(crate) trait Fft<ComplexType> {
     /// in Hertz and N, the number of samples given into the FFT. With the frequency resolution,
     /// we can determine the corresponding frequency of each index in the FFT result buffer.
     ///
-    /// In some FFT implementations, e.g. real instead of complex, this is a little bit different.
-    /// `microfft::real` slits the spectrum across the indices 0..N in output buffer  rather than
-    /// 0..N/2.
+    /// For "real FFT" implementations
     ///
     /// ## Parameters
     /// * `samples_len` Number of samples put into the FFT
