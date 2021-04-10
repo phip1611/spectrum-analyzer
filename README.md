@@ -17,14 +17,9 @@ Most tips and comments are located inside the code, so please check out the repo
 Github! Anyway, the most basic usage looks like this:
 
 ### FFT implementation as compile time configuration via Cargo features
-This crate offers multiple FFT implementations using the crates `rustfft` and `microfft` - both are great, shout-out to 
-the original creators and all contributors! `spectrum-analyzer` offers three features, where exactly one feature
-is allowed to be activated, otherwise the build breaks! To see differences between the implementations, plot the results
-or look into the screenshots of this README.
-
-- `rustfft-complex` **default feature**, **std (recommended)**: for regular applications, most accurate and most performance
-- `microfft-complex` **no_std (recommended)**: see doc comments in `spectrum_analyzer::fft::microfft_complex` to see limitations and advantages
-- `microfft-real` **no_std**, see doc comments in `spectrum_analyzer::fft::microfft_real` to see limitations and advantages
+By default this crate uses the `real`-module from the great `microfft`-crate. It's the fastest implementation
+and as of version `v0.5.0` there should be no valid reason why you should ever change this. The multiple features
+are there mainly for educational reasons and to support me while programming/testing.
 
 ### Cargo.toml
 ```toml
@@ -33,10 +28,8 @@ or look into the screenshots of this README.
 # This works since Rust 1.51 (stable)
 resolver = "2"
 
-# by default feature "rustfft-complex" is used
+# by default feature "microfft-real" is used
 spectrum-analyzer = "<latest>"
-# or any of the other features/FFT implementations; see module documentation for more information about them
-spectrum-analyzer = { version = "<latest>", default-features = false, features = "microfft-complex" }
 ```
 
 ### your_binary.rs

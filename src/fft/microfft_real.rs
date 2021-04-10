@@ -101,20 +101,6 @@ impl Fft<Complex32> for FftImpl {
     }
 
     #[inline(always)]
-    fn fft_map_result_to_f32(val: &Complex32) -> f32 {
-        // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
-        let sum = val.re * val.re + val.im * val.im;
-        let sqrt = libm::sqrtf(sum);
-        debug_assert!(sqrt != f32::NAN, "sqrt is NaN!");
-        sqrt
-    }
-
-    #[inline(always)]
-    fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
-        sampling_rate as f32 / samples_len as f32
-    }
-
-    #[inline(always)]
     fn fft_relevant_res_samples_count(samples_len: usize) -> usize {
         // `microfft::real` uses a real FFT and the result is exactly
         // N/2 elements of type Complex<f32> long. The documentation of

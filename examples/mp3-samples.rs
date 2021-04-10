@@ -130,7 +130,9 @@ fn to_spectrum_and_plot(samples: &[f32],
         &no_window,
         sampling_rate,
         frequency_limit,
-        None,
+        // several resources recommend that the FFT result should be divided
+        // by the length of samples (so that values of different samples lengths are comparable)
+        Some(&|x| x/samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!(
@@ -143,7 +145,7 @@ fn to_spectrum_and_plot(samples: &[f32],
         &hamming_window,
         sampling_rate,
         frequency_limit,
-        None,
+        Some(&|x| x/samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!(
@@ -156,7 +158,7 @@ fn to_spectrum_and_plot(samples: &[f32],
         &hann_window,
         sampling_rate,
         frequency_limit,
-        None,
+        Some(&|x| x/samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!(
@@ -172,7 +174,7 @@ fn to_spectrum_and_plot(samples: &[f32],
         &blackman_harris_4term_window,
         sampling_rate,
         frequency_limit,
-        None,
+        Some(&|x| x/samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 4-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
@@ -181,7 +183,7 @@ fn to_spectrum_and_plot(samples: &[f32],
         &blackman_harris_7term_window,
         sampling_rate,
         frequency_limit,
-        None,
+        Some(&|x| x/samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
     );
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 7-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());

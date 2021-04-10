@@ -68,20 +68,6 @@ impl FftAbstraction<Complex32> for FftImpl {
     }
 
     #[inline(always)]
-    fn fft_map_result_to_f32(val: &Complex32) -> f32 {
-        // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
-        let sum = val.re * val.re + val.im * val.im;
-        let sqrt = sum.sqrt();
-        debug_assert!(sqrt != f32::NAN, "sqrt is NaN!");
-        sqrt
-    }
-
-    #[inline(always)]
-    fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
-        sampling_rate as f32 / samples_len as f32
-    }
-
-    #[inline(always)]
     fn fft_relevant_res_samples_count(samples_len: usize) -> usize {
         // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
         // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/

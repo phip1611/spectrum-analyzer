@@ -4,7 +4,7 @@ description = """
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features.
 """
-version = "0.4.6"
+version = "0.5.0"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
@@ -20,12 +20,16 @@ documentation = "https://docs.rs/spectrum-analyzer"
 resolver = "2"
 
 [features]
+# by default we use microfft-real: it's the fastest and totally fit's our needs.
+# As of version 0.5.0 there is no advantage by using other implementations.
+# They still exist mainly for educational purposes, testing during development
+# and for possible future enhancements
 default = ["microfft-real"]
-# best option for STD environments, most accurate and performant + more than 4096 samples!
+# std
 rustfft-complex = ["rustfft"]
-# a bit slower but more accurate: uses regular FFT with complex numbers
+# no_std
 microfft-complex = ["microfft"]
-# faster but less accurate: uses an FFT algorithm that only works on real numbers
+# no_std, overall fastest
 microfft-real = ["microfft"]
 
 [dependencies]
