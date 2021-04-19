@@ -4,7 +4,7 @@ description = """
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features.
 """
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
@@ -33,11 +33,11 @@ microfft-complex = ["microfft"]
 microfft-real = ["microfft"]
 
 [dependencies]
-rustfft = { version = "5.0.1", optional = true }
+rustfft = { version = "6.0.0", optional = true }
 microfft = { version = "0.4.0", optional = true }
-float-cmp = "0.8.0" # approx. compare floats; not only in tests but also during runtime
-# sin() cos() log10() etc for no_std-environments; as of Rust 1.51 the default
-# functions are only part of the standard lib
+# approx. compare floats; not only in tests but also during runtime
+float-cmp = "0.8.0"
+# sin() cos() log10() etc for no_std-environments; these are not part of Core library
 libm = "0.2.1"
 
 [dev-dependencies]

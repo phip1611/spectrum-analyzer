@@ -1,9 +1,16 @@
 # Changelog
 
+## v0.5.1
+- Feature "rustfft-complex" uses "rustfft"-crate at version 6 which is faster/more optimized (~25%).
+- improved CI
+- README update
+
 ## v0.5.0
 This crate now uses `microfft::real` as default FFT implementation. It is by far the fastest implementation
-and there are no disadvantages. This crate works now in `no_std`-environments by default. It's also
-faster in `std`-environments compared to the previous release due to the `real` FFT.
+and there are no disadvantages, despite (with `microfft` version 0.4.0) the maximum FFT size is 4096. If you 
+need bigger FFT sizes, use feature `rustfft-complex`.
+
+This crate now works in `no_std`-environments by default.
 
 ## v0.4.5
 Added MIT to file headers where it was missing.
@@ -13,7 +20,7 @@ Fixed wrong usage of `microfft::real` + bumped version of `microfft` to `0.4.0`.
 **Currently it seems like with this implementation you only can get
 the frequencies zero to `sampling_rate/4`, i.e. half of Nyquist frequency!**
 I found out so by plotting the values. Wait until
-https://gitlab.com/ra_kete/microfft-rs/-/issues/9 gets resolved (TODO!)
+https://gitlab.com/ra_kete/microfft-rs/-/issues/9 gets resolved.
 
 ## v0.4.3
 README fix.

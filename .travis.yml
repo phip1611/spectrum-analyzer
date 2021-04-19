@@ -5,15 +5,26 @@ rust:
 cache: cargo
 
 script:
+  # build with all features/fft implementations
   - cargo build --all-targets
+  - cargo build --all-targets --no-default-features --features "rustfft-complex"
   - cargo build --all-targets --no-default-features --features "microfft-complex"
   - cargo build --all-targets --no-default-features --features "microfft-real"
-#  - cargo build --all-targets --release
+
+  # run tests with all features/fft implementations
   - cargo test --all-targets
-#  - cargo test --all-targets --release
+  - cargo test --all-targets --no-default-features --features "rustfft-complex"
+  - cargo test --all-targets --no-default-features --features "microfft-complex"
+  - cargo test --all-targets --no-default-features --features "microfft-real"
+
+  # test `no_std`-build with all features/fft implementations
   - rustup target add thumbv7em-none-eabihf
+  - cargo check --target thumbv7em-none-eabihf --no-default-features --features "rustfft-complex"
   - cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-complex"
   - cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-real"
 
-  # examples
+  # run examples with all features/fft implementations
   - cargo run --release --example mp3-samples
+  - cargo run --release --example mp3-samples --no-default-features --features "rustfft-complex"
+  - cargo run --release --example mp3-samples --no-default-features --features "microfft-complex"
+  - cargo run --release --example mp3-samples --no-default-features --features "microfft-real"
