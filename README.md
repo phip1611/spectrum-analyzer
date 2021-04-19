@@ -29,7 +29,14 @@ are there mainly for educational reasons and to support me while programming/tes
 resolver = "2"
 
 # by default feature "microfft-real" is used
+[dependencies]
 spectrum-analyzer = "<latest>"
+
+# or if you need another feature (FFT implementation)
+[dependencies.spectrum-analyzer]
+default-features = false # important! only one feature at a time works!
+version = "0.5.0"
+features = ["rustfft-complex"] # or on of the other features
 ```
 
 ### your_binary.rs
