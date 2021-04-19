@@ -11,7 +11,8 @@ cargo test --all-targets --no-default-features --features "microfft-real"
 
 # test no_std
 rustup target add thumbv7em-none-eabihf
-cargo check --target thumbv7em-none-eabihf --no-default-features --features "rustfft-complex"
+# nope, thats BS: this crate needs STD
+# cargo check --target thumbv7em-none-eabihf --no-default-features --features "rustfft-complex"
 cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-complex"
 cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-real"
 
