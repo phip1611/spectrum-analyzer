@@ -131,7 +131,7 @@ pub fn samples_fft_to_spectrum(
     // verify frequency limit: unwrap error or else ok
     let _ = frequency_limit
         .verify(max_detectable_frequency)
-        .map_err(|e| SpectrumAnalyzerError::InvalidFrequencyLimit(e))?;
+        .map_err(SpectrumAnalyzerError::InvalidFrequencyLimit)?;
 
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
@@ -197,7 +197,7 @@ fn fft_result_to_spectrum(
 
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
-        .into_iter()
+        .iter()
         // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
         // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
         //
@@ -269,7 +269,7 @@ fn fft_result_to_spectrum(
         // #######################
         // FFT result is always complex: calc magnitude
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, complex_res)| (fr, complex_to_magnitude(&complex_res)))
+        .map(|(fr, complex_res)| (fr, complex_to_magnitude(complex_res)))
         // apply optionally scale function
         .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
         // transform to my thin convenient orderable f32 wrappers

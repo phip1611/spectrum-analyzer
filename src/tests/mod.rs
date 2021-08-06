@@ -25,7 +25,7 @@ SOFTWARE.
 
 use crate::error::SpectrumAnalyzerError;
 use crate::tests::sine::sine_wave_audio_data_multiple;
-use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
+use crate::windows::{hamming_window, hann_window};
 use crate::{samples_fft_to_spectrum, ComplexSpectrumScalingFunction, FrequencyLimit};
 use alloc::boxed::Box;
 use alloc::vec::Vec;
@@ -66,12 +66,12 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     // 1/44100 * 4096 => 0.0928s
     let window = &sine_audio[0..4096];
 
-    let no_window = &window[..];
+    let no_window = window;
     let hamming_window = hamming_window(no_window);
     let hann_window = hann_window(no_window);
 
     let spectrum_no_window = samples_fft_to_spectrum(
-        &no_window,
+        no_window,
         44100,
         FrequencyLimit::Max(4000.0),
         None,

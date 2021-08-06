@@ -98,13 +98,13 @@ pub fn blackman_harris_7term(samples: &[f32]) -> Vec<f32> {
     // constants come from here:
     // https://dsp.stackexchange.com/questions/51095/seven-term-blackman-harris-window
     const ALPHA: [f32; 7] = [
-        0.27105140069342,
-        -0.43329793923448,
-        0.21812299954311,
-        -0.06592544638803,
-        0.01081174209837,
-        -0.00077658482522,
-        0.00001388721735,
+        0.271_051_4,
+        -0.433_297_93,
+        0.218_123,
+        -0.065_925_45,
+        0.010_811_742,
+        -0.000_776_584_84,
+        0.000_013_887_217,
     ];
 
     blackman_harris_xterm(samples, &ALPHA)

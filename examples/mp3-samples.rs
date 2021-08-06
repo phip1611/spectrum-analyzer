@@ -99,29 +99,29 @@ fn to_spectrum_and_plot(
     filename: &str,
     frequency_limit: FrequencyLimit,
 ) {
-    let no_window = &samples[..];
+    let no_window = samples;
 
     let now = Instant::now();
-    let hann_window = hann_window(&no_window);
+    let hann_window = hann_window(no_window);
     println!(
         "[Measurement]: Hann-Window with {} samples took: {}µs",
         samples.len(),
         now.elapsed().as_micros()
     );
     let now = Instant::now();
-    let hamming_window = hamming_window(&no_window);
+    let hamming_window = hamming_window(no_window);
     println!(
         "[Measurement]: Hamming-Window with {} samples took: {}µs",
         samples.len(),
         now.elapsed().as_micros()
     );
-    let blackman_harris_4term_window = blackman_harris_4term(&no_window);
+    let blackman_harris_4term_window = blackman_harris_4term(no_window);
     println!(
         "[Measurement]: Blackmann-Harris-4-term-Window with {} samples took: {}µs",
         samples.len(),
         now.elapsed().as_micros()
     );
-    let blackman_harris_7term_window = blackman_harris_4term(&no_window);
+    let blackman_harris_7term_window = blackman_harris_4term(no_window);
     println!(
         "[Measurement]: Blackmann-Harris-7-term-Window with {} samples took: {}µs",
         samples.len(),
@@ -130,7 +130,7 @@ fn to_spectrum_and_plot(
 
     let now = Instant::now();
     let spectrum_no_window = samples_fft_to_spectrum(
-        &no_window,
+        no_window,
         sampling_rate,
         frequency_limit,
         // several resources recommend that the FFT result should be divided
