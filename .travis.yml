@@ -17,6 +17,10 @@ script:
   - cargo test --all-targets --no-default-features --features "microfft-complex"
   - cargo test --all-targets --no-default-features --features "microfft-real"
 
+  # cargo format and clippy (--check doesn't change the files)
+  - cargo fmt -- --check
+  - cargo clippy
+
   # test `no_std`-build with all features/fft implementations
   - rustup target add thumbv7em-none-eabihf
   # nope, thats BS: this crate needs STD

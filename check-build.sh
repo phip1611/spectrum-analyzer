@@ -9,6 +9,9 @@ cargo test --all-targets --no-default-features --features "rustfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-real"
 
+cargo fmt
+cargo fmt -- --check # (--check doesn't change the files)
+
 # test no_std
 rustup target add thumbv7em-none-eabihf
 # nope, thats BS: this crate needs STD
