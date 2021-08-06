@@ -32,6 +32,7 @@ use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
 use audio_visualizer::Channels;
+use core::cmp::max;
 
 /// Directory with test samples (e.g. mp3) can be found here.
 #[allow(dead_code)]
@@ -137,6 +138,65 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
             println!("{}Hz => {}", fr, vol);
         }
     }*/
+}
+
+#[test]
+fn test_spectrum_power() {
+    let interesting_frequency = 2048.0;
+    let sine_audio = sine_wave_audio_data_multiple(&[interesting_frequency], 44100, 1000);
+
+    let sine_audio = sine_audio
+        .into_iter()
+        .map(|x| x as f32)
+        .collect::<Vec<f32>>();
+
+    // FFT frequency accuracy is: sample_rate / (N / 2)
+    // 44100/(4096/2) = 21.5Hz
+
+    // get a window that we want to analyze
+    // 1/44100 * 4096 => 0.0928s
+    let short_window = &sine_audio[0..2048];
+    let long_window = &sine_audio[0..4096];
+
+    let spectrum_short_window = samples_fft_to_spectrum(
+        &short_window,
+        44100,
+        FrequencyLimit::All,
+        None,
+        Some(get_divide_by_N_fnc(short_window.len())),
+    )
+    .unwrap();
+
+    let spectrum_long_window = samples_fft_to_spectrum(
+        &long_window,
+        44100,
+        FrequencyLimit::All,
+        None,
+        Some(get_divide_by_N_fnc(long_window.len())),
+    )
+    .unwrap();
+
+    /*spectrum_static_plotters_png_visualize(
+        &spectrum_short_window.to_map(None),
+        TEST_OUT_DIR,
+        "test_spectrum_power__short_window.png",
+    );
+    spectrum_static_plotters_png_visualize(
+        &spectrum_long_window.to_map(None),
+        TEST_OUT_DIR,
+        "test_spectrum_power__long_window.png",
+    );*/
+
+    let a = spectrum_short_window.freq_val_exact(interesting_frequency);
+    let b = spectrum_long_window.freq_val_exact(interesting_frequency);
+    let abs_diff = (a - b).val().abs();
+    let deviation = abs_diff / max(a, b).val();
+    // 0.15 chosen at will
+    // This test is mostly for my personal understanding
+    assert!(
+        deviation < 0.15,
+        "Values must more or less equal, because both were divided by their N"
+    )
 }
 
 #[test]
@@ -361,4 +421,11 @@ fn test_only_null_samples() {
 /// the max value.
 fn get_scale_to_one_fnc() -> ComplexSpectrumScalingFunction {
     Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
+}
+
+#[allow(non_snake_case)]
+fn get_divide_by_N_fnc(n: usize) -> ComplexSpectrumScalingFunction {
+    Box::new(move |_min: f32, _max: f32, _average: f32, _median: f32| {
+        Box::new(move |x| x / n as f32)
+    })
 }

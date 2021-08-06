@@ -96,7 +96,7 @@ impl FrequencySpectrum {
     ///                          `data[1].0 - data[0].0`.
     #[inline(always)]
     pub fn new(data: Vec<(Frequency, FrequencyValue)>, frequency_resolution: f32) -> Self {
-        assert!(
+        debug_assert!(
             data.len() >= 2,
             "Input data of length={} for spectrum makes no sense!",
             data.len()

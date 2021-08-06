@@ -75,7 +75,7 @@ impl Eq for OrderableF32 {}
 impl PartialEq for OrderableF32 {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
-         matches!(self.cmp(other), Ordering::Equal)
+        matches!(self.cmp(other), Ordering::Equal)
     }
 }
 
