@@ -27,7 +27,7 @@ use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plot
 use audio_visualizer::test_support::TEST_OUT_DIR;
 use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
-use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, scaling};
+use spectrum_analyzer::{samples_fft_to_spectrum, scaling, FrequencyLimit};
 use std::fs::File;
 use std::time::Instant;
 
@@ -47,7 +47,8 @@ fn example__bass_drum_sample() {
     // this sample is exactly 0,628s long
     // we have 44100samples/s*0,628s == 28695 samples
     // next smaller power of two is: 2^14 == 16384 => FFT needs power of 2
-    let (samples, sampling_rate) = read_mp3_to_mono("test/samples/bass_drum_with_high-hat_at_end-sample.mp3");
+    let (samples, sampling_rate) =
+        read_mp3_to_mono("test/samples/bass_drum_with_high-hat_at_end-sample.mp3");
     let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
@@ -92,10 +93,12 @@ fn example__high_hat_sample() {
 
 // Calculates spectrum via FFT for a given set of samples and applies
 // all window functions + plots all
-fn to_spectrum_and_plot(samples: &[f32],
-                        sampling_rate: u32,
-                        filename: &str,
-                        frequency_limit: FrequencyLimit) {
+fn to_spectrum_and_plot(
+    samples: &[f32],
+    sampling_rate: u32,
+    filename: &str,
+    frequency_limit: FrequencyLimit,
+) {
     let no_window = &samples[..];
 
     let now = Instant::now();
@@ -132,9 +135,9 @@ fn to_spectrum_and_plot(samples: &[f32],
         frequency_limit,
         // several resources recommend that the FFT result should be divided
         // by the length of samples (so that values of different samples lengths are comparable)
-        Some(&|x| x/samples.len() as f32),
+        Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    );
+    ).unwrap();
     println!(
         "[Measurement]: FFT to Spectrum with no window with {} samples took: {}µs",
         samples.len(),
@@ -145,9 +148,9 @@ fn to_spectrum_and_plot(samples: &[f32],
         &hamming_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x/samples.len() as f32),
+        Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    );
+    ).unwrap();
     println!(
         "[Measurement]: FFT to Spectrum with Hamming window with {} samples took: {}µs",
         samples.len(),
@@ -158,9 +161,9 @@ fn to_spectrum_and_plot(samples: &[f32],
         &hann_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x/samples.len() as f32),
+        Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    );
+    ).unwrap();
     println!(
         "[Measurement]: FFT to Spectrum with Hann window with {} samples took: {}µs",
         samples.len(),
@@ -174,18 +177,18 @@ fn to_spectrum_and_plot(samples: &[f32],
         &blackman_harris_4term_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x/samples.len() as f32),
+        Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    );
+    ).unwrap();
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 4-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
     let now = Instant::now();
     let spectrum_blackman_harris_7term_window = samples_fft_to_spectrum(
         &blackman_harris_7term_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x/samples.len() as f32),
+        Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    );
+    ).unwrap();
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 7-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
 
     /*for (fr, fr_val) in spectrum_hamming_window.data().iter() {
@@ -223,8 +226,6 @@ fn to_spectrum_and_plot(samples: &[f32],
     );
 }
 
-
-
 /// Reads an MP3 and returns the audio data as mono channel + the sample rate in Hertz.
 fn read_mp3_to_mono(file: &str) -> (Vec<i16>, u32) {
     let mut decoder = Mp3Decoder::new(File::open(file).unwrap());
@@ -249,17 +250,13 @@ fn read_mp3_to_mono(file: &str) -> (Vec<i16>, u32) {
                     for (i, sample) in samples_of_frame.iter().enumerate().step_by(2) {
                         let sample = *sample as i32;
                         let next_sample = samples_of_frame[i + 1] as i32;
-                        mono_samples.push(
-                            ((sample + next_sample) as f32 / 2.0) as i16
-                        );
+                        mono_samples.push(((sample + next_sample) as f32 / 2.0) as i16);
                     }
                 } else if channels == 1 {
                     mono_samples.extend_from_slice(&samples_of_frame);
                 } else {
                     panic!("Unsupported number of channels={}", channels);
                 }
-
-
             }
             Err(Mp3Error::Eof) => break,
             Err(e) => panic!("{:?}", e),

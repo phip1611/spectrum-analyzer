@@ -462,6 +462,7 @@ impl FrequencySpectrum {
 
         // check that I get the comparison right (and not from max to min)
         debug_assert!(min.1 <= max.1, "min must be <= max");
+        debug_assert!(min.1 <= max.1, "min must be <= max");
 
         self.min.replace(min);
         self.max.replace(max);
