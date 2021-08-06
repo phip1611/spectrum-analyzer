@@ -48,11 +48,11 @@ pub enum WindowFn {
 pub fn hann_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
     let samples_len_f32 = samples.len() as f32;
-    for i in 0..samples.len() {
+    for (i, sample) in samples.iter().enumerate() {
         let two_pi_i = 2.0 * PI * i as f32;
         let idontknowthename = cosf(two_pi_i / samples_len_f32);
         let multiplier = 0.5 * (1.0 - idontknowthename);
-        windowed_samples.push(multiplier * samples[i])
+        windowed_samples.push(multiplier * sample)
     }
     windowed_samples
 }
@@ -65,9 +65,9 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
     let samples_len_f32 = samples.len() as f32;
-    for i in 0..samples.len() {
+    for (i, sample) in samples.iter().enumerate() {
         let multiplier = 0.54 - (0.46 * (2.0 * PI * i as f32 / cosf(samples_len_f32 - 1.0)));
-        windowed_samples.push(multiplier * samples[i])
+        windowed_samples.push(multiplier * sample)
     }
     windowed_samples
 }
@@ -121,9 +121,7 @@ fn blackman_harris_xterm(samples: &[f32], alphas: &[f32]) -> Vec<f32> {
 
     let samples_len_f32 = samples.len() as f32;
 
-    for i in 0..samples.len() {
-        let mut acc = 0.0;
-
+    for sample in samples.iter() {
         // Will result in something like that:
         /* ALPHA0
             + ALPHA1 * ((2.0 * PI * *samples[i])/samples_len_f32).cos()
@@ -131,12 +129,12 @@ fn blackman_harris_xterm(samples: &[f32], alphas: &[f32]) -> Vec<f32> {
             + ALPHA3 * ((6.0 * PI * *samples[i])/samples_len_f32).cos()
         */
 
-        for alpha_i in 0..alphas.len() {
+        let mut acc = 0.0;
+        for (alpha_i, alpha) in alphas.iter().enumerate() {
             // in 1. iter. 0PI, then 2PI, then 4 PI, then 6 PI
             let two_pi_iteration = 2.0 * alpha_i as f32 * PI;
-            let sample = samples[i];
             let cos = cosf((two_pi_iteration * sample) / samples_len_f32);
-            acc += alphas[alpha_i] * cos;
+            acc += alpha * cos;
         }
 
         windowed_samples.push(acc)

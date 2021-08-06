@@ -319,7 +319,7 @@ fn complex_to_magnitude(val: &Complex32) -> f32 {
     // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
     let sum = val.re * val.re + val.im * val.im;
     let sqrt = libm::sqrtf(sum);
-    debug_assert!(sqrt != f32::NAN, "sqrt is NaN!");
+    debug_assert!(!sqrt.is_nan(), "sqrt is NaN!");
     sqrt
 }
 

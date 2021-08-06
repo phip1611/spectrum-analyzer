@@ -75,15 +75,12 @@ impl Eq for OrderableF32 {}
 impl PartialEq for OrderableF32 {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
-        // self.cmp(other).is_eq()
-        match self.cmp(other) {
-            Ordering::Equal => true,
-            _ => false,
-        }
+         matches!(self.cmp(other), Ordering::Equal)
     }
 }
 
 impl PartialOrd for OrderableF32 {
+    #[allow(clippy::float_cmp)]
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // self.cmp(other).is_eq()
@@ -130,8 +127,8 @@ impl Div for OrderableF32 {
     #[inline(always)]
     fn div(self, other: Self) -> Self::Output {
         let quotient = self.val() / other.val();
-        debug_assert_ne!(f32::NAN, quotient, "NaN is not allowed");
-        debug_assert_ne!(f32::INFINITY, quotient, "INFINITY is not allowed");
+        debug_assert!(!quotient.is_nan(), "NaN is not allowed");
+        debug_assert!(!quotient.is_infinite(), "INFINITY is not allowed");
         quotient.into()
     }
 }
