@@ -34,7 +34,7 @@ SOFTWARE.
 #![deny(missing_crate_level_docs)]
 #![deny(missing_doc_code_examples)]
 #![deny(missing_docs)]
-#![cfg_attr(test, no_std)]
+#![no_std]
 
 #[cfg_attr(test, macro_use)]
 #[cfg(test)]

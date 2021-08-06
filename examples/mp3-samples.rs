@@ -137,7 +137,8 @@ fn to_spectrum_and_plot(
         // by the length of samples (so that values of different samples lengths are comparable)
         Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    ).unwrap();
+    )
+    .unwrap();
     println!(
         "[Measurement]: FFT to Spectrum with no window with {} samples took: {}µs",
         samples.len(),
@@ -150,7 +151,8 @@ fn to_spectrum_and_plot(
         frequency_limit,
         Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    ).unwrap();
+    )
+    .unwrap();
     println!(
         "[Measurement]: FFT to Spectrum with Hamming window with {} samples took: {}µs",
         samples.len(),
@@ -163,7 +165,8 @@ fn to_spectrum_and_plot(
         frequency_limit,
         Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    ).unwrap();
+    )
+    .unwrap();
     println!(
         "[Measurement]: FFT to Spectrum with Hann window with {} samples took: {}µs",
         samples.len(),
@@ -179,7 +182,8 @@ fn to_spectrum_and_plot(
         frequency_limit,
         Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    ).unwrap();
+    )
+    .unwrap();
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 4-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
     let now = Instant::now();
     let spectrum_blackman_harris_7term_window = samples_fft_to_spectrum(
@@ -188,7 +192,8 @@ fn to_spectrum_and_plot(
         frequency_limit,
         Some(&|x| x / samples.len() as f32),
         Some(scaling::complex::scale_to_zero_to_one()),
-    ).unwrap();
+    )
+    .unwrap();
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 7-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
 
     /*for (fr, fr_val) in spectrum_hamming_window.data().iter() {
