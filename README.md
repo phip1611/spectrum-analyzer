@@ -107,6 +107,11 @@ Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a li
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
+## Building and Executing Tests
+To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian). This is required because
+not all tests are "automatic unit tests" but also tests that you need to check visually, by looking at the
+generated diagram of the spectrum.
+
 ## Trivia / FAQ
 ### Why f64 and no f32?
 I tested f64 but the additional accuracy doesn't pay out the ~40% calculation overhead (on x86_64).
