@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.0
+- The library returns now a result and will no longer panic
+  under certain circumstances.
+- many internal improvements
+- rust-toolchain.toml for build stability and reproducibility
+
 ## v0.5.1
 - Feature "rustfft-complex" uses "rustfft"-crate at version 6 which is faster/more optimized (~25%).
 - improved CI
