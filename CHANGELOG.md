@@ -10,6 +10,7 @@
   beneficial
 - renamed `ComplexSpectrumScalingFunction` to `SpectrumScalingFunction` and
   moved it into the `scaling`-module
+- MSRV is now `1.52.1` stable
 ### Other
 - many internal improvements
 - rust-toolchain.toml for build stability and reproducibility

@@ -31,7 +31,7 @@ SOFTWARE.
 /// each value. All properties reference the current data of a
 /// [`crate::spectrum::FrequencySpectrum`].
 ///
-/// This uses `f32` in favor of [`FrequencyValue`] because the latter led to
+/// This uses `f32` in favor of [`crate::FrequencyValue`] because the latter led to
 /// some implementation problems.
 #[derive(Debug)]
 pub struct SpectrumDataStats {
@@ -48,7 +48,7 @@ pub struct SpectrumDataStats {
     pub n: f32,
 }
 
-/// Describes the type for a function that scales/normalizes the data inside [`FrequencySpectrum`].
+/// Describes the type for a function that scales/normalizes the data inside [`crate::FrequencySpectrum`].
 /// The scaling only affects the value/amplitude of the frequency, but not the frequency itself.
 /// It gets applied to every single element.
 /// ///
@@ -60,7 +60,7 @@ pub struct SpectrumDataStats {
 /// that the result is NaN or Infinity (regarding IEEE-754). If the result is NaN or Infinity,
 /// the library will return `Err`.
 ///
-/// This uses `f32` in favor of [`FrequencyValue`] because the latter led to
+/// This uses `f32` in favor of [`crate::FrequencyValue`] because the latter led to
 /// some implementation problems.
 pub type SpectrumScalingFunction<'a> = &'a dyn Fn(f32, &SpectrumDataStats) -> f32;
 
@@ -106,7 +106,7 @@ pub fn scale_to_zero_to_one(val: f32, stats: &SpectrumDataStats) -> f32 {
 #[allow(non_snake_case)]
 pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
     if stats.n == 0.0 {
-        return val
+        val
     } else {
         val / stats.n
     }
@@ -129,7 +129,10 @@ mod tests {
         };
         // check that type matches
         let scaling_fn: SpectrumScalingFunction = &scale_to_zero_to_one;
-        let scaled_data = data.into_iter().map(|x| scaling_fn(x, &stats)).collect::<Vec<_>>();
+        let scaled_data = data
+            .into_iter()
+            .map(|x| scaling_fn(x, &stats))
+            .collect::<Vec<_>>();
         let expected = vec![0.0_f32, 0.2, 0.4, 0.6, 0.8, 1.0];
         for (expected_val, actual_val) in expected.iter().zip(scaled_data.iter()) {
             float_cmp::approx_eq!(f32, *expected_val, *actual_val, ulps = 3);

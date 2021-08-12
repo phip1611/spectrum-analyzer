@@ -69,14 +69,14 @@ impl FrequencyLimit {
     }
 
     /// Returns the minimum value, panics if it's none.
-    /// Unwrapped version of [`maybe_min`].
+    /// Unwrapped version of [`Self::maybe_min`].
     #[inline(always)]
     pub fn min(&self) -> f32 {
         self.maybe_min().expect("Must contain a value!")
     }
 
     /// Returns the minimum value, panics if it's none.
-    /// Unwrapped version of [`maybe_max`].
+    /// Unwrapped version of [`Self::maybe_max`].
     #[inline(always)]
     pub fn max(&self) -> f32 {
         self.maybe_max().expect("Must contain a value!")

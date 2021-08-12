@@ -1,6 +1,6 @@
 language: rust
 rust:
-  - 1.51.0 # MSRV
+  - 1.52.1 # MSRV
   - stable
   - nightly
 cache: cargo
@@ -23,6 +23,7 @@ script:
   # cargo format and clippy (--check doesn't change the files)
   - cargo fmt -- --check
   - cargo clippy
+  - cargo doc
 
   # test `no_std`-build with all features/fft implementations
   - rustup target add thumbv7em-none-eabihf

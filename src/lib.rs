@@ -33,6 +33,8 @@ SOFTWARE.
 //! ### Scaling via dynamic closure
 //! ```rust
 //! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+//! // get data from audio source
+//! let samples = vec![0.0, 1.1, 5.5, -5.5];
 //! let res = samples_fft_to_spectrum(
 //!         &samples,
 //!         44100,
@@ -44,6 +46,8 @@ SOFTWARE.
 //! ```rust
 //! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 //! use spectrum_analyzer::scaling::scale_to_zero_to_one;
+//! // get data from audio source
+//! let samples = vec![0.0, 1.1, 5.5, -5.5];
 //! let res = samples_fft_to_spectrum(
 //!         &samples,
 //!         44100,
@@ -54,11 +58,10 @@ SOFTWARE.
 
 #![deny(clippy::all)]
 #![deny(missing_debug_implementations)]
-#![deny(missing_crate_level_docs)]
-#![deny(missing_doc_code_examples)]
-#![deny(missing_docs)]
+#![deny(rustdoc::all)]
 #![no_std]
 
+// enable std in tests (println!() for example)
 #[cfg_attr(test, macro_use)]
 #[cfg(test)]
 extern crate std;
@@ -74,8 +77,9 @@ use crate::error::SpectrumAnalyzerError;
 use crate::fft::{Complex32, Fft, FftImpl};
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
-pub use crate::spectrum::FrequencySpectrum;
+pub use crate::limit::FrequencyLimitError;
 use crate::scaling::SpectrumScalingFunction;
+pub use crate::spectrum::FrequencySpectrum;
 
 pub mod error;
 mod fft;
@@ -114,6 +118,8 @@ mod tests;
 /// ### Scaling via dynamic closure
 /// ```rust
 /// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+/// // get data from audio source
+/// let samples = vec![0.0, 1.1, 5.5, -5.5];
 /// let res = samples_fft_to_spectrum(
 ///         &samples,
 ///         44100,
@@ -125,6 +131,8 @@ mod tests;
 /// ```rust
 /// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 /// use spectrum_analyzer::scaling::scale_to_zero_to_one;
+/// // get data from audio source
+/// let samples = vec![0.0, 1.1, 5.5, -5.5];
 /// let res = samples_fft_to_spectrum(
 ///         &samples,
 ///         44100,

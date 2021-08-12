@@ -6,8 +6,7 @@ via Cargo features.
 
 **I'm not an expert on digital signal processing. Code contributions are highly welcome! 🙂**
 
-**The MSRV (minimum supported Rust version) is 1.51 Stable because this crate needs the 
-"resolver" feature of Cargo to cope with build problems occurring in `no_std`-builds.**
+**The MSRV (minimum supported Rust version) is 1.52.1 stable.**
 
 ## I want to understand how FFT can be used to get a spectrum
 Please see file [/EDUCATIONAL.md](/EDUCATIONAL.md).

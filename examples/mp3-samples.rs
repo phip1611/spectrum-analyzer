@@ -24,11 +24,11 @@ SOFTWARE.
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::test_support::TEST_OUT_DIR;
 use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
+use spectrum_analyzer::scaling::scale_to_zero_to_one;
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use std::fs::File;
 use std::time::Instant;
-use spectrum_analyzer::scaling::scale_to_zero_to_one;
 
 fn main() {
     println!("bass drum example:");
@@ -51,7 +51,7 @@ fn example__bass_drum_sample() {
     let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
-        &samples[0..128],
+        &samples[0..4096],
         sampling_rate,
         "example__mp3-samples__bass_drum__spectrum",
         FrequencyLimit::Max(5000.0),

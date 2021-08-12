@@ -23,6 +23,9 @@ SOFTWARE.
 */
 //! Errors related to the spectrum analysis via FFT. Most probably, the errors will
 //! result in wrong input data, before the actual calculation has begun.
+//!
+//! This module focuses on the "overall" errors. More specific errors might be
+//! located in submodules.
 
 use crate::limit::FrequencyLimitError;
 
@@ -36,7 +39,7 @@ pub enum SpectrumAnalyzerError {
     NaNValuesNotSupported,
     /// Infinity-values (regarding floating point representation) in samples are not supported!
     InfinityValuesNotSupported,
-    /// See [`crate::frequency_limit::FrequencyLimitError`].
+    /// See [`crate::limit::FrequencyLimitError`].
     InvalidFrequencyLimit(FrequencyLimitError),
     /// The number of samples must be a power of two in order for the FFT
     /// to be fast and, depending on the used FFT implementation, to work at all.

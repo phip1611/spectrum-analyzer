@@ -25,7 +25,7 @@ SOFTWARE.
 
 use crate::error::SpectrumAnalyzerError;
 use crate::frequency::{Frequency, FrequencyValue};
-use crate::scaling::{SpectrumScalingFunction, SpectrumDataStats};
+use crate::scaling::{SpectrumDataStats, SpectrumScalingFunction};
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use core::cell::{Cell, Ref, RefCell};
@@ -48,7 +48,7 @@ pub struct FrequencySpectrum {
     data: RefCell<Vec<(Frequency, FrequencyValue)>>,
     /// Frequency resolution of the examined samples in Hertz,
     /// i.e the frequency steps between elements in the vector
-    /// inside field [`data`].
+    /// inside field [`Self::data`].
     frequency_resolution: f32,
     /// Average value of frequency value/magnitude/amplitude
     /// corresponding to data in [`FrequencySpectrum::data`].
@@ -124,7 +124,10 @@ impl FrequencySpectrum {
                 // regular for instead of for_each(), so that I can early return a result here
                 let scaled_val: f32 = scaling_fn(fr_val.val(), &stats);
                 if scaled_val.is_nan() || scaled_val.is_infinite() {
-                    return Err(SpectrumAnalyzerError::ScalingError(fr_val.val(), scaled_val));
+                    return Err(SpectrumAnalyzerError::ScalingError(
+                        fr_val.val(),
+                        scaled_val,
+                    ));
                 }
                 *fr_val = scaled_val.into()
             }
@@ -222,10 +225,10 @@ impl FrequencySpectrum {
 
     /// Returns the value of the given frequency from the spectrum either exactly or approximated.
     /// If `search_fr` is not exactly given in the spectrum, i.e. due to the
-    /// [`self::frequency_resolution`], this function takes the two closest
+    /// [`Self::frequency_resolution`], this function takes the two closest
     /// neighbors/points (A, B), put a linear function through them and calculates
-    /// the point C in the middle. This is done by using
-    /// [`calculate_point_between_points`].
+    /// the point C in the middle. This is done by the private function
+    /// `calculate_y_coord_between_points`.
     ///
     /// ## Panics
     /// If parameter `search_fr` (frequency) is below the lowest or the maximum
@@ -237,7 +240,7 @@ impl FrequencySpectrum {
     /// - `search_fr` The frequency of that you want the amplitude/value in the spectrum.
     ///
     /// ## Return
-    /// Either exact value of approximated value, determined by [`self::frequency_resolution`].
+    /// Either exact value of approximated value, determined by [`Self::frequency_resolution`].
     #[inline(always)]
     pub fn freq_val_exact(&self, search_fr: f32) -> FrequencyValue {
         let data = self.data.borrow();
@@ -319,7 +322,7 @@ impl FrequencySpectrum {
     /// - `search_fr` The frequency of that you want the amplitude/value in the spectrum.
     ///
     /// ## Return
-    /// Closest matching point in spectrum, determined by [`self::frequency_resolution`].
+    /// Closest matching point in spectrum, determined by [`Self::frequency_resolution`].
     #[inline(always)]
     pub fn freq_val_closest(&self, search_fr: f32) -> (Frequency, FrequencyValue) {
         let data = self.data.borrow();
@@ -513,7 +516,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_calculate_point_between_points() {
+    fn test_calculate_y_coord_between_points() {
         assert_eq!(
             // expected y coordinate
             0.5,
@@ -767,12 +770,12 @@ mod tests {
         );
 
         assert_ne!(
-             f32::INFINITY,
+            f32::INFINITY,
             spectrum.min().1.val(),
             "INFINITY is not valid, must be 0.0!"
         );
         assert_ne!(
-             f32::INFINITY,
+            f32::INFINITY,
             spectrum.max().1.val(),
             "INFINITY is not valid, must be 0.0!"
         );
@@ -782,7 +785,7 @@ mod tests {
             "INFINITY is not valid, must be 0.0!"
         );
         assert_ne!(
-             f32::INFINITY,
+            f32::INFINITY,
             spectrum.median().val(),
             "INFINITY is not valid, must be 0.0!"
         );
