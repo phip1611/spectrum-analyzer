@@ -61,6 +61,18 @@ SOFTWARE.
 #![deny(rustdoc::all)]
 #![no_std]
 
+#[cfg(any(
+    all(feature = "microfft-real", feature = "microfft-complex"),
+    all(feature = "microfft-real", feature = "rustfft-complex"),
+    all(feature = "microfft-complex", feature = "rustfft-complex"),
+    not(any(
+        feature = "microfft-real",
+        feature = "microfft-complex",
+        feature = "rustfft-complex"
+    ))
+))]
+compile_error!("You can use exactly one FFT implementation. Check Cargo features of dependency!");
+
 // enable std in tests (println!() for example)
 #[cfg_attr(test, macro_use)]
 #[cfg(test)]
