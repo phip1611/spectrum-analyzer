@@ -69,11 +69,6 @@ fn main() {
 }
 ```
 
-## Scaling the frequency values/amplitudes
-As already mentioned, there are lots of comments in the code. Short story is:
-Type `ComplexSpectrumScalingFunction` can do anything like `BasicSpectrumScalingFunction` whereas `BasicSpectrumScalingFunction`
-is easier to write, especially for Rust beginners.
-
 ## Performance
 *Measurements taken on i7-8650U @ 3 Ghz (Single-Core) with optimized build*
 

@@ -24,10 +24,10 @@ SOFTWARE.
 //! Test module for "integration"-like tests. No small unit tests of simple functions.
 
 use crate::error::SpectrumAnalyzerError;
+use crate::scaling::{divide_by_N, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{hamming_window, hann_window};
-use crate::{samples_fft_to_spectrum, ComplexSpectrumScalingFunction, FrequencyLimit};
-use alloc::boxed::Box;
+use crate::{samples_fft_to_spectrum, FrequencyLimit};
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
@@ -75,8 +75,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         no_window,
         44100,
         FrequencyLimit::Max(4000.0),
-        None,
-        Some(get_scale_to_one_fnc()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
 
@@ -84,8 +83,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         &hann_window,
         44100,
         FrequencyLimit::Max(4000.0),
-        None,
-        Some(get_scale_to_one_fnc()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
 
@@ -93,8 +91,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         &hamming_window,
         44100,
         FrequencyLimit::Max(4000.0),
-        None,
-        Some(get_scale_to_one_fnc()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
 
@@ -162,19 +159,13 @@ fn test_spectrum_power() {
         &short_window,
         44100,
         FrequencyLimit::All,
-        None,
-        Some(get_divide_by_N_fnc(short_window.len())),
+        Some(&divide_by_N),
     )
     .unwrap();
 
-    let spectrum_long_window = samples_fft_to_spectrum(
-        &long_window,
-        44100,
-        FrequencyLimit::All,
-        None,
-        Some(get_divide_by_N_fnc(long_window.len())),
-    )
-    .unwrap();
+    let spectrum_long_window =
+        samples_fft_to_spectrum(&long_window, 44100, FrequencyLimit::All, Some(&divide_by_N))
+            .unwrap();
 
     /*spectrum_static_plotters_png_visualize(
         &spectrum_short_window.to_map(None),
@@ -217,14 +208,9 @@ fn test_spectrum_frequency_limit_inclusive() {
     let window = hann_window(&sine_audio[0..512]);
 
     {
-        let spectrum = samples_fft_to_spectrum(
-            &window,
-            sampling_rate,
-            FrequencyLimit::Max(400.0),
-            None,
-            None,
-        )
-        .unwrap();
+        let spectrum =
+            samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::Max(400.0), None)
+                .unwrap();
         assert_eq!(
             spectrum.min_fr().val(),
             0.0,
@@ -237,14 +223,9 @@ fn test_spectrum_frequency_limit_inclusive() {
         );
     }
     {
-        let spectrum = samples_fft_to_spectrum(
-            &window,
-            sampling_rate,
-            FrequencyLimit::Min(100.0),
-            None,
-            None,
-        )
-        .unwrap();
+        let spectrum =
+            samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::Min(100.0), None)
+                .unwrap();
         assert_eq!(
             spectrum.min_fr().val(),
             100.0,
@@ -261,7 +242,6 @@ fn test_spectrum_frequency_limit_inclusive() {
             &window,
             sampling_rate,
             FrequencyLimit::Range(412.0, 510.0),
-            None,
             None,
         )
         .unwrap();
@@ -283,8 +263,7 @@ fn test_spectrum_frequency_limit_inclusive() {
 fn test_spectrum_nyquist_theorem() {
     let dummy_audio_samples = vec![0.0; 4096];
     let spectrum =
-        samples_fft_to_spectrum(&dummy_audio_samples, 44100, FrequencyLimit::All, None, None)
-            .unwrap();
+        samples_fft_to_spectrum(&dummy_audio_samples, 44100, FrequencyLimit::All, None).unwrap();
     assert_eq!(
         // because indices 0..N/2 (inclusive) of the FFT result are relevant
         // => DC component to Nyquist frequency
@@ -325,8 +304,7 @@ fn test_spectrum_nyquist_theorem2() {
         &sine_audio[0..4096],
         44100,
         FrequencyLimit::All,
-        None,
-        Some(get_scale_to_one_fnc()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
     assert_eq!(
@@ -371,14 +349,12 @@ fn test_spectrum_nyquist_theorem2() {
 fn test_invalid_input() {
     // should not contain NaN
     let samples = vec![0.0, 1.0, 2.0, 3.0, f32::NAN, 4.0, 5.0, 6.0];
-    let err =
-        samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None, None).unwrap_err();
+    let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
     assert!(matches!(err, SpectrumAnalyzerError::NaNValuesNotSupported));
 
     // should not contain Infinity
     let samples = vec![0.0, 1.0, 2.0, 3.0, f32::INFINITY, 4.0, 5.0, 6.0];
-    let err =
-        samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None, None).unwrap_err();
+    let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
     assert!(matches!(
         err,
         SpectrumAnalyzerError::InfinityValuesNotSupported
@@ -386,14 +362,13 @@ fn test_invalid_input() {
 
     // needs at least two samples
     let samples = vec![0.0];
-    let err =
-        samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None, None).unwrap_err();
+    let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
     assert!(matches!(err, SpectrumAnalyzerError::TooFewSamples));
 
     // test frequency limit gets verified
     let samples = vec![0.0; 4];
-    let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::Min(-1.0), None, None)
-        .unwrap_err();
+    let err =
+        samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::Min(-1.0), None).unwrap_err();
     assert!(matches!(
         err,
         SpectrumAnalyzerError::InvalidFrequencyLimit(_)
@@ -401,31 +376,27 @@ fn test_invalid_input() {
 
     // samples length not a power of two
     let samples = vec![0.0; 3];
-    let err =
-        samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None, None).unwrap_err();
+    let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
     assert!(matches!(
         err,
         SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo
     ));
 }
 
-// tests https://github.com/phip1611/spectrum-analyzer/issues/33
 #[test]
-fn test_only_null_samples() {
+fn test_only_null_samples_valid() {
     let samples = vec![0.0, 0.0];
-    let res = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None, None).unwrap();
-    println!("{:#?}", res);
+    let _ = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap();
 }
 
-/// Returns a scale function that scales each element to the interval [0, 1] regarding
-/// the max value.
-fn get_scale_to_one_fnc() -> ComplexSpectrumScalingFunction {
-    Box::new(move |_min: f32, max: f32, _average: f32, _median: f32| Box::new(move |x| x / max))
-}
-
-#[allow(non_snake_case)]
-fn get_divide_by_N_fnc(n: usize) -> ComplexSpectrumScalingFunction {
-    Box::new(move |_min: f32, _max: f32, _average: f32, _median: f32| {
-        Box::new(move |x| x / n as f32)
-    })
+#[test]
+fn test_scaling_produces_error() {
+    let samples = vec![1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8];
+    let _ = samples_fft_to_spectrum(
+        &samples,
+        44100,
+        FrequencyLimit::All,
+        Some(&|_val, _info| f32::NAN),
+    )
+    .expect_err("Must throw error due to illegal scaling!");
 }

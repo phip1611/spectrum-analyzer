@@ -51,8 +51,8 @@ use crate::error::SpectrumAnalyzerError;
 use crate::fft::{Complex32, Fft, FftImpl};
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
-pub use crate::spectrum::{ComplexSpectrumScalingFunction, FrequencySpectrum};
-use core::convert::identity;
+pub use crate::spectrum::FrequencySpectrum;
+use crate::scaling::SpectrumScalingFunction;
 
 pub mod error;
 mod fft;
@@ -65,15 +65,6 @@ pub mod windows;
 // test module for large "integration"-like tests
 #[cfg(test)]
 mod tests;
-
-/// Definition of a simple function that gets applied on each frequency magnitude
-/// in the spectrum. This is easier to write, especially for Rust beginners.
-/// Everything that can be achieved with this, can also be achieved with parameter
-/// `total_scaling_fn`.
-///
-/// The scaling only affects the value/amplitude of the frequency
-/// but not the frequency itself.
-pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using the specified FFT implementation) on it
@@ -91,27 +82,18 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 ///             better accuracy/frequency resolution.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
-/// * `per_element_scaling_fn` See [`crate::SimpleSpectrumScalingFunction`] for details.
-///                            This is easier to write, especially for Rust beginners. Everything
-///                            that can be achieved with this, can also be achieved with
-///                            parameter `total_scaling_fn`.
-///                            See [`crate::scaling`] for example implementations.
-/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`] for details.
-///                      See [`crate::scaling`] for example implementations.
+/// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`] for details.
 ///
 /// ## Returns value
 /// New object of type [`FrequencySpectrum`].
 ///
 /// ## Panics
-/// * When `samples` contains NaN or infinite values (regarding f32/float).
-/// * When `samples.len()` isn't a power of two and `samples.len() > 4096`
-///   (restriction by `microfft`-crate)
+/// * When `samples.len() > 4096` and `microfft` is used (restriction by the crate)
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    per_element_scaling_fn: Option<SimpleSpectrumScalingFunction>,
-    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
+    scaling_fn: Option<SpectrumScalingFunction>,
 ) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
     // everything below two samples is unreasonable
     if samples.len() < 2 {
@@ -157,8 +139,7 @@ pub fn samples_fft_to_spectrum(
         &buffer,
         sampling_rate,
         frequency_limit,
-        per_element_scaling_fn,
-        total_scaling_fn,
+        scaling_fn,
     )
 }
 
@@ -173,11 +154,7 @@ pub fn samples_fft_to_spectrum(
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
-/// * `per_element_scaling_fn` Optional per element scaling function, e.g. `20 * log(x)`.
-///                            To see where this equation comes from, check out
-///                            this paper:
-///                            https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
-/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`].
+/// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`].
 ///
 /// ## Return value
 /// New object of type [`FrequencySpectrum`].
@@ -187,8 +164,7 @@ fn fft_result_to_spectrum(
     fft_result: &[Complex32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
-    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
+    scaling_fn: Option<SpectrumScalingFunction>,
 ) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
@@ -270,8 +246,6 @@ fn fft_result_to_spectrum(
         // FFT result is always complex: calc magnitude
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
         .map(|(fr, complex_res)| (fr, complex_to_magnitude(complex_res)))
-        // apply optionally scale function
-        .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
         // transform to my thin convenient orderable f32 wrappers
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
         // collect all into an sorted vector (from lowest frequency to highest)
@@ -281,8 +255,8 @@ fn fft_result_to_spectrum(
     let spectrum = FrequencySpectrum::new(frequency_vec, frequency_resolution);
 
     // optionally scale
-    if let Some(total_scaling_fn) = total_scaling_fn {
-        spectrum.apply_complex_scaling_fn(total_scaling_fn)
+    if let Some(scaling_fn) = scaling_fn {
+        spectrum.apply_scaling_fn(scaling_fn)?
     }
 
     Ok(spectrum)

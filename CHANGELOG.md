@@ -1,8 +1,16 @@
 # Changelog
 
 ## v1.0.0
+### Breaking Changes
 - The library returns now a result and will no longer panic
   under certain circumstances.
+- removed `per_element_scaling_fn` in favor of
+  `complex_scaling_fn`, which is now just called
+  `scaling_fn` - the old behaviour was more confusing than
+  beneficial
+- renamed `ComplexSpectrumScalingFunction` to `SpectrumScalingFunction` and
+  moved it into the `scaling`-module
+### Other
 - many internal improvements
 - rust-toolchain.toml for build stability and reproducibility
 

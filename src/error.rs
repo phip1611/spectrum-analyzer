@@ -41,4 +41,8 @@ pub enum SpectrumAnalyzerError {
     /// The number of samples must be a power of two in order for the FFT
     /// to be fast and, depending on the used FFT implementation, to work at all.
     SamplesLengthNotAPowerOfTwo,
+    /// After applying the scaling function on a specific item, the returned value is either
+    /// infinity or NaN, according to IEEE-754. This is invalid. Check
+    /// your scaling function!
+    ScalingError(f32, f32),
 }

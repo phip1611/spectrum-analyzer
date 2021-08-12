@@ -21,15 +21,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-#[macro_use]
-extern crate std;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::test_support::TEST_OUT_DIR;
 use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
-use spectrum_analyzer::{samples_fft_to_spectrum, scaling, FrequencyLimit};
+use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use std::fs::File;
 use std::time::Instant;
+use spectrum_analyzer::scaling::scale_to_zero_to_one;
 
 fn main() {
     println!("bass drum example:");
@@ -52,7 +51,7 @@ fn example__bass_drum_sample() {
     let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
-        &samples[0..4096],
+        &samples[0..128],
         sampling_rate,
         "example__mp3-samples__bass_drum__spectrum",
         FrequencyLimit::Max(5000.0),
@@ -133,10 +132,7 @@ fn to_spectrum_and_plot(
         no_window,
         sampling_rate,
         frequency_limit,
-        // several resources recommend that the FFT result should be divided
-        // by the length of samples (so that values of different samples lengths are comparable)
-        Some(&|x| x / samples.len() as f32),
-        Some(scaling::complex::scale_to_zero_to_one()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
     println!(
@@ -149,8 +145,7 @@ fn to_spectrum_and_plot(
         &hamming_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x / samples.len() as f32),
-        Some(scaling::complex::scale_to_zero_to_one()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
     println!(
@@ -163,8 +158,7 @@ fn to_spectrum_and_plot(
         &hann_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x / samples.len() as f32),
-        Some(scaling::complex::scale_to_zero_to_one()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
     println!(
@@ -180,8 +174,7 @@ fn to_spectrum_and_plot(
         &blackman_harris_4term_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x / samples.len() as f32),
-        Some(scaling::complex::scale_to_zero_to_one()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 4-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
@@ -190,8 +183,7 @@ fn to_spectrum_and_plot(
         &blackman_harris_7term_window,
         sampling_rate,
         frequency_limit,
-        Some(&|x| x / samples.len() as f32),
-        Some(scaling::complex::scale_to_zero_to_one()),
+        Some(&scale_to_zero_to_one),
     )
     .unwrap();
     println!("[Measurement]: FFT to Spectrum with Blackmann Harris 7-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
