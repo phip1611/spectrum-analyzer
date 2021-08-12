@@ -25,9 +25,32 @@ SOFTWARE.
 //! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
 //! blocks/optional features.
 //!
-//! In short, this is a convenient wrapper around an FFT implementation. You choose the
-//! implementation at compile time via Cargo features. As of version 0.4.0 this uses
-//! "microfft"-crate.
+//! In short, this is a convenient wrapper around a FFT implementation. You choose the
+//! implementation at compile time via Cargo features. This crate uses
+//! "microfft" by default for FFT. See README for more advise.
+//!
+//! ## Examples
+//! ### Scaling via dynamic closure
+//! ```rust
+//! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+//! let res = samples_fft_to_spectrum(
+//!         &samples,
+//!         44100,
+//!         FrequencyLimit::All,
+//!         Some(&|val, info| val - info.min),
+//! );
+//! ```
+//! ### Scaling via static function
+//! ```rust
+//! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+//! use spectrum_analyzer::scaling::scale_to_zero_to_one;
+//! let res = samples_fft_to_spectrum(
+//!         &samples,
+//!         44100,
+//!         FrequencyLimit::All,
+//!         Some(&scale_to_zero_to_one),
+//! );
+//! ```
 
 #![deny(clippy::all)]
 #![deny(missing_debug_implementations)]
@@ -86,6 +109,29 @@ mod tests;
 ///
 /// ## Returns value
 /// New object of type [`FrequencySpectrum`].
+///
+/// ## Examples
+/// ### Scaling via dynamic closure
+/// ```rust
+/// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+/// let res = samples_fft_to_spectrum(
+///         &samples,
+///         44100,
+///         FrequencyLimit::All,
+///         Some(&|val, info| val - info.min),
+///  );
+/// ```
+/// ### Scaling via static function
+/// ```rust
+/// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+/// use spectrum_analyzer::scaling::scale_to_zero_to_one;
+/// let res = samples_fft_to_spectrum(
+///         &samples,
+///         44100,
+///         FrequencyLimit::All,
+///         Some(&scale_to_zero_to_one),
+///  );
+/// ```
 ///
 /// ## Panics
 /// * When `samples.len() > 4096` and `microfft` is used (restriction by the crate)
