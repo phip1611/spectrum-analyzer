@@ -138,25 +138,27 @@ impl FrequencySpectrum {
         Ok(())
     }
 
-    /// Getter for [`FrequencySpectrum::average`].
+    /// Returns the average frequency value of the spectrum.
     #[inline(always)]
     pub fn average(&self) -> FrequencyValue {
         self.average.get()
     }
 
-    /// Getter for [`FrequencySpectrum::median`].
+    /// Returns the median frequency value of the spectrum.
     #[inline(always)]
     pub fn median(&self) -> FrequencyValue {
         self.median.get()
     }
 
-    /// Getter for [`FrequencySpectrum::max`].
+    /// Returns the maximum (frequency, frequency value)-pair of the spectrum
+    /// (regarding the frequency value).
     #[inline(always)]
     pub fn max(&self) -> (Frequency, FrequencyValue) {
         self.max.get()
     }
 
-    /// Getter for [`FrequencySpectrum::min`].
+    /// Returns the minimum (frequency, frequency value)-pair of the spectrum
+    /// (regarding the frequency value).
     #[inline(always)]
     pub fn min(&self) -> (Frequency, FrequencyValue) {
         self.min.get()
@@ -164,19 +166,19 @@ impl FrequencySpectrum {
 
     /// Returns [`FrequencySpectrum::max().1`] - [`FrequencySpectrum::min().1`],
     /// i.e. the range of the frequency values (not the frequencies itself,
-    /// but their amplitude/value).
+    /// but their amplitudes/values).
     #[inline(always)]
     pub fn range(&self) -> FrequencyValue {
         self.max().1 - self.min().1
     }
 
-    /// Getter for [`FrequencySpectrum::data`].
+    /// Returns the underlying data.
     #[inline(always)]
     pub fn data(&self) -> Ref<Vec<(Frequency, FrequencyValue)>> {
         self.data.borrow()
     }
 
-    /// Getter for [`FrequencySpectrum::frequency_resolution`].
+    /// Returns the frequency resolution of this spectrum.
     #[inline(always)]
     pub const fn frequency_resolution(&self) -> f32 {
         self.frequency_resolution
@@ -184,14 +186,21 @@ impl FrequencySpectrum {
 
     /// Getter for the highest frequency that is captured inside this spectrum.
     /// Shortcut for `spectrum.data()[spectrum.data().len() - 1].0`.
+    /// This corresponds to the [`crate::limit::FrequencyLimit`] of the spectrum.
+    ///
+    /// This method could return the Nyquist frequency, if there was no Frequency
+    /// limit while obtaining the spectrum.
     #[inline(always)]
     pub fn max_fr(&self) -> Frequency {
         let data = self.data.borrow();
         data[data.len() - 1].0
     }
 
-    /// Getter for the highest frequency that is captured inside this spectrum.
+    /// Getter for the lowest frequency that is captured inside this spectrum.
     /// Shortcut for `spectrum.data()[0].0`.
+    /// This corresponds to the [`crate::limit::FrequencyLimit`] of the spectrum.
+    ///
+    /// This method could return the DC component, see [`Self::dc_component`].
     #[inline(always)]
     pub fn min_fr(&self) -> Frequency {
         let data = self.data.borrow();
