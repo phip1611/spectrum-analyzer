@@ -178,7 +178,7 @@ impl FrequencySpectrum {
 
     /// Getter for [`FrequencySpectrum::frequency_resolution`].
     #[inline(always)]
-    pub fn frequency_resolution(&self) -> f32 {
+    pub const fn frequency_resolution(&self) -> f32 {
         self.frequency_resolution
     }
 

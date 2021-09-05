@@ -56,7 +56,20 @@ SOFTWARE.
 //! );
 //! ```
 
-#![deny(clippy::all)]
+#![deny(
+    clippy::all,
+    clippy::cargo,
+    clippy::nursery,
+    // clippy::restriction,
+    // clippy::pedantic
+)]
+// now allow a few rules which are denied by the above statement
+// --> they are ridiculous and not necessary
+#![allow(
+    clippy::suboptimal_flops,
+    clippy::redundant_pub_crate,
+    clippy::fallible_impl_from,
+)]
 #![deny(missing_debug_implementations)]
 #![deny(rustdoc::all)]
 #![no_std]
@@ -364,7 +377,7 @@ fn complex_to_magnitude(val: &Complex32) -> f32 {
 }
 
 // idea from https://stackoverflow.com/questions/600293/how-to-check-if-a-number-is-a-power-of-2
-fn is_power_of_two(num: usize) -> bool {
+const fn is_power_of_two(num: usize) -> bool {
     num != 0 && ((num & (num - 1)) == 0)
 }
 

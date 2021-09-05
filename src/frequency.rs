@@ -43,7 +43,7 @@ pub struct OrderableF32(f32);
 
 impl OrderableF32 {
     #[inline(always)]
-    pub fn val(&self) -> f32 {
+    pub const fn val(&self) -> f32 {
         self.0
     }
 }
@@ -95,7 +95,7 @@ impl PartialOrd for OrderableF32 {
 }
 
 impl Add for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn add(self, other: Self) -> Self::Output {
@@ -104,7 +104,7 @@ impl Add for OrderableF32 {
 }
 
 impl Sub for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn sub(self, other: Self) -> Self::Output {
@@ -113,7 +113,7 @@ impl Sub for OrderableF32 {
 }
 
 impl Mul for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn mul(self, other: Self) -> Self::Output {
@@ -122,7 +122,7 @@ impl Mul for OrderableF32 {
 }
 
 impl Div for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn div(self, other: Self) -> Self::Output {
