@@ -52,6 +52,7 @@ tui = { version = "0.16", default-features = false, features = ['crossterm'] }
 crossterm = "0.21.0"
 # audio data buffering
 ringbuffer = "0.7.1"
+rand = "0.8.4"
 
 
 # otherwise FFT and other code is too slow
