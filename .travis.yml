@@ -5,6 +5,11 @@ rust:
   - nightly
 cache: cargo
 
+# required to build the examples
+before_script:
+  - sudo apt-get update
+  - sudo apt-get -y install libasound2-dev
+
 script:
   # build with all features/fft implementations
   - cargo build --all-targets
