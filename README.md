@@ -69,23 +69,21 @@ fn main() {
 ```
 
 ## Performance
-*Measurements taken on i7-8650U @ 3 Ghz (Single-Core) with optimized build*
+*Measurements taken on i7-1165G7 @ 2.80GHz (Single-threaded) with optimized build*
 
 
 | Operation                                              | Time   |
 | ------------------------------------------------------ | ------:|
-| Hann Window with 4096 samples                          | ≈70µs  |
-| Hamming Window with 4096 samples                       | ≈10µs  |
-| Hann Window with 16384 samples                         | ≈175µs |
-| Hamming Window with 16384 samples                      | ≈44µs  |
-| FFT (`rustfft/complex`) to spectrum with 4096 samples  | ≈240µs |
-| FFT (`rustfft/complex`) to spectrum with 16384 samples | ≈740µs |
-| FFT (`microfft/real`) to spectrum with 4096 samples    | ≈120µs |
+| Hann Window with 4096 samples                          | ≈68µs  |
+| Hamming Window with 4096 samples                       | ≈118µs |
+| FFT (`rustfft/complex`) to spectrum with 4096 samples  | ≈170µs |
+| FFT (`microfft/real`) to spectrum with 4096 samples    | ≈90µs  |
+| FFT (`microfft/complex`) to spectrum with 4096 samples | ≈250µs |
 
 ## Example visualization
 In the following example you can see a basic visualization of frequencies `0 to 4000Hz` for 
 a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `44100Hz` sampling rate. The peaks for the 
-given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms.
+given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms of audio signal.
 
 **The noise (wrong peaks) also comes from clipping of the added sine waves!**
 

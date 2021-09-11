@@ -84,7 +84,9 @@ SOFTWARE.
         feature = "rustfft-complex"
     ))
 ))]
-compile_error!("You can use exactly one FFT implementation. Check Cargo features of dependency!");
+compile_error!(
+    "You must use exactly one FFT implementation. Check Cargo compile-time features of this crate!"
+);
 
 // enable std in tests (println!() for example)
 #[cfg_attr(test, macro_use)]
