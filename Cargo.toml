@@ -4,7 +4,7 @@ description = """
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features.
 """
-version = "0.5.2"
+version = "1.0.0"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
@@ -33,16 +33,27 @@ microfft-complex = ["microfft"]
 microfft-real = ["microfft"]
 
 [dependencies]
-rustfft = { version = "6.0.0", optional = true }
-microfft = { version = "0.4.0", optional = true }
+rustfft = { version = "6.0", optional = true }
+microfft = { version = "0.4", optional = true }
 # approx. compare floats; not only in tests but also during runtime
-float-cmp = "0.8.0"
+float-cmp = "0.9.0"
 # sin() cos() log10() etc for no_std-environments; these are not part of Core library
 libm = "0.2.1"
 
 [dev-dependencies]
+# readmp3 files in tests and examples
 minimp3 = "0.5.1"
+# visualize spectrum in tests and examples
 audio-visualizer = "0.2.2"
+# get audio input in examples
+cpal = "0.13.4"
+# CLI example
+tui = { version = "0.16", default-features = false, features = ['crossterm'] }
+crossterm = "0.21.0"
+# audio data buffering
+ringbuffer = "0.7.1"
+rand = "0.8.4"
+
 
 # otherwise FFT and other code is too slow
 [profile.dev]

@@ -38,12 +38,12 @@ pub type FrequencyValue = OrderableF32;
 /// Small convenient wrapper around `f32`.
 /// Mainly required to make `f32` operable in a sorted tree map.
 /// You should only use the type aliases `Frequency` and `FrequencyValue`.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct OrderableF32(f32);
 
 impl OrderableF32 {
     #[inline(always)]
-    pub fn val(&self) -> f32 {
+    pub const fn val(&self) -> f32 {
         self.0
     }
 }
@@ -51,7 +51,8 @@ impl OrderableF32 {
 impl From<f32> for OrderableF32 {
     #[inline(always)]
     fn from(val: f32) -> Self {
-        debug_assert_ne!(f32::NAN, val, "NaN-values are not supported!");
+        debug_assert!(!val.is_nan(), "NaN-values are not supported!");
+        debug_assert!(!val.is_infinite(), "Infinite-values are not supported!");
         Self(val)
     }
 }
@@ -74,15 +75,12 @@ impl Eq for OrderableF32 {}
 impl PartialEq for OrderableF32 {
     #[inline(always)]
     fn eq(&self, other: &Self) -> bool {
-        // self.cmp(other).is_eq()
-        match self.cmp(other) {
-            Ordering::Equal => true,
-            _ => false,
-        }
+        matches!(self.cmp(other), Ordering::Equal)
     }
 }
 
 impl PartialOrd for OrderableF32 {
+    #[allow(clippy::float_cmp)]
     #[inline(always)]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // self.cmp(other).is_eq()
@@ -97,7 +95,7 @@ impl PartialOrd for OrderableF32 {
 }
 
 impl Add for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn add(self, other: Self) -> Self::Output {
@@ -106,7 +104,7 @@ impl Add for OrderableF32 {
 }
 
 impl Sub for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn sub(self, other: Self) -> Self::Output {
@@ -115,7 +113,7 @@ impl Sub for OrderableF32 {
 }
 
 impl Mul for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn mul(self, other: Self) -> Self::Output {
@@ -124,13 +122,13 @@ impl Mul for OrderableF32 {
 }
 
 impl Div for OrderableF32 {
-    type Output = OrderableF32;
+    type Output = Self;
 
     #[inline(always)]
     fn div(self, other: Self) -> Self::Output {
         let quotient = self.val() / other.val();
-        debug_assert_ne!(f32::NAN, quotient, "NaN is not allowed");
-        debug_assert_ne!(f32::INFINITY, quotient, "INFINITY is not allowed");
+        debug_assert!(!quotient.is_nan(), "NaN is not allowed");
+        debug_assert!(!quotient.is_infinite(), "INFINITY is not allowed");
         quotient.into()
     }
 }

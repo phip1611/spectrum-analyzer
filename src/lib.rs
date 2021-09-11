@@ -25,41 +25,100 @@ SOFTWARE.
 //! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
 //! blocks/optional features.
 //!
-//! In short, this is a convenient wrapper around an FFT implementation. You choose the
-//! implementation at compile time via Cargo features. As of version 0.4.0 this uses
-//! "microfft"-crate.
+//! In short, this is a convenient wrapper around a FFT implementation. You choose the
+//! implementation at compile time via Cargo features. This crate uses
+//! "microfft" by default for FFT. See README for more advise.
+//!
+//! ## Examples
+//! ### Scaling via dynamic closure
+//! ```rust
+//! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+//! // get data from audio source
+//! let samples = vec![0.0, 1.1, 5.5, -5.5];
+//! let res = samples_fft_to_spectrum(
+//!         &samples,
+//!         44100,
+//!         FrequencyLimit::All,
+//!         Some(&|val, info| val - info.min),
+//! );
+//! ```
+//! ### Scaling via static function
+//! ```rust
+//! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+//! use spectrum_analyzer::scaling::scale_to_zero_to_one;
+//! // get data from audio source
+//! let samples = vec![0.0, 1.1, 5.5, -5.5];
+//! let res = samples_fft_to_spectrum(
+//!         &samples,
+//!         44100,
+//!         FrequencyLimit::All,
+//!         Some(&scale_to_zero_to_one),
+//! );
+//! ```
 
+#![deny(
+    clippy::all,
+    clippy::cargo,
+    clippy::nursery,
+    // clippy::restriction,
+    // clippy::pedantic
+)]
+// now allow a few rules which are denied by the above statement
+// --> they are ridiculous and not necessary
+#![allow(
+    clippy::suboptimal_flops,
+    clippy::redundant_pub_crate,
+    clippy::fallible_impl_from
+)]
+#![deny(missing_debug_implementations)]
+#![deny(rustdoc::all)]
 #![no_std]
 
-// use alloc crate, because this is no_std
+#[cfg(any(
+    all(feature = "microfft-real", feature = "microfft-complex"),
+    all(feature = "microfft-real", feature = "rustfft-complex"),
+    all(feature = "microfft-complex", feature = "rustfft-complex"),
+    not(any(
+        feature = "microfft-real",
+        feature = "microfft-complex",
+        feature = "rustfft-complex"
+    ))
+))]
+compile_error!(
+    "You must use exactly one FFT implementation. Check Cargo compile-time features of this crate!"
+);
+
+// enable std in tests (println!() for example)
+#[cfg_attr(test, macro_use)]
+#[cfg(test)]
+extern crate std;
+
+// We use alloc crate, because this is no_std
+// The macros are only needed when we test
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
 use alloc::vec::Vec;
 
+use crate::error::SpectrumAnalyzerError;
 use crate::fft::{Complex32, Fft, FftImpl};
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
-pub use crate::spectrum::{ComplexSpectrumScalingFunction, FrequencySpectrum};
-use core::convert::identity;
+pub use crate::limit::FrequencyLimitError;
+use crate::scaling::SpectrumScalingFunction;
+pub use crate::spectrum::FrequencySpectrum;
 
+pub mod error;
 mod fft;
 mod frequency;
 mod limit;
 pub mod scaling;
 mod spectrum;
-#[cfg(test)]
-mod tests;
 pub mod windows;
 
-/// Definition of a simple function that gets applied on each frequency magnitude
-/// in the spectrum. This is easier to write, especially for Rust beginners.
-/// Everything that can be achieved with this, can also be achieved with parameter
-/// `total_scaling_fn`.
-///
-/// The scaling only affects the value/amplitude of the frequency
-/// but not the frequency itself.
-pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
+// test module for large "integration"-like tests
+#[cfg(test)]
+mod tests;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using the specified FFT implementation) on it
@@ -77,37 +136,65 @@ pub type SimpleSpectrumScalingFunction<'a> = &'a dyn Fn(f32) -> f32;
 ///             better accuracy/frequency resolution.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
-/// * `per_element_scaling_fn` See [`crate::SimpleSpectrumScalingFunction`] for details.
-///                            This is easier to write, especially for Rust beginners. Everything
-///                            that can be achieved with this, can also be achieved with
-///                            parameter `total_scaling_fn`.
-///                            See [`crate::scaling`] for example implementations.
-/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`] for details.
-///                      See [`crate::scaling`] for example implementations.
+/// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`] for details.
 ///
 /// ## Returns value
 /// New object of type [`FrequencySpectrum`].
 ///
+/// ## Examples
+/// ### Scaling via dynamic closure
+/// ```rust
+/// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+/// // get data from audio source
+/// let samples = vec![0.0, 1.1, 5.5, -5.5];
+/// let res = samples_fft_to_spectrum(
+///         &samples,
+///         44100,
+///         FrequencyLimit::All,
+///         Some(&|val, info| val - info.min),
+///  );
+/// ```
+/// ### Scaling via static function
+/// ```rust
+/// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+/// use spectrum_analyzer::scaling::scale_to_zero_to_one;
+/// // get data from audio source
+/// let samples = vec![0.0, 1.1, 5.5, -5.5];
+/// let res = samples_fft_to_spectrum(
+///         &samples,
+///         44100,
+///         FrequencyLimit::All,
+///         Some(&scale_to_zero_to_one),
+///  );
+/// ```
+///
 /// ## Panics
-/// * When `samples` contains NaN or infinite values (regarding f32/float).
-/// * When `samples.len()` isn't a power of two and `samples.len() > 4096`
-///   (restriction by `microfft`-crate)
+/// * When `samples.len() > 4096` and `microfft` is used (restriction by the crate)
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    per_element_scaling_fn: Option<SimpleSpectrumScalingFunction>,
-    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
-) -> FrequencySpectrum {
-    // check input value doesn't contain any NaN
-    assert!(
-        !samples.iter().any(|x| x.is_nan()),
-        "NaN values in samples not supported!"
-    );
-    assert!(
-        !samples.iter().any(|x| x.is_infinite()),
-        "Infinity values in samples not supported!"
-    );
+    scaling_fn: Option<SpectrumScalingFunction>,
+) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
+    // everything below two samples is unreasonable
+    if samples.len() < 2 {
+        return Err(SpectrumAnalyzerError::TooFewSamples);
+    }
+    // do several checks on input data
+    if samples.iter().any(|x| x.is_nan()) {
+        return Err(SpectrumAnalyzerError::NaNValuesNotSupported);
+    }
+    if samples.iter().any(|x| x.is_infinite()) {
+        return Err(SpectrumAnalyzerError::InfinityValuesNotSupported);
+    }
+    if !is_power_of_two(samples.len()) {
+        return Err(SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo);
+    }
+    let max_detectable_frequency = sampling_rate as f32 / 2.0;
+    // verify frequency limit: unwrap error or else ok
+    let _ = frequency_limit
+        .verify(max_detectable_frequency)
+        .map_err(SpectrumAnalyzerError::InvalidFrequencyLimit)?;
 
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
@@ -133,8 +220,7 @@ pub fn samples_fft_to_spectrum(
         &buffer,
         sampling_rate,
         frequency_limit,
-        per_element_scaling_fn,
-        total_scaling_fn,
+        scaling_fn,
     )
 }
 
@@ -149,11 +235,7 @@ pub fn samples_fft_to_spectrum(
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
-/// * `per_element_scaling_fn` Optional per element scaling function, e.g. `20 * log(x)`.
-///                            To see where this equation comes from, check out
-///                            this paper:
-///                            https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
-/// * `total_scaling_fn` See [`crate::spectrum::SpectrumTotalScaleFunctionFactory`].
+/// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`].
 ///
 /// ## Return value
 /// New object of type [`FrequencySpectrum`].
@@ -163,9 +245,8 @@ fn fft_result_to_spectrum(
     fft_result: &[Complex32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    per_element_scaling_fn: Option<&dyn Fn(f32) -> f32>,
-    total_scaling_fn: Option<ComplexSpectrumScalingFunction>,
-) -> FrequencySpectrum {
+    scaling_fn: Option<SpectrumScalingFunction>,
+) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
 
@@ -173,7 +254,7 @@ fn fft_result_to_spectrum(
 
     // collect frequency => frequency value in Vector of Pairs/Tuples
     let frequency_vec = fft_result
-        .into_iter()
+        .iter()
         // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
         // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
         //
@@ -221,6 +302,9 @@ fn fft_result_to_spectrum(
         .filter(|(fr, _fft_result)| {
             if let Some(min_fr) = maybe_min {
                 // inclusive!
+                // attention: due to the frequency resolution, we do not necessarily hit
+                //            exactly the frequency, that a user requested
+                //            e.g. 1416.8 < limit < 1425.15
                 *fr >= min_fr
             } else {
                 true
@@ -230,6 +314,9 @@ fn fft_result_to_spectrum(
         .filter(|(fr, _fft_result)| {
             if let Some(max_fr) = maybe_max {
                 // inclusive!
+                // attention: due to the frequency resolution, we do not necessarily hit
+                //            exactly the frequency, that a user requested
+                //            e.g. 1416.8 < limit < 1425.15
                 *fr <= max_fr
             } else {
                 true
@@ -239,9 +326,7 @@ fn fft_result_to_spectrum(
         // #######################
         // FFT result is always complex: calc magnitude
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, complex_res)| (fr, complex_to_magnitude(&complex_res)))
-        // apply optionally scale function
-        .map(|(fr, val)| (fr, per_element_scaling_fn.unwrap_or(&identity)(val)))
+        .map(|(fr, complex_res)| (fr, complex_to_magnitude(complex_res)))
         // transform to my thin convenient orderable f32 wrappers
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
         // collect all into an sorted vector (from lowest frequency to highest)
@@ -251,11 +336,11 @@ fn fft_result_to_spectrum(
     let spectrum = FrequencySpectrum::new(frequency_vec, frequency_resolution);
 
     // optionally scale
-    if let Some(total_scaling_fn) = total_scaling_fn {
-        spectrum.apply_complex_scaling_fn(total_scaling_fn)
+    if let Some(scaling_fn) = scaling_fn {
+        spectrum.apply_scaling_fn(scaling_fn)?
     }
 
-    spectrum
+    Ok(spectrum)
 }
 
 /// Calculate the frequency resolution of the FFT. It is determined by the sampling rate
@@ -289,6 +374,28 @@ fn complex_to_magnitude(val: &Complex32) -> f32 {
     // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
     let sum = val.re * val.re + val.im * val.im;
     let sqrt = libm::sqrtf(sum);
-    debug_assert!(sqrt != f32::NAN, "sqrt is NaN!");
+    debug_assert!(!sqrt.is_nan(), "sqrt is NaN!");
     sqrt
+}
+
+// idea from https://stackoverflow.com/questions/600293/how-to-check-if-a-number-is-a-power-of-2
+const fn is_power_of_two(num: usize) -> bool {
+    num != 0 && ((num & (num - 1)) == 0)
+}
+
+// tests module for small unit tests
+
+#[cfg(test)]
+mod tests2 {
+    use super::*;
+
+    #[test]
+    fn test_is_power_of_two() {
+        assert!(!is_power_of_two(0));
+        assert!(is_power_of_two(1));
+        assert!(is_power_of_two(2));
+        assert!(!is_power_of_two(3));
+        assert!(is_power_of_two(2));
+        assert!(is_power_of_two(256));
+    }
 }

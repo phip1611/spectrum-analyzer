@@ -1,3 +1,6 @@
+set -e
+set -x
+
 echo "checks that this builds on std+no_std + that all tests run + that all features compile"
 cargo build --all-targets
 cargo build --all-targets --no-default-features --features "rustfft-complex"
@@ -8,6 +11,10 @@ cargo test --all-targets
 cargo test --all-targets --no-default-features --features "rustfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-real"
+
+cargo fmt
+cargo fmt -- --check # (--check doesn't change the files)
+cargo doc
 
 # test no_std
 rustup target add thumbv7em-none-eabihf

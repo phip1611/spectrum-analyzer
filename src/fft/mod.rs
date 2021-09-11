@@ -39,7 +39,7 @@ SOFTWARE.
 //! most actively developed implementation and also the fastest and most accurate, at least
 //! in `std`-environments on modern processors. To test other implementations I usually
 //! plot the results using the function
-//! [`crate::tests::test_spectrum_and_visualize_sine_waves_50_1000_3777hz`] by invoking it
+//! `crate::tests::test_spectrum_and_visualize_sine_waves_50_1000_3777hz` by invoking it
 //! with different features (FFT implementations) enabled.
 
 #[cfg(feature = "microfft-complex")]

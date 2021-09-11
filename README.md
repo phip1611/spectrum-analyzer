@@ -6,8 +6,7 @@ via Cargo features.
 
 **I'm not an expert on digital signal processing. Code contributions are highly welcome! 🙂**
 
-**The MSRV (minimum supported Rust version) is 1.51 Stable because this crate needs the 
-"resolver" feature of Cargo to cope with build problems occurring in `no_std`-builds.**
+**The MSRV (minimum supported Rust version) is 1.52.1 stable.**
 
 ## I want to understand how FFT can be used to get a spectrum
 Please see file [/EDUCATIONAL.md](/EDUCATIONAL.md).
@@ -69,29 +68,22 @@ fn main() {
 }
 ```
 
-## Scaling the frequency values/amplitudes
-As already mentioned, there are lots of comments in the code. Short story is:
-Type `ComplexSpectrumScalingFunction` can do anything like `BasicSpectrumScalingFunction` whereas `BasicSpectrumScalingFunction`
-is easier to write, especially for Rust beginners.
-
 ## Performance
-*Measurements taken on i7-8650U @ 3 Ghz (Single-Core) with optimized build*
+*Measurements taken on i7-1165G7 @ 2.80GHz (Single-threaded) with optimized build*
 
 
 | Operation                                              | Time   |
 | ------------------------------------------------------ | ------:|
-| Hann Window with 4096 samples                          | ≈70µs  |
-| Hamming Window with 4096 samples                       | ≈10µs  |
-| Hann Window with 16384 samples                         | ≈175µs |
-| Hamming Window with 16384 samples                      | ≈44µs  |
-| FFT (`rustfft/complex`) to spectrum with 4096 samples  | ≈240µs |
-| FFT (`rustfft/complex`) to spectrum with 16384 samples | ≈740µs |
-| FFT (`microfft/real`) to spectrum with 4096 samples    | ≈120µs |
+| Hann Window with 4096 samples                          | ≈68µs  |
+| Hamming Window with 4096 samples                       | ≈118µs |
+| FFT (`rustfft/complex`) to spectrum with 4096 samples  | ≈170µs |
+| FFT (`microfft/real`) to spectrum with 4096 samples    | ≈90µs  |
+| FFT (`microfft/complex`) to spectrum with 4096 samples | ≈250µs |
 
 ## Example visualization
 In the following example you can see a basic visualization of frequencies `0 to 4000Hz` for 
 a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `44100Hz` sampling rate. The peaks for the 
-given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms.
+given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms of audio signal.
 
 **The noise (wrong peaks) also comes from clipping of the added sine waves!**
 
@@ -106,6 +98,11 @@ Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a li
 ### Spectrum with *Hamming window function* on samples before FFT
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
+
+## Building and Executing Tests
+To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian). This is required because
+not all tests are "automatic unit tests" but also tests that you need to check visually, by looking at the
+generated diagram of the spectrum.
 
 ## Trivia / FAQ
 ### Why f64 and no f32?

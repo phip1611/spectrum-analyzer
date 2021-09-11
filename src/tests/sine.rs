@@ -84,14 +84,14 @@ pub fn sine_wave_audio_data_multiple(
 
         // BEGIN: scale
         // times 0.1 to prevent to clipping if multiple sinus waves are added above each other
-        let acc = acc * i16::max_value() as f32 * 0.1;
+        let acc = acc * i16::MAX as f32 * 0.1;
         // END: scale
 
         // BEGIN: truncate in interval
-        let acc = if acc > i16::max_value() as f32 {
-            i16::max_value()
-        } else if acc < i16::min_value() as f32 {
-            i16::min_value()
+        let acc = if acc > i16::MAX as f32 {
+            i16::MAX
+        } else if acc < i16::MIN as f32 {
+            i16::MIN
         } else {
             acc as i16
         };
