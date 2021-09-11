@@ -40,7 +40,7 @@ use core::cell::{Cell, Ref, RefCell};
 ///
 /// All results are related to the sampling rate provided to the library function which
 /// creates objects of this struct!
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct FrequencySpectrum {
     /// Raw data. Vector is sorted from lowest
     /// frequency to highest and data is normalized/scaled

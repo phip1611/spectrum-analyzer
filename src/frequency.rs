@@ -38,7 +38,7 @@ pub type FrequencyValue = OrderableF32;
 /// Small convenient wrapper around `f32`.
 /// Mainly required to make `f32` operable in a sorted tree map.
 /// You should only use the type aliases `Frequency` and `FrequencyValue`.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct OrderableF32(f32);
 
 impl OrderableF32 {

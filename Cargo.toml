@@ -41,8 +41,18 @@ float-cmp = "0.9.0"
 libm = "0.2.1"
 
 [dev-dependencies]
+# readmp3 files in tests and examples
 minimp3 = "0.5.1"
+# visualize spectrum in tests and examples
 audio-visualizer = "0.2.2"
+# get audio input in examples
+cpal = "0.13.4"
+# CLI example
+tui = { version = "0.16", default-features = false, features = ['crossterm'] }
+crossterm = "0.21.0"
+# audio data buffering
+ringbuffer = "0.7.1"
+
 
 # otherwise FFT and other code is too slow
 [profile.dev]
