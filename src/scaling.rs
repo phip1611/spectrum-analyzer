@@ -84,7 +84,14 @@ pub type SpectrumScalingFunction<'a> = &'a dyn Fn(f32, &SpectrumDataStats) -> f3
 /// ```
 /// Function is of type [`SpectrumScalingFunction`].
 pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats) -> f32 {
-    20.0 * libm::log10f(frequency_magnitude)
+    debug_assert!(!frequency_magnitude.is_infinite());
+    debug_assert!(!frequency_magnitude.is_nan());
+    debug_assert!(frequency_magnitude >= 0.0);
+    if frequency_magnitude == 0.0 {
+        0.0
+    } else {
+        20.0 * libm::log10f(frequency_magnitude)
+    }
 }
 
 /// Scales each frequency value/amplitude in the spectrum to interval `[0.0; 1.0]`.
