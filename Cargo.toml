@@ -53,6 +53,8 @@ crossterm = "0.21.0"
 # audio data buffering
 ringbuffer = "0.7.1"
 rand = "0.8.4"
+# exit in examples
+ctrlc = "3.2.0"
 
 
 # otherwise FFT and other code is too slow
