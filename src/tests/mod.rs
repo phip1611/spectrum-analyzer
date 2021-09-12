@@ -28,7 +28,7 @@ use crate::scaling::{combined, divide_by_N, scale_20_times_log10, scale_to_zero_
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{hamming_window, hann_window};
 use crate::{
-    fft_calc_frequency_resolution, fft_result_to_spectrum, samples_fft_to_spectrum, FrequencyLimit,
+    samples_fft_to_spectrum, FrequencyLimit,
 };
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;

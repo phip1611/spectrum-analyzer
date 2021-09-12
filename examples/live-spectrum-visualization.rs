@@ -57,7 +57,7 @@ use tui::text::Span;
 use tui::widgets::{Axis, Block, Borders, Chart, Dataset};
 use tui::{symbols, Terminal};
 
-use spectrum_analyzer::scaling::{combined, divide_by_N, scale_20_times_log10};
+use spectrum_analyzer::scaling::{combined, divide_by_N};
 use spectrum_analyzer::{FrequencyLimit, FrequencySpectrum};
 
 /// Run in terminal (not IDE!) and it will open an alternate screen where you can see
@@ -169,9 +169,9 @@ fn visualize_loop(
                             .labels(vec![
                                 Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                                 //Span::raw("0"),
-                                Span::styled("70", Style::default().add_modifier(Modifier::BOLD)),
+                                Span::styled("100", Style::default().add_modifier(Modifier::BOLD)),
                             ])
-                            .bounds([0.0, 70.0]),
+                            .bounds([0.0, 100.0]),
                     );
                 f.render_widget(chart, chunks[0]);
             })
@@ -239,7 +239,8 @@ fn process_audio_input(
         44100,
         FrequencyLimit::All,
         // Some(&spectrum_analyzer::scaling::scale_20_times_log10),
-        Some(&combined(&[&divide_by_N, &scale_20_times_log10])),
+        //Some(&combined(&[&divide_by_N, &scale_20_times_log10])),
+        Some(&combined(&[&divide_by_N])),
     )
     .unwrap();
 
