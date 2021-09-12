@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.1
+- bugfix of a bug since v1.0.0
+
 ## 1.1.0
 - added `scaling::combined` which helps you to combine several scaling functions 
 - added `FrequencySpectrum::to_log_spectrum` which gives you a more usable spectrum

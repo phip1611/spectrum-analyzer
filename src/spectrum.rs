@@ -51,6 +51,10 @@ pub struct FrequencySpectrum {
     /// i.e the frequency steps between elements in the vector
     /// inside field [`Self::data`].
     frequency_resolution: f32,
+    /// Number of samples. This property must be kept separately, because
+    /// `data.borrow().len()` might contain less than N elements, if the
+    /// spectrum was created with a [`crate::limit::FrequencyLimit`] .
+    samples_len: u32,
     /// Average value of frequency value/magnitude/amplitude
     /// corresponding to data in [`FrequencySpectrum::data`].
     average: Cell<FrequencyValue>,
@@ -75,8 +79,14 @@ impl FrequencySpectrum {
     /// * `data` Vector with all ([`Frequency`], [`FrequencyValue`])-tuples
     /// * `frequency_resolution` Resolution in Hertz. This equals to
     ///                          `data[1].0 - data[0].0`.
+    /// * `samples_len` Number of samples. Might be bigger than `data.len()`
+    ///                 if the spectrum is obtained with a frequency limit.
     #[inline(always)]
-    pub fn new(data: Vec<(Frequency, FrequencyValue)>, frequency_resolution: f32) -> Self {
+    pub fn new(
+        data: Vec<(Frequency, FrequencyValue)>,
+        frequency_resolution: f32,
+        samples_len: u32,
+    ) -> Self {
         debug_assert!(
             data.len() >= 2,
             "Input data of length={} for spectrum makes no sense!",
@@ -86,7 +96,7 @@ impl FrequencySpectrum {
         let obj = Self {
             data: RefCell::new(data),
             frequency_resolution,
-
+            samples_len,
             // default/placeholder values
             average: Cell::new(FrequencyValue::from(-1.0)),
             median: Cell::new(FrequencyValue::from(-1.0)),
@@ -118,7 +128,8 @@ impl FrequencySpectrum {
                 max: self.max.get().1.val(),
                 average: self.average.get().val(),
                 median: self.median.get().val(),
-                n: data.len() as f32,
+                // attention! not necessarily `data.len()`!
+                n: self.samples_len as f32,
             };
 
             for (_fr, fr_val) in &mut *data {
@@ -183,6 +194,12 @@ impl FrequencySpectrum {
     #[inline(always)]
     pub const fn frequency_resolution(&self) -> f32 {
         self.frequency_resolution
+    }
+
+    /// Returns the number of samples used to obtain this spectrum.
+    #[inline(always)]
+    pub const fn samples_len(&self) -> u32 {
+        self.samples_len
     }
 
     /// Getter for the highest frequency that is captured inside this spectrum.
@@ -477,9 +494,7 @@ impl FrequencySpectrum {
             //  visualization implementations look like :(
             if fr.val() > 128.0 && fr.val() <= 256.0 {
                 shrink_factor = 2;
-            } else if fr.val() > 256.0 && fr.val() <= 512.0 {
-                shrink_factor = 4;
-            } else if fr.val() > 512.0 && fr.val() <= 1024.0 {
+            } else if fr.val() > 256.0 && fr.val() <= 1024.0 {
                 shrink_factor = 4;
             } else if fr.val() > 1024.0 {
                 shrink_factor = 8;
@@ -666,7 +681,8 @@ mod tests {
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
+        let spectrum_len = spectrum.len() as u32;
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0, spectrum_len);
 
         // test inner vector is ordered
         {
@@ -793,7 +809,8 @@ mod tests {
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
+        let spectrum_len = spectrum.len() as u32;
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0, spectrum_len);
 
         // -1 not included, expect panic
         spectrum.freq_val_exact(-1.0).val();
@@ -808,7 +825,8 @@ mod tests {
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
+        let spectrum_len = spectrum.len() as u32;
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0, spectrum_len);
 
         // 451 not included, expect panic
         spectrum.freq_val_exact(451.0).val();
@@ -823,7 +841,8 @@ mod tests {
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
+        let spectrum_len = spectrum.len() as u32;
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0, spectrum_len);
 
         // -1 not included, expect panic
         spectrum.freq_val_closest(-1.0);
@@ -838,7 +857,8 @@ mod tests {
             .into_iter()
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
-        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
+        let spectrum_len = spectrum.len() as u32;
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0, spectrum_len);
 
         // 451 not included, expect panic
         spectrum.freq_val_closest(451.0);
@@ -848,10 +868,12 @@ mod tests {
     fn test_nan_safety() {
         let spectrum_vector: Vec<(Frequency, FrequencyValue)> = vec![(0.0.into(), 0.0.into()); 8];
 
+        let spectrum_len = spectrum_vector.len() as u32;
         let spectrum = FrequencySpectrum::new(
             spectrum_vector,
             // not important here, any valu
             50.0,
+            spectrum_len,
         );
 
         assert_ne!(
@@ -902,7 +924,8 @@ mod tests {
         let spectrum: Vec<(Frequency, FrequencyValue)> =
             vec![(150.0.into(), 150.0.into()), (200.0.into(), 100.0.into())];
 
-        let spectrum = FrequencySpectrum::new(spectrum, 50.0);
+        let spectrum_len = spectrum.len() as u32;
+        let spectrum = FrequencySpectrum::new(spectrum, 50.0, spectrum_len);
 
         assert!(
             spectrum.dc_component().is_none(),
@@ -946,8 +969,9 @@ mod tests {
             (22050.0.into(), 10.0.into()),
         ];
 
+        let spectrum_len = spectrum.len() as u32;
         // frequency resolution is irrelevant
-        let spectrum = FrequencySpectrum::new(spectrum, 0.0);
+        let spectrum = FrequencySpectrum::new(spectrum, 0.0, spectrum_len);
         let log_spectrum = spectrum.to_log_spectrum();
         // println!("{:#?}", log_spectrum);
 
