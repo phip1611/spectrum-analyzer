@@ -27,9 +27,7 @@ use crate::error::SpectrumAnalyzerError;
 use crate::scaling::{combined, divide_by_N, scale_20_times_log10, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{hamming_window, hann_window};
-use crate::{
-    samples_fft_to_spectrum, FrequencyLimit,
-};
+use crate::{samples_fft_to_spectrum, FrequencyLimit};
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
