@@ -27,7 +27,9 @@ use crate::error::SpectrumAnalyzerError;
 use crate::scaling::{combined, divide_by_N, scale_20_times_log10, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{hamming_window, hann_window};
-use crate::{samples_fft_to_spectrum, FrequencyLimit};
+use crate::{
+    fft_calc_frequency_resolution, fft_result_to_spectrum, samples_fft_to_spectrum, FrequencyLimit,
+};
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
@@ -444,4 +446,28 @@ fn test_visualize_log_spectrum() {
         TEST_OUT_DIR,
         "test_visualized_logarithmic_spectrum__logarithmic.png",
     );
+}
+
+/// Test that the scaling actually has the effect that we expect it to have.
+#[test]
+fn test_divide_by_n_as_effect() {
+    let audio_data = sine_wave_audio_data_multiple(&[100.0, 200.0, 400.0], 1000, 2000);
+    let audio_data = audio_data.into_iter().map(|x| x as f32).collect::<Vec<_>>();
+    let audio_data = hann_window(&audio_data[0..1024]);
+    let normal_spectrum =
+        samples_fft_to_spectrum(&audio_data, 1000, FrequencyLimit::All, None).unwrap();
+    let scaled_spectrum =
+        samples_fft_to_spectrum(&audio_data, 1000, FrequencyLimit::All, Some(&divide_by_N))
+            .unwrap();
+    for i in 0..512 {
+        let actual_no_scaling = normal_spectrum.data()[i].1.val();
+        let actual_with_scaling = scaled_spectrum.data()[i].1.val();
+        assert!(
+            (actual_no_scaling / 1024.0 - actual_with_scaling) < 0.1,
+            "[{}] actual_no_scaling={} should be roughly 1024 times bigger than actual_with_scaling={}", 
+            i,
+            actual_no_scaling,
+            actual_with_scaling,
+        );
+    }
 }
