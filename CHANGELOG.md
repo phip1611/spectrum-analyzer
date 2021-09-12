@@ -23,6 +23,9 @@
 - many internal improvements
 - rust-toolchain.toml for build stability and reproducibility
 - really minor performance improvements (~5 %)
+- added example `live-spectrum-visualization.rs`
+  (still not perfect, but works)
+- added example `bench.rs`
 
 ## v0.5.1
 - Feature "rustfft-complex" uses "rustfft"-crate at version 6 which is faster/more optimized (~25%).
