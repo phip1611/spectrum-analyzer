@@ -469,6 +469,22 @@ impl FrequencySpectrum {
             // last iteration?
             let is_last = fr == &self.max_fr();
 
+            // this is a little bit ugly but I tried several settings and
+            // this works the best I think. A shrink factor of more than 16
+            // leads to way too few data points for the high frequencies
+            // TODO this whole section needs more work I guess..
+            //  it's not sexy and doesn't look like what other
+            //  visualization implementations look like :(
+            if fr.val() > 128.0 && fr.val() <= 256.0 {
+                shrink_factor = 2;
+            } else if fr.val() > 256.0 && fr.val() <= 512.0 {
+                shrink_factor = 4;
+            } else if fr.val() > 512.0 && fr.val() <= 1024.0 {
+                shrink_factor = 4;
+            } else if fr.val() > 1024.0 {
+                shrink_factor = 8;
+            }
+
             // we switch to the next power of 2 shrink block;
             if fr.val() > frequency_upper_bound {
                 // in this case, there were not enough data points to reach the shrink factor
@@ -480,7 +496,6 @@ impl FrequencySpectrum {
 
                 // FREQUENCY_LOWER_BOUND = frequency_upper_bound;
                 frequency_upper_bound *= 2.0;
-                shrink_factor *= 2;
                 fr_avg_bucket.reset();
                 fr_val_avg_bucket.reset();
             }
