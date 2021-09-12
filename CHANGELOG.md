@@ -4,6 +4,9 @@
 - added `scaling::combined` which helps you to combine several scaling functions 
 - added `FrequencySpectrum::to_log_spectrum` which gives you a more usable spectrum
   when you analyze music for example.
+  - this is not optimal yet :(
+  - Needs code contributions.. doesn't look as nice and convenient as other implementations. 
+    I don't really know what to do here.
 
 ## v1.0.0
 ### Breaking Changes
