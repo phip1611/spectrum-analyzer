@@ -509,6 +509,8 @@ impl FrequencySpectrum {
                 i = 0;
                 // add to vector
                 log_spectrum.push((fr_avg_bucket.avg().into(), fr_val_avg_bucket.avg().into()));
+                fr_avg_bucket.reset();
+                fr_val_avg_bucket.reset();
             }
 
             // required because otherwise it might happen that we
