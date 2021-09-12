@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+- added `scaling::combined` which helps you to combine several scaling functions 
+- added `FrequencySpectrum::to_log_spectrum` which gives you a more usable spectrum
+  when you analyze music for example.
+
 ## v1.0.0
 ### Breaking Changes
 - The library returns now a result and will no longer panic
