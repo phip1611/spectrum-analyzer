@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.0
+- added `scaling::combined` which helps you to combine several scaling functions 
+- added `FrequencySpectrum::to_log_spectrum` which gives you a more usable spectrum
+  when you analyze music for example.
+  - this is not optimal yet :(
+  - Needs code contributions.. doesn't look as nice and convenient as other implementations. 
+    I don't really know what to do here.
+
 ## v1.0.0
 ### Breaking Changes
 - The library returns now a result and will no longer panic
@@ -15,6 +23,9 @@
 - many internal improvements
 - rust-toolchain.toml for build stability and reproducibility
 - really minor performance improvements (~5 %)
+- added example `live-spectrum-visualization.rs`
+  (still not perfect, but works)
+- added example `bench.rs`
 
 ## v0.5.1
 - Feature "rustfft-complex" uses "rustfft"-crate at version 6 which is faster/more optimized (~25%).

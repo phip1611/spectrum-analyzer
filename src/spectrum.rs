@@ -26,6 +26,7 @@ SOFTWARE.
 use crate::error::SpectrumAnalyzerError;
 use crate::frequency::{Frequency, FrequencyValue};
 use crate::scaling::{SpectrumDataStats, SpectrumScalingFunction};
+use crate::util::AverageBucket;
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 use core::cell::{Cell, Ref, RefCell};
@@ -426,6 +427,102 @@ impl FrequencySpectrum {
             .collect()
     }
 
+    /// This is an attempt to return a more "usable" spectrum. If you analyze music,
+    /// usually with 44100kHz, you get frequencies 0 to 22050 Hz. Although, the most
+    /// interesting and relevant might be frequencies 0 to 2000 Hz. Therefore, this
+    /// method returns a sorted vector with all frequencies, but:
+    /// - fr 1-128: keep
+    /// - fr 129-256: cut number of samples in half (by calculating average of blocks)
+    /// - fr 257-512: cut number of samples in half (by calculating average of blocks)
+    /// - fr 513-1024: cut number of samples in half (by calculating average of blocks)
+    /// - ...
+    /// - fr 16385-22050: cut number of samples in half (by calculating average of blocks)
+    #[inline(always)]
+    pub fn to_log_spectrum(&self) -> Vec<(Frequency, FrequencyValue)> {
+        let data = self.data.borrow();
+        let mut log_spectrum = Vec::new();
+
+        const FREQUENCY_LOWER_BOUND: f32 = 128.0;
+        // initial shrink factor is two, because
+        // frequencies 128 < f <= 256 is already shrinked by 2
+        let mut shrink_factor = 2;
+        let mut frequency_upper_bound = 256.0;
+
+        // condition for the initial frequency, that we want to keep as it is (all data points)
+        let initial_fr_cond: fn(&(Frequency, FrequencyValue)) -> bool =
+            |(fr, _)| fr.val() <= FREQUENCY_LOWER_BOUND;
+
+        // wee keep all the values for frequencies <=128 Hz
+        data.iter()
+            .filter(|x| initial_fr_cond(x))
+            .for_each(|x| log_spectrum.push(*x));
+
+        // counter for shrinking
+        let mut i = 0;
+        let mut fr_avg_bucket = AverageBucket::new();
+        let mut fr_val_avg_bucket = AverageBucket::new();
+
+        // We iterate all existing data points and accumulate them
+        // into the new logarithmic data set (by shrinking the data points
+        // on a logarithmic base) (TODO I'm not 100% if this is correct)
+        for (fr, fr_val) in data.iter().filter(|x| !initial_fr_cond(x)) {
+            // last iteration?
+            let is_last = fr == &self.max_fr();
+
+            // this is a little bit ugly but I tried several settings and
+            // this works the best I think. A shrink factor of more than 16
+            // leads to way too few data points for the high frequencies
+            // TODO this whole section needs more work I guess..
+            //  it's not sexy and doesn't look like what other
+            //  visualization implementations look like :(
+            if fr.val() > 128.0 && fr.val() <= 256.0 {
+                shrink_factor = 2;
+            } else if fr.val() > 256.0 && fr.val() <= 512.0 {
+                shrink_factor = 4;
+            } else if fr.val() > 512.0 && fr.val() <= 1024.0 {
+                shrink_factor = 4;
+            } else if fr.val() > 1024.0 {
+                shrink_factor = 8;
+            }
+
+            // we switch to the next power of 2 shrink block;
+            if fr.val() > frequency_upper_bound {
+                // in this case, there were not enough data points to reach the shrink factor
+                if i != 0 {
+                    // add to vector
+                    log_spectrum.push((fr_avg_bucket.avg().into(), fr_val_avg_bucket.avg().into()));
+                    i = 0;
+                }
+
+                // FREQUENCY_LOWER_BOUND = frequency_upper_bound;
+                frequency_upper_bound *= 2.0;
+                fr_avg_bucket.reset();
+                fr_val_avg_bucket.reset();
+            }
+
+            fr_avg_bucket.add(fr.val());
+            fr_val_avg_bucket.add(fr_val.val());
+            i += 1;
+
+            // combine X data points to a single new one
+            if i >= shrink_factor {
+                i = 0;
+                // add to vector
+                log_spectrum.push((fr_avg_bucket.avg().into(), fr_val_avg_bucket.avg().into()));
+                fr_avg_bucket.reset();
+                fr_val_avg_bucket.reset();
+            }
+
+            // required because otherwise it might happen that we
+            // lose the last element
+            if is_last && i != 0 {
+                log_spectrum.push((fr_avg_bucket.avg().into(), fr_val_avg_bucket.avg().into()));
+            }
+        }
+
+        log_spectrum
+    }
+
     /*/// Returns an iterator over the underlying vector [`data`].
     #[inline(always)]
     pub fn iter(&self) -> Iter<(Frequency, FrequencyValue)> {
@@ -811,5 +908,73 @@ mod tests {
             spectrum.dc_component().is_none(),
             "This spectrum should not contain a DC component!"
         )
+    }
+
+    #[test]
+    fn test_to_log_spectrum() {
+        let spectrum: Vec<(Frequency, FrequencyValue)> = vec![
+            (2.0.into(), 10.0.into()),
+            (4.0.into(), 10.0.into()),
+            (8.0.into(), 10.0.into()),
+            (16.0.into(), 10.0.into()),
+            (32.0.into(), 10.0.into()),
+            (64.0.into(), 10.0.into()),
+            (128.0.into(), 10.0.into()),
+            // ---
+            (129.0.into(), 20.0.into()),
+            (256.0.into(), 10.0.into()),
+            // ---
+            (257.0.into(), 20.0.into()),
+            (512.0.into(), 10.0.into()),
+            // ---
+            (513.0.into(), 20.0.into()),
+            (1024.0.into(), 10.0.into()),
+            // ---
+            (1025.0.into(), 30.0.into()),
+            (2048.0.into(), 10.0.into()),
+            // ---
+            (2049.0.into(), 30.0.into()),
+            (4096.0.into(), 10.0.into()),
+            // ---
+            (4097.0.into(), 30.0.into()),
+            (8192.0.into(), 10.0.into()),
+            // ---
+            (8193.0.into(), 30.0.into()),
+            (16384.0.into(), 10.0.into()),
+            // ---
+            (16385.0.into(), 30.0.into()),
+            (22050.0.into(), 10.0.into()),
+        ];
+
+        // frequency resolution is irrelevant
+        let spectrum = FrequencySpectrum::new(spectrum, 0.0);
+        let log_spectrum = spectrum.to_log_spectrum();
+        // println!("{:#?}", log_spectrum);
+
+        assert_eq!(15, log_spectrum.len(), "Must contain exactly 15 values!");
+
+        let expected = [
+            (2.0, 10.0),
+            (4.0, 10.0),
+            (8.0, 10.0),
+            (16.0, 10.0),
+            (32.0, 10.0),
+            (64.0, 10.0),
+            (128.0, 10.0),
+            (192.5, 15.0),
+            (384.5, 15.0),
+            (768.5, 15.0),
+            (1536.5, 20.0),
+            (3072.5, 20.0),
+            (6144.5, 20.0),
+            (12288.5, 20.0),
+            (19217.5, 20.0),
+        ];
+        let actual = log_spectrum
+            .into_iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect::<Vec<_>>()
+            .into_boxed_slice();
+        assert_eq!(actual.as_ref(), &expected);
     }
 }

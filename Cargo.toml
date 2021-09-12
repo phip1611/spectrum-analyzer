@@ -4,7 +4,7 @@ description = """
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features.
 """
-version = "1.0.1"
+version = "1.1.0"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
@@ -53,6 +53,8 @@ crossterm = "0.21.0"
 # audio data buffering
 ringbuffer = "0.7.1"
 rand = "0.8.4"
+# exit in examples
+ctrlc = "3.2.0"
 
 
 # otherwise FFT and other code is too slow

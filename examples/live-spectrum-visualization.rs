@@ -57,6 +57,7 @@ use tui::text::Span;
 use tui::widgets::{Axis, Block, Borders, Chart, Dataset};
 use tui::{symbols, Terminal};
 
+use spectrum_analyzer::scaling::{combined, divide_by_N};
 use spectrum_analyzer::{FrequencyLimit, FrequencySpectrum};
 
 /// Run in terminal (not IDE!) and it will open an alternate screen where you can see
@@ -68,6 +69,15 @@ fn main() {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend).unwrap();
     let continue_work = Arc::new(AtomicBool::new(true));
+
+    {
+        let continue_work = continue_work.clone();
+        ctrlc::set_handler(move || {
+            continue_work.store(false, Ordering::SeqCst);
+        })
+        .unwrap();
+    }
+
     terminal
         .backend_mut()
         .execute(EnterAlternateScreen)
@@ -86,6 +96,8 @@ fn main() {
         .backend_mut()
         .execute(LeaveAlternateScreen)
         .unwrap();
+
+    println!("Gracefully shut down.");
 }
 
 fn visualize_loop(
@@ -94,11 +106,12 @@ fn visualize_loop(
     latest_spectrum_data: Arc<Mutex<FrequencySpectrum>>,
 ) {
     while continue_work.load(Ordering::SeqCst) {
+        // prepare the data for the TUI diagram
         let data = {
             let data = latest_spectrum_data.lock().unwrap();
-            let mut new_data = Vec::with_capacity(data.data().len());
-            data.data()
-                .iter()
+            let data = data.to_log_spectrum();
+            let mut new_data = Vec::with_capacity(data.len());
+            data.iter()
                 .map(|(fr, fr_val)| (fr.val() as f64, fr_val.val() as f64))
                 .for_each(|x| new_data.push(x));
             new_data
@@ -140,22 +153,25 @@ fn visualize_loop(
                             .title("Frequency (Hz)")
                             .style(Style::default().fg(Color::Gray))
                             .labels(vec![
-                                Span::styled("0.0", Style::default().add_modifier(Modifier::BOLD)),
+                                Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                                 //Span::raw("0"),
-                                Span::styled("2000", Style::default().add_modifier(Modifier::BOLD)),
+                                Span::styled(
+                                    "22050",
+                                    Style::default().add_modifier(Modifier::BOLD),
+                                ),
                             ])
-                            .bounds([0.0, 2000.0]),
+                            .bounds([0.0, 22050.0]),
                     )
                     .y_axis(
                         Axis::default()
                             .title("Amplitude")
                             .style(Style::default().fg(Color::Gray))
                             .labels(vec![
-                                Span::styled("0.0", Style::default().add_modifier(Modifier::BOLD)),
+                                Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                                 //Span::raw("0"),
-                                Span::styled("5000", Style::default().add_modifier(Modifier::BOLD)),
+                                Span::styled("100", Style::default().add_modifier(Modifier::BOLD)),
                             ])
-                            .bounds([0.0, 5000.0_f64]),
+                            .bounds([0.0, 100.0]),
                     );
                 f.render_widget(chart, chunks[0]);
             })
@@ -221,9 +237,10 @@ fn process_audio_input(
     let spectrum = spectrum_analyzer::samples_fft_to_spectrum(
         lock.to_vec().as_slice(),
         44100,
-        FrequencyLimit::Max(2000.0),
+        FrequencyLimit::All,
         // Some(&spectrum_analyzer::scaling::scale_20_times_log10),
-        Some(&spectrum_analyzer::scaling::divide_by_N),
+        //Some(&combined(&[&divide_by_N, &scale_20_times_log10])),
+        Some(&combined(&[&divide_by_N])),
     )
     .unwrap();
 
@@ -233,5 +250,5 @@ fn process_audio_input(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    // use super::*;
 }

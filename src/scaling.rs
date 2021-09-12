@@ -26,6 +26,8 @@ SOFTWARE.
 //! frequency value (the FFT result). They act as "idea/inspiration". Feel free
 //! to either compose them or create your own derivation from them.
 
+use alloc::boxed::Box;
+
 /// Helper struct for [`SpectrumScalingFunction`], that gets passed into the
 /// function together with the actual value. This structure can be used to scale
 /// each value. All properties reference the current data of a
@@ -82,7 +84,14 @@ pub type SpectrumScalingFunction<'a> = &'a dyn Fn(f32, &SpectrumDataStats) -> f3
 /// ```
 /// Function is of type [`SpectrumScalingFunction`].
 pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats) -> f32 {
-    20.0 * libm::log10f(frequency_magnitude)
+    debug_assert!(!frequency_magnitude.is_infinite());
+    debug_assert!(!frequency_magnitude.is_nan());
+    debug_assert!(frequency_magnitude >= 0.0);
+    if frequency_magnitude == 0.0 {
+        0.0
+    } else {
+        20.0 * libm::log10f(frequency_magnitude)
+    }
 }
 
 /// Scales each frequency value/amplitude in the spectrum to interval `[0.0; 1.0]`.
@@ -110,6 +119,24 @@ pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
     } else {
         val / stats.n
     }
+}
+
+/// Combines several scaling functions into a new single one.
+///
+/// # Example
+/// ```ignored
+/// Some(&combined(&[&divide_by_N, &scale_20_times_log10]))
+/// ```
+pub fn combined<'a>(
+    fncs: &'a [SpectrumScalingFunction<'a>],
+) -> Box<dyn Fn(f32, &SpectrumDataStats) -> f32 + 'a> {
+    Box::new(move |val, stats| {
+        let mut val = val;
+        for fnc in fncs {
+            val = fnc(val, stats);
+        }
+        val
+    })
 }
 
 #[cfg(test)]

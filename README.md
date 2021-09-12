@@ -100,6 +100,18 @@ Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a li
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
+## Tips For Audio Visualization
+(This is probably not 100% correct, because I'm not totally convinced by my solution/implementation.)
+The function `FrequencySpectrum::to_log_spectrum` tries to give you better suited representation for 
+situations, when you want to analyze music. There you are most probably interested in lows, mids,
+and highs, but highs could be combined, i.e. 0-128hz, 128-1000hz, 8-20k. This function tries
+to solve this. An example visualization can be found when you execute tests. Look into 
+`./test/out` afterwards and search for the corresponding file name.
+
+Also check out `$ cargo run --release --example live-spectrum-visualization` which uses your default
+audio input device and draws a graph to the terminal.
+
+
 ## Building and Executing Tests
 To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian). This is required because
 not all tests are "automatic unit tests" but also tests that you need to check visually, by looking at the
