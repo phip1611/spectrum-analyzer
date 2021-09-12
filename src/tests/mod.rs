@@ -138,6 +138,10 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     }*/
 }
 
+/// This test is primarily for my personal understanding. It analyzes a specific constant
+/// signal twice, but one time for twice the duration. If all FFT result values are
+/// divided by their corresponding N (length of samples), the values must match
+/// (with a small delta).
 #[test]
 fn test_spectrum_power() {
     let interesting_frequency = 2048.0;
@@ -183,8 +187,7 @@ fn test_spectrum_power() {
     let b = spectrum_long_window.freq_val_exact(interesting_frequency);
     let abs_diff = (a - b).val().abs();
     let deviation = abs_diff / max(a, b).val();
-    // 0.15 chosen at will
-    // This test is mostly for my personal understanding
+    // I thought they should match closer.. but that's the closest I can get.
     assert!(
         deviation < 0.15,
         "Values must more or less equal, because both were divided by their N"
@@ -466,6 +469,24 @@ fn test_divide_by_n_as_effect() {
             i,
             actual_no_scaling,
             actual_with_scaling,
+        );
+    }
+
+    // now check that the "divide by N" also works, if there is a frequency limit
+    let scaled_spectrum_with_limit = samples_fft_to_spectrum(
+        &audio_data,
+        1000,
+        FrequencyLimit::Max(250.0),
+        Some(&divide_by_N),
+    )
+    .unwrap();
+
+    for i in 0..256 {
+        let reference = scaled_spectrum.data()[i].1.val();
+        let actual = scaled_spectrum_with_limit.data()[i].1.val();
+        assert_eq!(
+            reference, actual,
+            "having less frequencies in the spectrum due to a limit must not effect N!"
         );
     }
 }
