@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.2
+- example `live-spectrum-visualization` requires Rust stable `1.55.0` because 
+  the `ringbuffer`-dependency requires it
+- the rest of the crate should still build with the current MSRV `1.52.1`
+- if you run tests, you need `1.55.0`!
+
 ## 1.1.1
 - bugfix of a bug since v1.0.0
 
