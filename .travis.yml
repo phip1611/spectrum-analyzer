@@ -1,6 +1,7 @@
 language: rust
 rust:
-  - 1.52.1 # MSRV
+  # - 1.52.1 # MSRV for regular build
+  - 1.55.0 # MSRV for tests
   - stable
   - nightly
 cache: cargo
