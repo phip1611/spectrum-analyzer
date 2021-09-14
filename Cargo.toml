@@ -4,7 +4,7 @@ description = """
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features.
 """
-version = "1.1.1"
+version = "1.1.2"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2018"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
@@ -51,7 +51,7 @@ cpal = "0.13.4"
 tui = { version = "0.16", default-features = false, features = ['crossterm'] }
 crossterm = "0.21.0"
 # audio data buffering
-ringbuffer = "0.7.1"
+ringbuffer = "0.8.2" # REQUIRES Rust Stable 1.55 because it uses "ringbuffer v0.8"
 rand = "0.8.4"
 # exit in examples
 ctrlc = "3.2.0"

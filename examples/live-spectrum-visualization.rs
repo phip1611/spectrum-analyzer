@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+//! THIS EXAMPLE REQUIRES Rust Stable 1.55 because it uses "ringbuffer v0.8"
+
 #![deny(
     clippy::all,
     clippy::cargo,
@@ -49,7 +51,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{BufferSize, SampleRate, StreamConfig};
 use crossterm::terminal::{EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::ExecutableCommand;
-use ringbuffer::{ConstGenericRingBuffer, RingBufferExt, RingBufferWrite};
+use ringbuffer::{ConstGenericRingBuffer, RingBufferExt};
 use tui::backend::CrosstermBackend;
 use tui::layout::{Constraint, Direction, Layout};
 use tui::style::{Color, Modifier, Style};
@@ -59,9 +61,12 @@ use tui::{symbols, Terminal};
 
 use spectrum_analyzer::scaling::{combined, divide_by_N};
 use spectrum_analyzer::{FrequencyLimit, FrequencySpectrum};
+use spectrum_analyzer::windows::hann_window;
 
 /// Run in terminal (not IDE!) and it will open an alternate screen where you can see
 /// the nice visualization. Unfortunately, this isn't really sexy so far.. :(
+///
+/// THIS EXAMPLE REQUIRES Rust Stable 1.55 because it uses "ringbuffer v0.8"
 ///
 /// TODO upstream this to "audio-visualizer" crate.
 fn main() {
@@ -84,8 +89,10 @@ fn main() {
         .unwrap();
 
     let latest_spectrum_data = Arc::new(Mutex::new(FrequencySpectrum::default()));
-    let latest_audio_data = Mutex::new(ConstGenericRingBuffer::<f32, 2048>::new());
-    (0..2048).for_each(|_| latest_audio_data.lock().unwrap().push(0.0));
+    let mut latest_audio_data = ConstGenericRingBuffer::<f32, 2048>::new();
+    // fill buffer with zeroes
+    latest_audio_data.fill_default();
+    let latest_audio_data = Mutex::new(latest_audio_data);
 
     let stream = setup_audio_input_loop(latest_spectrum_data.clone(), latest_audio_data);
     stream.play().unwrap();
@@ -97,7 +104,7 @@ fn main() {
         .execute(LeaveAlternateScreen)
         .unwrap();
 
-    println!("Gracefully shut down.");
+    // println!("Gracefully shut down.");
 }
 
 fn visualize_loop(
@@ -109,6 +116,7 @@ fn visualize_loop(
         // prepare the data for the TUI diagram
         let data = {
             let data = latest_spectrum_data.lock().unwrap();
+            // reduce data point, improves visualization
             let data = data.to_log_spectrum();
             let mut new_data = Vec::with_capacity(data.len());
             data.iter()
@@ -129,13 +137,6 @@ fn visualize_loop(
                         .marker(symbols::Marker::Dot)
                         .style(Style::default().fg(Color::Yellow))
                         .data(data.as_slice()),
-                    /*.data(&[
-                        (0.0, 0.0),
-                        (100.0, 100.0),
-                        (200.0, 120.0),
-                        (300.0, 100.0),
-                        (400.0, 50.0),
-                    ]),*/
                 ];
                 let chart = Chart::new(datasets)
                     .block(
@@ -169,9 +170,11 @@ fn visualize_loop(
                             .labels(vec![
                                 Span::styled("0", Style::default().add_modifier(Modifier::BOLD)),
                                 //Span::raw("0"),
-                                Span::styled("100", Style::default().add_modifier(Modifier::BOLD)),
+                                Span::styled("1000", Style::default().add_modifier(Modifier::BOLD)),
                             ])
-                            .bounds([0.0, 100.0]),
+                            // TODO I don't know what unit this is :(
+                            //  found the boundary by testing..
+                            .bounds([0.0, 1000.0]),
                     );
                 f.render_widget(chart, chunks[0]);
             })
@@ -229,13 +232,18 @@ fn process_audio_input(
     let mut lock = audio_ring_buf.lock().unwrap();
     // scale each value from -1 to 1 ... I'm not sure if this is really required but I think
     // the results will be more accurate in the end..
-    data.iter()
-        .map(|x| *x * i16::MAX as f32)
-        .for_each(|x| lock.push(x));
+    lock.extend(
+        data.iter()
+            // scale value from [-1; 1] to [-i16::MAX, i16::MAX]
+            // better results
+            .map(|x| *x * i16::MAX as f32)
+    );
+    // apply window function
+    let window = hann_window(&lock.to_vec());
 
     // calculate spectrum
     let spectrum = spectrum_analyzer::samples_fft_to_spectrum(
-        lock.to_vec().as_slice(),
+        &window,
         44100,
         FrequencyLimit::All,
         // Some(&spectrum_analyzer::scaling::scale_20_times_log10),
