@@ -149,6 +149,9 @@ mod tests {
         assert_eq!(9.0, f4.val(), "add must work");
         assert!(f2 < f1, "Compare must work");
         assert!(f1 > f2, "Compare must work");
-        assert_eq!(f1, f1, "Equal must work");
+        #[allow(clippy::eq_op)]
+        {
+            assert_eq!(f1, f1, "Equal must work");
+        }
     }
 }

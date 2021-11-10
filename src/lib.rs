@@ -68,7 +68,8 @@ SOFTWARE.
 #![allow(
     clippy::suboptimal_flops,
     clippy::redundant_pub_crate,
-    clippy::fallible_impl_from
+    clippy::fallible_impl_from,
+    clippy::float_cmp
 )]
 #![deny(missing_debug_implementations)]
 #![deny(rustdoc::all)]

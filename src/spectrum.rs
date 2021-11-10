@@ -665,6 +665,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::cognitive_complexity)]
     fn test_spectrum_basic() {
         let spectrum = vec![
             (0.0_f32, 5.0_f32),

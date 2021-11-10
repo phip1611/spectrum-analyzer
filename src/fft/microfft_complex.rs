@@ -53,7 +53,7 @@ impl FftImpl {
     fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
         samples
             .iter()
-            .map(|x| Complex32::new(x.clone(), 0.0))
+            .map(|x| Complex32::new(*x, 0.0))
             .collect::<Vec<Complex32>>()
     }
 }

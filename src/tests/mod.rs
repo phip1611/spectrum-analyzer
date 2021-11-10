@@ -160,16 +160,12 @@ fn test_spectrum_power() {
     let short_window = &sine_audio[0..2048];
     let long_window = &sine_audio[0..4096];
 
-    let spectrum_short_window = samples_fft_to_spectrum(
-        &short_window,
-        44100,
-        FrequencyLimit::All,
-        Some(&divide_by_N),
-    )
-    .unwrap();
+    let spectrum_short_window =
+        samples_fft_to_spectrum(short_window, 44100, FrequencyLimit::All, Some(&divide_by_N))
+            .unwrap();
 
     let spectrum_long_window =
-        samples_fft_to_spectrum(&long_window, 44100, FrequencyLimit::All, Some(&divide_by_N))
+        samples_fft_to_spectrum(long_window, 44100, FrequencyLimit::All, Some(&divide_by_N))
             .unwrap();
 
     /*spectrum_static_plotters_png_visualize(
@@ -451,7 +447,7 @@ fn test_visualize_log_spectrum() {
 
 /// Test that the scaling actually has the effect that we expect it to have.
 #[test]
-fn test_divide_by_n_as_effect() {
+fn test_divide_by_n_has_effect() {
     let audio_data = sine_wave_audio_data_multiple(&[100.0, 200.0, 400.0], 1000, 2000);
     let audio_data = audio_data.into_iter().map(|x| x as f32).collect::<Vec<_>>();
     let audio_data = hann_window(&audio_data[0..1024]);
