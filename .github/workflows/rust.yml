@@ -1,7 +1,7 @@
 name: Build
 
 # Triggers the workflow on push or pull request events (for any branch in a repository)
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -14,7 +14,7 @@ jobs:
         rust:
           - stable
           - nightly
-          - 1.55.0 # MSRV for tests
+          - 1.56.1
     steps:
       - uses: actions/checkout@v2
       - name: Install package libasound2-dev
@@ -51,9 +51,21 @@ jobs:
           - stable
     steps:
       - uses: actions/checkout@v2
-      - name: Rustfmt
+      - name: Rustfmt (checks all source code/all features)
         run: cargo fmt -- --check
-      - name: Clippy
-        run: cargo clippy --features all
-      - name: Rustdoc
-        run: cargo doc --features all
+      - name: Clippy (default feature)
+        run: cargo clippy
+      - name: Clippy (rustfft-complex)
+        run: cargo clippy --no-default-features --features "rustfft-complex"
+      - name: Clippy (microfft-complex)
+        run: cargo clippy --no-default-features --features "microfft-complex"
+      - name: Clippy (microfft-real)
+        run: cargo clippy --no-default-features --features "microfft-real"
+      - name: Rustdoc (default feature)
+        run: cargo doc
+      - name: Rustdoc (rustfft-complex)
+        run: cargo doc --no-default-features --features "rustfft-complex"
+      - name: Rustdoc (microfft-complex)
+        run: cargo doc --no-default-features --features "microfft-complex"
+      - name: Rustdoc (microfft-real)
+        run: cargo doc --no-default-features --features "microfft-real"

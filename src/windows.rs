@@ -23,8 +23,8 @@ SOFTWARE.
 */
 //! Several window functions which you can apply before doing the FFT.
 //! For more information:
-//! - https://en.wikipedia.org/wiki/Window_function
-//! - https://www.youtube.com/watch?v=dCeHOf4cJE0 (FFT and windowing by Texas Instruments)
+//! - <https://en.wikipedia.org/wiki/Window_function>
+//! - <https://www.youtube.com/watch?v=dCeHOf4cJE0> (FFT and windowing by Texas Instruments)
 
 use alloc::vec::Vec;
 use core::f32::consts::PI;
@@ -40,7 +40,7 @@ pub enum WindowFn {
 
 }*/
 
-/// Applies a Hann window (https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+/// Applies a Hann window (<https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows>)
 /// to an array of samples.
 ///
 /// ## Return value
@@ -57,7 +57,7 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
     windowed_samples
 }
 
-/// Applies a Hamming window (https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows)
+/// Applies a Hamming window (<https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows>)
 /// to an array of samples.
 ///
 /// ## Return value
@@ -72,7 +72,7 @@ pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
     windowed_samples
 }
 
-/// Applies a Blackman-Harris 4-term window (https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window)
+/// Applies a Blackman-Harris 4-term window (<https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window>)
 /// to an array of samples.
 ///
 /// ## Return value
@@ -88,9 +88,9 @@ pub fn blackman_harris_4term(samples: &[f32]) -> Vec<f32> {
 /// Applies a Blackman-Harris 7-term window to an array of samples.
 ///
 /// ## More information
-/// * https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window
-/// * https://ieeexplore.ieee.org/document/940309
-/// * https://dsp.stackexchange.com/questions/51095/seven-term-blackman-harris-window
+/// * <https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window>
+/// * <https://ieeexplore.ieee.org/document/940309>
+/// * <https://dsp.stackexchange.com/questions/51095/seven-term-blackman-harris-window>
 ///
 /// ## Return value
 /// New vector with Blackman-Harris 7-term window applied to the values.
@@ -111,7 +111,7 @@ pub fn blackman_harris_7term(samples: &[f32]) -> Vec<f32> {
 }
 
 /// Applies a Blackman-Harris x-term window
-/// (https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window)
+/// (<https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window>)
 /// to an array of samples. The x is specified by `alphas.len()`.
 ///
 /// ## Return value

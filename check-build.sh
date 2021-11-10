@@ -12,9 +12,17 @@ cargo test --all-targets --no-default-features --features "rustfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-real"
 
-cargo fmt
 cargo fmt -- --check # (--check doesn't change the files)
+
 cargo doc
+cargo doc --no-default-features --features "rustfft-complex"
+cargo doc --no-default-features --features "microfft-complex"
+cargo doc --no-default-features --features "microfft-real"
+
+cargo clippy --all-targets
+cargo clippy --all-targets --no-default-features --features "rustfft-complex"
+cargo clippy --all-targets --no-default-features --features "microfft-complex"
+cargo clippy --all-targets --no-default-features --features "microfft-real"
 
 # test no_std
 rustup target add thumbv7em-none-eabihf

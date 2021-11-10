@@ -5,5 +5,5 @@
 # makes sure that "clippy" and "rustfmt" get downloaded and installed
 # when "cargo fmt" or "cargo clippy" gets invoked.
 profile = "default"
-channel = "1.55.0" # msvr also in README
+channel = "1.56.1" # msvr also in README
 

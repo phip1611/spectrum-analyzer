@@ -231,7 +231,7 @@ impl FrequencySpectrum {
     /// when the libraries main function was called.
     ///
     /// More information:
-    /// https://dsp.stackexchange.com/questions/12972/discrete-fourier-transform-what-is-the-dc-term-really
+    /// <https://dsp.stackexchange.com/questions/12972/discrete-fourier-transform-what-is-the-dc-term-really>
     ///
     /// Excerpt:
     /// *As far as practical applications go, the DC or 0 Hz term is not particularly useful.

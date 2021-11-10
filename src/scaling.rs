@@ -69,7 +69,7 @@ pub type SpectrumScalingFunction<'a> = &'a dyn Fn(f32, &SpectrumDataStats) -> f3
 /// Calculates the base 10 logarithm of each frequency magnitude and
 /// multiplies it with 20. This scaling is quite common, you can
 /// find more information for example here:
-/// https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
+/// <https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf>
 ///
 /// ## Usage
 /// ```rust
