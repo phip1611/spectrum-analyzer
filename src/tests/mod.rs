@@ -24,22 +24,19 @@ SOFTWARE.
 //! Test module for "integration"-like tests. No small unit tests of simple functions.
 
 use crate::error::SpectrumAnalyzerError;
-use crate::scaling::{combined, divide_by_N, scale_20_times_log10, scale_to_zero_to_one};
+use crate::scaling::{divide_by_N, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{hamming_window, hann_window};
 use crate::{samples_fft_to_spectrum, FrequencyLimit};
-use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
-use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
-use audio_visualizer::waveform::staticc::plotters_png_file::waveform_static_plotters_png_visualize;
+use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
+use audio_visualizer::waveform::plotters_png_file::waveform_static_plotters_png_visualize;
 use audio_visualizer::Channels;
 use core::cmp::max;
 
-/// Directory with test samples (e.g. mp3) can be found here.
-#[allow(dead_code)]
-const TEST_SAMPLES_DIR: &str = "test/samples";
+// /// Directory with test samples (e.g. mp3) can be found here.
+// const TEST_SAMPLES_DIR: &str = "test/samples";
 /// If tests create files, they should be stored here.
-#[allow(dead_code)]
 const TEST_OUT_DIR: &str = "test/out";
 
 mod sine;
@@ -399,50 +396,6 @@ fn test_scaling_produces_error() {
         Some(&|_val, _info| f32::NAN),
     )
     .expect_err("Must throw error due to illegal scaling!");
-}
-
-#[test]
-fn test_visualize_log_spectrum() {
-    let data = sine_wave_audio_data_multiple(
-        &[
-            32.0, 64.0, 100.0, 128.0, 150.0, 256.0, 300.0, 512.0, 700.0, 1024.0, 1400.0, 2048.0,
-            2500.0, 4096.0, 5000.0, 8192.0, 10000.0, 10100.0, 10200.0, 10300.0, 10400.0, 16384.0,
-            19000.0, 19100.0, 19200.0, 19300.0, 22050.0,
-        ],
-        44100,
-        50,
-    );
-    let data = data
-        .into_iter()
-        .take(2048)
-        .map(|x| x as f32)
-        .collect::<Vec<_>>();
-    let data = hann_window(&data);
-    let spectrum = samples_fft_to_spectrum(
-        data.as_slice(),
-        44100,
-        FrequencyLimit::All,
-        Some(&combined(&[&divide_by_N, &scale_20_times_log10])),
-        // Some(&|val, stats| ),
-        // None,
-    )
-    .unwrap();
-    let log_spectrum = spectrum.to_log_spectrum();
-    let log_spectrum = log_spectrum
-        .into_iter()
-        .map(|(fr, val)| (fr.val() as u32, val.val()))
-        .collect::<BTreeMap<_, _>>();
-
-    spectrum_static_plotters_png_visualize(
-        &spectrum.to_map(None),
-        TEST_OUT_DIR,
-        "test_visualized_logarithmic_spectrum__normal.png",
-    );
-    spectrum_static_plotters_png_visualize(
-        &log_spectrum,
-        TEST_OUT_DIR,
-        "test_visualized_logarithmic_spectrum__logarithmic.png",
-    );
 }
 
 /// Test that the scaling actually has the effect that we expect it to have.

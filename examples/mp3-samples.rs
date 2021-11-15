@@ -39,14 +39,15 @@ SOFTWARE.
 #![deny(missing_debug_implementations)]
 #![deny(rustdoc::all)]
 
-use audio_visualizer::spectrum::staticc::plotters_png_file::spectrum_static_plotters_png_visualize;
-use audio_visualizer::test_support::TEST_OUT_DIR;
+use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
 use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
 use spectrum_analyzer::scaling::scale_to_zero_to_one;
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use std::fs::File;
 use std::time::Instant;
+
+const TEST_OUT_DIR: &str = "test/out";
 
 fn main() {
     println!("bass drum example:");

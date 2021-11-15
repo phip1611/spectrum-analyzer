@@ -115,7 +115,6 @@ mod frequency;
 mod limit;
 pub mod scaling;
 mod spectrum;
-mod util;
 pub mod windows;
 
 // test module for large "integration"-like tests

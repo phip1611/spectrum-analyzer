@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1
+- removed `FrequencySpectrum::to_log_spectrum` (was useless; my understanding was wrong)
+- added example `plot_log_spectrum` that shows how you could display a logarithmic spectrum
+  in real-time in a window
+- removed example `live-spectrum-visualization` (was really bad)
+
 ## 1.2.0
 - MSRV is now 1.56.1
 - Rust edition 2021
