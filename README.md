@@ -23,11 +23,6 @@ are there mainly for educational reasons and to support me while programming/tes
 
 ### Cargo.toml
 ```toml
-# ONLY NEEDED FOR `no_std`-builds!
-# fixes `no_std` build problems caused by wrong feature resolution of Cargo
-# This works since Rust 1.51 (stable)
-resolver = "2"
-
 # by default feature "microfft-real" is used
 [dependencies]
 spectrum-analyzer = "<latest version, see crates.io>"
