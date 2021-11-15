@@ -102,7 +102,7 @@ Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](res/spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ## Live Audio + Spectrum Visualization
-Execute example `$ cargo run --release --example live_visualization`. It will show you
+Execute example `$ cargo run --release --example live-visualization`. It will show you
 how you can visualize audio data in realtime + the current spectrum.
 
 ![Example visualization of real-time audio + spectrum analysis](res/live_demo_spectrum_green_day_holiday.gif "Example visualization of real-time audio + spectrum analysis")

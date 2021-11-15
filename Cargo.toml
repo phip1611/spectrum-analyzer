@@ -4,7 +4,7 @@ description = """
 A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
 It follows the KISS principle and consists of simple building blocks/optional features.
 """
-version = "1.2.1"
+version = "1.2.2"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2021"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
@@ -14,6 +14,11 @@ license = "MIT"
 homepage = "https://github.com/phip1611/spectrum-analyzer"
 repository = "https://github.com/phip1611/spectrum-analyzer"
 documentation = "https://docs.rs/spectrum-analyzer"
+exclude = [
+    "res",
+    "test",
+    ".github"
+]
 
 [features]
 # by default we use microfft-real: it's the fastest and totally fit's our needs.
