@@ -24,11 +24,6 @@ SOFTWARE.
 //! Real FFT using `microfft::real`.
 //! Works in `no_std`-environments, maximum sample length is 4096 (with microfft version 0.4.0)
 //! and it's faster than a "typical" complex FFT.
-//!
-//! **Currently it seems like with this implementation you only can get
-//! the frequencies zero to `sampling_rate/4`, i.e. half of Nyquist frequency!**
-//! I found out so by plotting the values. Wait until
-//! https://gitlab.com/ra_kete/microfft-rs/-/issues/9 gets resolved (TODO!)
 
 use alloc::vec::Vec;
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+- MSRV is now 1.56.1
+- Rust edition 2021
+
 ## 1.1.2
 - example `live-spectrum-visualization` requires Rust stable `1.55.0` because 
   the `ringbuffer`-dependency requires it

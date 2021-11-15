@@ -60,8 +60,8 @@ use tui::widgets::{Axis, Block, Borders, Chart, Dataset};
 use tui::{symbols, Terminal};
 
 use spectrum_analyzer::scaling::{combined, divide_by_N};
-use spectrum_analyzer::{FrequencyLimit, FrequencySpectrum};
 use spectrum_analyzer::windows::hann_window;
+use spectrum_analyzer::{FrequencyLimit, FrequencySpectrum};
 
 /// Run in terminal (not IDE!) and it will open an alternate screen where you can see
 /// the nice visualization. Unfortunately, this isn't really sexy so far.. :(
@@ -131,13 +131,11 @@ fn visualize_loop(
                     .margin(0)
                     .constraints([Constraint::Percentage(100), Constraint::Percentage(0)].as_ref())
                     .split(f.size());
-                let datasets = vec![
-                    Dataset::default()
-                        // .name("data2")
-                        .marker(symbols::Marker::Dot)
-                        .style(Style::default().fg(Color::Yellow))
-                        .data(data.as_slice()),
-                ];
+                let datasets = vec![Dataset::default()
+                    // .name("data2")
+                    .marker(symbols::Marker::Dot)
+                    .style(Style::default().fg(Color::Yellow))
+                    .data(data.as_slice())];
                 let chart = Chart::new(datasets)
                     .block(
                         Block::default()
@@ -236,7 +234,7 @@ fn process_audio_input(
         data.iter()
             // scale value from [-1; 1] to [-i16::MAX, i16::MAX]
             // better results
-            .map(|x| *x * i16::MAX as f32)
+            .map(|x| *x * i16::MAX as f32),
     );
     // apply window function
     let window = hann_window(&lock.to_vec());
