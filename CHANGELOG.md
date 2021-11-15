@@ -1,16 +1,16 @@
 # Changelog
 
-## 1.2.1
+## 1.2.1 (2021-11-15)
 - removed `FrequencySpectrum::to_log_spectrum` (was useless; my understanding was wrong)
-- added example `plot_log_spectrum` that shows how you could display a logarithmic spectrum
-  in real-time in a window
+- added example `live-visualization` that shows how you could visualize a spectrum in real-time \
+  ![Example visualization of real-time audio + spectrum analysis](res/live_demo_spectrum_green_day_holiday.gif "Example visualization of real-time audio + spectrum analysis") 
 - removed example `live-spectrum-visualization` (was really bad)
 
-## 1.2.0
+## 1.2.0 (2021-11-10)
 - MSRV is now 1.56.1
 - Rust edition 2021
 
-## 1.1.2
+## 1.1.2 (2021-09-14)
 - example `live-spectrum-visualization` requires Rust stable `1.55.0` because 
   the `ringbuffer`-dependency requires it
 - the rest of the crate should still build with the current MSRV `1.52.1`

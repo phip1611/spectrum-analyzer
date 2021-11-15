@@ -82,8 +82,8 @@ fn main() {
 | FFT (`microfft/real`) to spectrum with 4096 samples    | ≈90µs  |
 | FFT (`microfft/complex`) to spectrum with 4096 samples | ≈250µs |
 
-## Example visualization
-In the following example you can see a basic visualization of frequencies `0 to 4000Hz` for 
+## Example Visualizations
+In the following examples you can see a basic visualization of the spectrum from `0 to 4000Hz` for 
 a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `44100Hz` sampling rate. The peaks for the 
 given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms of audio signal.
 
@@ -91,19 +91,21 @@ given frequencies are clearly visible. Each calculation was done with `2048` sam
 
 ### Spectrum *without window function* on samples
 Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with no window function.](spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.")
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with no window function.](res/spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.")
 
 ### Spectrum with *Hann window function* on samples before FFT
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](spectrum_sine_waves_50_1000_3777hz--hann-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](res/spectrum_sine_waves_50_1000_3777hz--hann-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ### Spectrum with *Hamming window function* on samples before FFT
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
+![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](res/spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
-## Tips For Audio Visualization
+## Live Audio + Spectrum Visualization
 Execute example `$ cargo run --release --example live_visualization`. It will show you
 how you can visualize audio data in realtime + the current spectrum.
+
+![Example visualization of real-time audio + spectrum analysis](res/live_demo_spectrum_green_day_holiday.gif "Example visualization of real-time audio + spectrum analysis")
 
 ## Building and Executing Tests
 To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian). This is required because
