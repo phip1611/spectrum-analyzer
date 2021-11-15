@@ -17,8 +17,8 @@ jobs:
           - 1.56.1
     steps:
       - uses: actions/checkout@v2
-      - name: Install package libasound2-dev
-        run: sudo apt-get -y install libasound2-dev
+      - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
+        run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
 
       # build with all features/fft implementations
       - run: cargo build --all-targets
