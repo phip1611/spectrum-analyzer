@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.2 / 1.2.3 (2021-11-26)
+- typos and small fixes
+
 ## 1.2.1 (2021-11-15)
 - removed `FrequencySpectrum::to_log_spectrum` (was useless; my understanding was wrong)
 - added example `live-visualization` that shows how you could visualize a spectrum in real-time \
