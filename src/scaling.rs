@@ -121,6 +121,18 @@ pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
     }
 }
 
+/// Like [`divide_by_N`] but additionally calculates the square root from the
+/// result. This is the recommended scaling in the `rustfft` documentation
+/// (but is generally applicable).
+#[allow(non_snake_case)]
+pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
+    if stats.n == 0.0 {
+        val
+    } else {
+        libm::sqrtf(val / stats.n)
+    }
+}
+
 /// Combines several scaling functions into a new single one.
 ///
 /// # Example

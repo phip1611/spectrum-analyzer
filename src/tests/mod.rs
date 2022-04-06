@@ -24,7 +24,7 @@ SOFTWARE.
 //! Test module for "integration"-like tests. No small unit tests of simple functions.
 
 use crate::error::SpectrumAnalyzerError;
-use crate::scaling::{divide_by_N, scale_to_zero_to_one};
+use crate::scaling::{divide_by_N, divide_by_N_sqrt, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{hamming_window, hann_window};
 use crate::{samples_fft_to_spectrum, FrequencyLimit};
@@ -156,16 +156,29 @@ fn test_spectrum_power() {
     // 1/44100 * 4096 => 0.0928s
     let short_window = &sine_audio[0..2048];
     let long_window = &sine_audio[0..4096];
+    //let very_long_window = &sine_audio[0..16384];
 
-    let spectrum_short_window =
-        samples_fft_to_spectrum(short_window, 44100, FrequencyLimit::All, Some(&divide_by_N))
-            .unwrap();
+    let spectrum_short_window = samples_fft_to_spectrum(
+        short_window,
+        44100,
+        FrequencyLimit::Max(4000.0),
+        Some(&divide_by_N_sqrt),
+    )
+    .unwrap();
 
-    let spectrum_long_window =
-        samples_fft_to_spectrum(long_window, 44100, FrequencyLimit::All, Some(&divide_by_N))
-            .unwrap();
+    let spectrum_long_window = samples_fft_to_spectrum(
+        long_window,
+        44100,
+        FrequencyLimit::Max(4000.0),
+        Some(&divide_by_N_sqrt),
+    )
+    .unwrap();
 
-    /*spectrum_static_plotters_png_visualize(
+    /*let spectrum_very_long_window =
+    samples_fft_to_spectrum(very_long_window, 44100, FrequencyLimit::Max(4000.0), Some(&divide_by_N_sqrt))
+        .unwrap();*/
+
+    spectrum_static_plotters_png_visualize(
         &spectrum_short_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_power__short_window.png",
@@ -174,17 +187,30 @@ fn test_spectrum_power() {
         &spectrum_long_window.to_map(None),
         TEST_OUT_DIR,
         "test_spectrum_power__long_window.png",
+    );
+    /*spectrum_static_plotters_png_visualize(
+        &spectrum_long_window.to_map(None),
+        TEST_OUT_DIR,
+        "test_spectrum_power__very_long_window.png",
     );*/
 
     let a = spectrum_short_window.freq_val_exact(interesting_frequency);
     let b = spectrum_long_window.freq_val_exact(interesting_frequency);
-    let abs_diff = (a - b).val().abs();
-    let deviation = abs_diff / max(a, b).val();
-    // I thought they should match closer.. but that's the closest I can get.
+    //let c = spectrum_very_long_window.freq_val_exact(interesting_frequency);
+    //dbg!(a, b, c);
+    let ab_abs_diff = (a - b).val().abs();
+    //let ac_abs_diff = (a - c).val().abs();
+    let ab_deviation = ab_abs_diff / max(a, b).val();
+    //let ac_deviation = ac_abs_diff / max(a, c).val();
     assert!(
-        deviation < 0.15,
-        "Values must more or less equal, because both were divided by their N"
-    )
+        ab_deviation < 0.07,
+        "Values must more or less equal, because both were divided by their N. deviation={}",
+        ab_deviation
+    );
+    //assert!(
+    //    ac_deviation < 0.07,
+    //    "Values must more or less equal, because both were divided by their N. deviation={}", ac_deviation
+    //);
 }
 
 #[test]
@@ -414,7 +440,7 @@ fn test_divide_by_n_has_effect() {
         let actual_with_scaling = scaled_spectrum.data()[i].1.val();
         assert!(
             (actual_no_scaling / 1024.0 - actual_with_scaling) < 0.1,
-            "[{}] actual_no_scaling={} should be roughly 1024 times bigger than actual_with_scaling={}", 
+            "[{}] actual_no_scaling={} should be roughly 1024 times bigger than actual_with_scaling={}",
             i,
             actual_no_scaling,
             actual_with_scaling,
