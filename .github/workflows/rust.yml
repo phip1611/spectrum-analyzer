@@ -17,6 +17,13 @@ jobs:
           - 1.56.1
     steps:
       - uses: actions/checkout@v2
+      # Important preparation step: override the latest default Rust version in GitHub CI
+      # with the current value of the iteration in the "strategy.matrix.rust"-array.
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: ${{ matrix.rust }}
+          override: true
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
         run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
 
@@ -51,6 +58,13 @@ jobs:
           - stable
     steps:
       - uses: actions/checkout@v2
+      # Important preparation step: override the latest default Rust version in GitHub CI
+      # with the current value of the iteration in the "strategy.matrix.rust"-array.
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: default
+          toolchain: ${{ matrix.rust }}
+          override: true
       - name: Rustfmt (checks all source code/all features)
         run: cargo fmt -- --check
       - name: Clippy (default feature)
