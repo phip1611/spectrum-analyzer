@@ -301,27 +301,23 @@ fn fft_result_to_spectrum(
         // ### BEGIN filtering: results in lower calculation and memory overhead!
         // check lower bound frequency (inclusive)
         .filter(|(fr, _fft_result)| {
-            if let Some(min_fr) = maybe_min {
+            maybe_min.map_or(true, |min_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
                 //            exactly the frequency, that a user requested
                 //            e.g. 1416.8 < limit < 1425.15
                 *fr >= min_fr
-            } else {
-                true
-            }
+            })
         })
         // check upper bound frequency (inclusive)
         .filter(|(fr, _fft_result)| {
-            if let Some(max_fr) = maybe_max {
+            maybe_max.map_or(true, |max_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
                 //            exactly the frequency, that a user requested
                 //            e.g. 1416.8 < limit < 1425.15
                 *fr <= max_fr
-            } else {
-                true
-            }
+            })
         })
         // ### END filtering
         // #######################

@@ -430,16 +430,7 @@ impl FrequencySpectrum {
             .borrow()
             .iter()
             .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
-            .map(|(fr, fr_val)| {
-                (
-                    if let Some(fnc) = scale_fn {
-                        (fnc)(fr)
-                    } else {
-                        fr as u32
-                    },
-                    fr_val,
-                )
-            })
+            .map(|(fr, fr_val)| (scale_fn.map_or(fr as u32, |fnc| (fnc)(fr)), fr_val))
             .collect()
     }
 
