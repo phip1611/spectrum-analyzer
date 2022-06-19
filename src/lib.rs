@@ -71,6 +71,7 @@ SOFTWARE.
     clippy::fallible_impl_from,
     clippy::float_cmp
 )]
+#![deny(missing_docs)]
 #![deny(missing_debug_implementations)]
 #![deny(rustdoc::all)]
 #![no_std]
