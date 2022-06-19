@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.5 (2022-06-19)
+- dependency update
+- number of sample can now also be 8192 and 16384 (when the feature `microfft` is used)
+
 ## 1.2.4 (2022-04-06)
 - added scaling fn `divide_by_N_sqrt` which is the recommended
   normalization function by the `rustfft` documentation (but generally applicable)
