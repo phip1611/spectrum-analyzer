@@ -23,7 +23,7 @@ SOFTWARE.
 */
 //! Complex FFT using `microfft::complex`. Results should be equal to the ones from `rustfft`.
 //! The difference is that this implementation works in `no_std`-environments but it is
-//! limited to a maximum sample length of 4096 (with microfft version 0.4.0)
+//! limited to a maximum sample length of 16384 (with microfft version 0.5.0)
 
 use alloc::vec::Vec;
 
