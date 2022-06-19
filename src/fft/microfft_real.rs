@@ -81,8 +81,16 @@ impl Fft<Complex32> for FftImpl {
             } else if buffer.len() == 4096 {
                 let mut buffer: [_; 4096] = buffer.try_into().unwrap();
                 real::rfft_4096(&mut buffer).to_vec()
+            } else if buffer.len() == 8192 {
+                let mut buffer: [_; 8192] = buffer.try_into().unwrap();
+                real::rfft_8192(&mut buffer).to_vec()
+            } else if buffer.len() == 16384 {
+                let mut buffer: [_; 16384] = buffer.try_into().unwrap();
+                real::rfft_16384(&mut buffer).to_vec()
             } else {
-                panic!("`microfft::real` only supports powers of 2 between 2 and 4096!");
+                panic!(
+                    "`microfft::real` only supports powers of 2 between 2 and 16384 as amount of samples!"
+                );
             }
         };
 
