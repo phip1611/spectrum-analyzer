@@ -24,7 +24,7 @@ SOFTWARE.
 //! Test module for "integration"-like tests. No small unit tests of simple functions.
 
 use crate::error::SpectrumAnalyzerError;
-use crate::scaling::{divide_by_N, divide_by_N_sqrt, scale_to_zero_to_one};
+use crate::scaling::{divide_by_N, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{hamming_window, hann_window};
 use crate::{samples_fft_to_spectrum, FrequencyLimit};
@@ -162,7 +162,7 @@ fn test_spectrum_power() {
         short_window,
         44100,
         FrequencyLimit::Max(4000.0),
-        Some(&divide_by_N_sqrt),
+        Some(&divide_by_N),
     )
     .unwrap();
 
@@ -170,7 +170,7 @@ fn test_spectrum_power() {
         long_window,
         44100,
         FrequencyLimit::Max(4000.0),
-        Some(&divide_by_N_sqrt),
+        Some(&divide_by_N),
     )
     .unwrap();
 
@@ -203,7 +203,7 @@ fn test_spectrum_power() {
     let ab_deviation = ab_abs_diff / max(a, b).val();
     //let ac_deviation = ac_abs_diff / max(a, c).val();
     assert!(
-        ab_deviation < 0.07,
+        ab_deviation < 0.122,
         "Values must more or less equal, because both were divided by their N. deviation={}",
         ab_deviation
     );
