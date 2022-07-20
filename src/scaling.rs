@@ -121,15 +121,16 @@ pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
     }
 }
 
-/// Like [`divide_by_N`] but additionally calculates the square root from the
-/// result. This is the recommended scaling in the `rustfft` documentation
-/// (but is generally applicable).
+/// Like [`divide_by_N`] but divides each value by `sqrt(N)`. This is the recommended scaling
+/// in the `rustfft` documentation (but is generally applicable).
+/// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
 pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
     if stats.n == 0.0 {
         val
     } else {
-        libm::sqrtf(val / stats.n)
+        // https://docs.rs/rustfft/latest/rustfft/#normalization
+        val / libm::sqrtf(stats.n)
     }
 }
 
@@ -139,6 +140,7 @@ pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// ```ignored
 /// Some(&combined(&[&divide_by_N, &scale_20_times_log10]))
 /// ```
+#[allow(clippy::type_complexity)]
 pub fn combined<'a>(
     fncs: &'a [SpectrumScalingFunction<'a>],
 ) -> Box<dyn Fn(f32, &SpectrumDataStats) -> f32 + 'a> {

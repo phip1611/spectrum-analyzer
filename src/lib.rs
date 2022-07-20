@@ -194,7 +194,7 @@ pub fn samples_fft_to_spectrum(
     }
     let max_detectable_frequency = sampling_rate as f32 / 2.0;
     // verify frequency limit: unwrap error or else ok
-    let _ = frequency_limit
+    frequency_limit
         .verify(max_detectable_frequency)
         .map_err(SpectrumAnalyzerError::InvalidFrequencyLimit)?;
 

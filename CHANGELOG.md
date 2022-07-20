@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.6 (2022-07-20)
+- fixed wrong scaling in `scaling::divide_by_N_sqrt` (<https://github.com/phip1611/spectrum-analyzer/issues/41>)
+
 ## 1.2.5 (2022-06-19)
 - dependency update
 - number of sample can now also be 8192 and 16384 (when the feature `microfft` is used)
