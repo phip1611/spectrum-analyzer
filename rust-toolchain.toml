@@ -1,4 +1,4 @@
-# doesn't work in CI
+# doesn't used in CI
 
 [toolchain]
 # https://rust-lang.github.io/rustup/concepts/profiles.html
