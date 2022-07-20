@@ -52,8 +52,8 @@ impl FrequencyLimit {
     #[inline(always)]
     pub const fn maybe_min(&self) -> Option<f32> {
         match self {
-            FrequencyLimit::Min(min) => Some(*min),
-            FrequencyLimit::Range(min, _) => Some(*min),
+            Self::Min(min) => Some(*min),
+            Self::Range(min, _) => Some(*min),
             _ => None,
         }
     }
@@ -62,8 +62,8 @@ impl FrequencyLimit {
     #[inline(always)]
     pub const fn maybe_max(&self) -> Option<f32> {
         match self {
-            FrequencyLimit::Max(max) => Some(*max),
-            FrequencyLimit::Range(_, max) => Some(*max),
+            Self::Max(max) => Some(*max),
+            Self::Range(_, max) => Some(*max),
             _ => None,
         }
     }
@@ -96,9 +96,9 @@ impl FrequencyLimit {
                     Ok(())
                 }
             }
-            FrequencyLimit::Range(min, max) => {
-                let _ = Self::Min(*min).verify(max_detectable_frequency)?;
-                let _ = Self::Max(*max).verify(max_detectable_frequency)?;
+            Self::Range(min, max) => {
+                Self::Min(*min).verify(max_detectable_frequency)?;
+                Self::Max(*max).verify(max_detectable_frequency)?;
                 if min > max {
                     Err(FrequencyLimitError::InvalidRange(*min, *max))
                 } else {

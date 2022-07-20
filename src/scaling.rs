@@ -140,6 +140,7 @@ pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// ```ignored
 /// Some(&combined(&[&divide_by_N, &scale_20_times_log10]))
 /// ```
+#[allow(clippy::type_complexity)]
 pub fn combined<'a>(
     fncs: &'a [SpectrumScalingFunction<'a>],
 ) -> Box<dyn Fn(f32, &SpectrumDataStats) -> f32 + 'a> {
