@@ -52,8 +52,8 @@ pub struct SpectrumDataStats {
 
 /// Describes the type for a function that scales/normalizes the data inside [`crate::FrequencySpectrum`].
 /// The scaling only affects the value/amplitude of the frequency, but not the frequency itself.
-/// It gets applied to every single element.
-/// ///
+/// It is applied to every single element.
+///
 /// A scaling function can be used for example to subtract the minimum (`min`) from each value.
 /// It is optional to use the second parameter [`SpectrumDataStats`].
 /// and the type works with static functions as well as dynamically created closures.
@@ -64,7 +64,7 @@ pub struct SpectrumDataStats {
 ///
 /// This uses `f32` in favor of [`crate::FrequencyValue`] because the latter led to
 /// some implementation problems.
-pub type SpectrumScalingFunction<'a> = &'a dyn Fn(f32, &SpectrumDataStats) -> f32;
+pub type SpectrumScalingFunction = dyn Fn(f32, &SpectrumDataStats) -> f32;
 
 /// Calculates the base 10 logarithm of each frequency magnitude and
 /// multiplies it with 20. This scaling is quite common, you can
@@ -136,14 +136,14 @@ pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
 
 /// Combines several scaling functions into a new single one.
 ///
+/// Currently there is the limitation that the functions need to have
+/// a `'static` lifetime. This will be fixed if someone needs this.
+///
 /// # Example
 /// ```ignored
-/// Some(&combined(&[&divide_by_N, &scale_20_times_log10]))
+/// let fncs = combined(&[&divide_by_N, &scale_20_times_log10]);
 /// ```
-#[allow(clippy::type_complexity)]
-pub fn combined<'a>(
-    fncs: &'a [SpectrumScalingFunction<'a>],
-) -> Box<dyn Fn(f32, &SpectrumDataStats) -> f32 + 'a> {
+pub fn combined(fncs: &'static [&SpectrumScalingFunction]) -> Box<SpectrumScalingFunction> {
     Box::new(move |val, stats| {
         let mut val = val;
         for fnc in fncs {
@@ -169,7 +169,7 @@ mod tests {
             n: data.len() as f32,
         };
         // check that type matches
-        let scaling_fn: SpectrumScalingFunction = &scale_to_zero_to_one;
+        let scaling_fn: &SpectrumScalingFunction = &scale_to_zero_to_one;
         let scaled_data = data
             .into_iter()
             .map(|x| scaling_fn(x, &stats))
@@ -178,5 +178,23 @@ mod tests {
         for (expected_val, actual_val) in expected.iter().zip(scaled_data.iter()) {
             float_cmp::approx_eq!(f32, *expected_val, *actual_val, ulps = 3);
         }
+    }
+
+    // make sure this compiles
+    #[test]
+    fn test_combined_compiles() {
+        let _combined_static = combined(&[&scale_20_times_log10, &divide_by_N, &divide_by_N_sqrt]);
+
+        // doesn't compile yet.. fix this once someone requests it
+        /*let closure_scaling_fnc = |frequency_magnitude: f32, _stats: &SpectrumDataStats| {
+           0.0
+        };
+
+        let _combined_dynamic = combined(&[
+            &scale_20_times_log10,
+            &divide_by_N,
+            &divide_by_N_sqrt,
+            &closure_scaling_fnc,
+        ]);*/
     }
 }
