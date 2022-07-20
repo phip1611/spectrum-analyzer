@@ -116,7 +116,7 @@ impl FrequencySpectrum {
     #[inline(always)]
     pub fn apply_scaling_fn(
         &self,
-        scaling_fn: SpectrumScalingFunction,
+        scaling_fn: &SpectrumScalingFunction,
     ) -> Result<(), SpectrumAnalyzerError> {
         {
             // drop RefMut<> from borrow_mut() before calc_statistics

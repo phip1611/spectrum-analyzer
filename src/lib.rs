@@ -176,7 +176,7 @@ pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    scaling_fn: Option<SpectrumScalingFunction>,
+    scaling_fn: Option<&SpectrumScalingFunction>,
 ) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
     // everything below two samples is unreasonable
     if samples.len() < 2 {
@@ -247,7 +247,7 @@ fn fft_result_to_spectrum(
     fft_result: &[Complex32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
-    scaling_fn: Option<SpectrumScalingFunction>,
+    scaling_fn: Option<&SpectrumScalingFunction>,
 ) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
     let maybe_min = frequency_limit.maybe_min();
     let maybe_max = frequency_limit.maybe_max();
