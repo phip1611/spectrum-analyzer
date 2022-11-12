@@ -163,14 +163,14 @@ impl FrequencySpectrum {
     }
 
     /// Returns the maximum (frequency, frequency value)-pair of the spectrum
-    /// (regarding the frequency value).
+    /// **regarding the frequency value**.
     #[inline(always)]
     pub fn max(&self) -> (Frequency, FrequencyValue) {
         self.max.get()
     }
 
     /// Returns the minimum (frequency, frequency value)-pair of the spectrum
-    /// (regarding the frequency value).
+    /// **regarding the frequency value**.
     #[inline(always)]
     pub fn min(&self) -> (Frequency, FrequencyValue) {
         self.min.get()
@@ -444,15 +444,17 @@ impl FrequencySpectrum {
             l_fr_val.cmp(r_fr_val)
         });
 
-        // sum
+        // sum of all frequency values
         let sum: f32 = data_sorted
             .iter()
             .map(|fr_val| fr_val.1.val())
             .fold(0.0, |a, b| a + b);
 
+        // average of all frequency values
         let avg = sum / data_sorted.len() as f32;
         let average: FrequencyValue = avg.into();
 
+        // median of all frequency values
         let median = {
             // we assume that data_sorted.length() is always even, because
             // it must be a power of 2 (for FFT)
@@ -461,9 +463,9 @@ impl FrequencySpectrum {
             (a + b) / 2.0.into()
         };
 
-        // because we sorted the vector a few lines above
-        // by the value, the following lines are correct
-        // i.e. we get min/max value with corresponding frequency
+        // Because we sorted the vector from lowest to highest value, the
+        // following lines are correct, i.e., we get min/max value with
+        // the corresponding frequency.
         let min = data_sorted[0];
         let max = data_sorted[data_sorted.len() - 1];
 
@@ -567,6 +569,7 @@ mod tests {
             (250.0, 20.0),
             (300.0, 0.0),
             (450.0, 200.0),
+            (500.0, 100.0),
         ];
 
         let spectrum = spectrum
@@ -618,23 +621,24 @@ mod tests {
                 spectrum.data()[7],
                 "Vector must be ordered"
             );
+            assert_eq!(
+                (500.0.into(), 100.0.into()),
+                spectrum.data()[8],
+                "Vector must be ordered"
+            );
         }
 
         // test DC component getter
-        assert!(
-            spectrum.dc_component().is_some(),
-            "Spectrum must contain DC component"
-        );
         assert_eq!(
-            5.0,
-            spectrum.dc_component().unwrap().val(),
+            Some(5.0.into()),
+            spectrum.dc_component(),
             "Spectrum must contain DC component"
         );
 
         // test getters
         {
             assert_eq!(0.0, spectrum.min_fr().val(), "min_fr() must work");
-            assert_eq!(450.0, spectrum.max_fr().val(), "max_fr() must work");
+            assert_eq!(500.0, spectrum.max_fr().val(), "max_fr() must work");
             assert_eq!(
                 (300.0.into(), 0.0.into()),
                 spectrum.min(),
@@ -646,7 +650,7 @@ mod tests {
                 "max() must work"
             );
             assert_eq!(200.0 - 0.0, spectrum.range().val(), "range() must work");
-            assert_eq!(78.125, spectrum.average().val(), "average() must work");
+            assert_eq!(80.55556, spectrum.average().val(), "average() must work");
             assert_eq!(
                 (50 + 100) as f32 / 2.0,
                 spectrum.median().val(),
