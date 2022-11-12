@@ -1,9 +1,0 @@
-# doesn't used in CI
-
-[toolchain]
-# https://rust-lang.github.io/rustup/concepts/profiles.html
-# makes sure that "clippy" and "rustfmt" get downloaded and installed
-# when "cargo fmt" or "cargo clippy" gets invoked.
-profile = "default"
-channel = "1.56.1" # msvr also in README
-
