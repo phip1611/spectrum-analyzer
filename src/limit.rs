@@ -50,6 +50,7 @@ pub enum FrequencyLimit {
 impl FrequencyLimit {
     /// Returns the minimum value, if any.
     #[inline(always)]
+    #[must_use]
     pub const fn maybe_min(&self) -> Option<f32> {
         match self {
             Self::Min(min) => Some(*min),
@@ -60,6 +61,7 @@ impl FrequencyLimit {
 
     /// Returns the maximum value, if any.
     #[inline(always)]
+    #[must_use]
     pub const fn maybe_max(&self) -> Option<f32> {
         match self {
             Self::Max(max) => Some(*max),
@@ -71,6 +73,7 @@ impl FrequencyLimit {
     /// Returns the minimum value, panics if it's none.
     /// Unwrapped version of [`Self::maybe_min`].
     #[inline(always)]
+    #[must_use]
     pub fn min(&self) -> f32 {
         self.maybe_min().expect("Must contain a value!")
     }
@@ -78,6 +81,7 @@ impl FrequencyLimit {
     /// Returns the minimum value, panics if it's none.
     /// Unwrapped version of [`Self::maybe_max`].
     #[inline(always)]
+    #[must_use]
     pub fn max(&self) -> f32 {
         self.maybe_max().expect("Must contain a value!")
     }

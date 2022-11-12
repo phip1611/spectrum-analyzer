@@ -83,6 +83,7 @@ pub type SpectrumScalingFunction = dyn Fn(f32, &SpectrumDataStats) -> f32;
 /// );
 /// ```
 /// Function is of type [`SpectrumScalingFunction`].
+#[must_use]
 pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats) -> f32 {
     debug_assert!(!frequency_magnitude.is_infinite());
     debug_assert!(!frequency_magnitude.is_nan());
@@ -97,6 +98,7 @@ pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats
 /// Scales each frequency value/amplitude in the spectrum to interval `[0.0; 1.0]`.
 /// Function is of type [`SpectrumScalingFunction`]. Expects that [`SpectrumDataStats::min`] is
 /// not negative.
+#[must_use]
 pub fn scale_to_zero_to_one(val: f32, stats: &SpectrumDataStats) -> f32 {
     // usually not the case, except you use other scaling functions first,
     // that transforms the value to a negative one
@@ -113,6 +115,7 @@ pub fn scale_to_zero_to_one(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// Divides each value by N. Several resources recommend that the FFT result should be divided
 /// by the length of samples, so that values of different samples lengths are comparable.
 #[allow(non_snake_case)]
+#[must_use]
 pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
     if stats.n == 0.0 {
         val
@@ -125,6 +128,7 @@ pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// in the `rustfft` documentation (but is generally applicable).
 /// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
+#[must_use]
 pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
     if stats.n == 0.0 {
         val

@@ -81,6 +81,7 @@ impl FrequencySpectrum {
     /// * `samples_len` Number of samples. Might be bigger than `data.len()`
     ///                 if the spectrum is obtained with a frequency limit.
     #[inline(always)]
+    #[must_use]
     pub fn new(
         data: Vec<(Frequency, FrequencyValue)>,
         frequency_resolution: f32,
