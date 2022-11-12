@@ -356,8 +356,8 @@ fn fft_result_to_spectrum(
 /// Frequency resolution in Hertz.
 ///
 /// ## More info
-/// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
-/// * https://stackoverflow.com/questions/4364823/
+/// * <https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution>
+/// * <https://stackoverflow.com/questions/4364823/>
 #[inline(always)]
 fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
     sampling_rate as f32 / samples_len as f32

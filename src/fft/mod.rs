@@ -88,8 +88,8 @@ pub(crate) trait Fft<ComplexType> {
     /// therefore we skip it; the return value is smaller than `complex_samples.len()`.
     ///
     /// ## More info
-    /// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
-    /// * https://stackoverflow.com/questions/4364823/
+    /// * <https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution>
+    /// * <https://stackoverflow.com/questions/4364823/>
     ///
     /// ## Parameters
     /// * `samples_len` Number of samples put into the FFT
