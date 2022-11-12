@@ -47,9 +47,9 @@ minimp3 = "0.5"
 # visualize spectrum in tests and examples
 audio-visualizer = "0.3"
 # get audio input in examples
-cpal = "0.13"
+cpal = "0.14"
 # audio data buffering
-ringbuffer = "0.8" # REQUIRES Rust Stable 1.55 because it uses "ringbuffer v0.8"
+ringbuffer = "0.10"
 rand = "0.8" # for benchmark
 # exit in examples
 ctrlc = "3.2"
