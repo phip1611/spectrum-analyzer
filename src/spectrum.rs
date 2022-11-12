@@ -438,6 +438,7 @@ impl FrequencySpectrum {
     /// Calculates min, max, median and average of the frequency values/magnitudes/amplitudes.
     #[inline(always)]
     fn calc_statistics(&self) {
+        // TODO this clone is not only space-inefficient but also expensive!
         let mut data_sorted = self.data.borrow().clone();
         data_sorted.sort_by(|(_l_fr, l_fr_val), (_r_fr, r_fr_val)| {
             // compare by frequency value, from min to max
@@ -826,6 +827,42 @@ mod tests {
         assert!(
             spectrum.dc_component().is_none(),
             "This spectrum should not contain a DC component!"
+        )
+    }
+
+    #[test]
+    fn test_max() {
+        let maximum: (Frequency, FrequencyValue) = (34.991455.into(), 86.791145.into());
+        let spectrum: Vec<(Frequency, FrequencyValue)> = vec![
+            (2.6916504.into(), 22.81816.into()),
+            (5.383301.into(), 2.1004658.into()),
+            (8.074951.into(), 8.704016.into()),
+            (10.766602.into(), 3.4043686.into()),
+            (13.458252.into(), 8.649045.into()),
+            (16.149902.into(), 9.210494.into()),
+            (18.841553.into(), 14.937911.into()),
+            (21.533203.into(), 5.1524887.into()),
+            (24.224854.into(), 20.706167.into()),
+            (26.916504.into(), 8.359295.into()),
+            (29.608154.into(), 3.7514696.into()),
+            (32.299805.into(), 15.109907.into()),
+            maximum,
+            (37.683105.into(), 52.140736.into()),
+            (40.374756.into(), 24.108875.into()),
+            (43.066406.into(), 11.070151.into()),
+            (45.758057.into(), 10.569871.into()),
+            (48.449707.into(), 6.1969466.into()),
+            (51.141357.into(), 16.722788.into()),
+            (53.833008.into(), 8.93011.into()),
+        ];
+
+        let spectrum_len = spectrum.len() as u32;
+        let spectrum = FrequencySpectrum::new(spectrum, 44100.0, spectrum_len);
+
+        assert_eq!(
+            spectrum.max(),
+            maximum,
+            "Should return the maximum frequency value!"
         )
     }
 }

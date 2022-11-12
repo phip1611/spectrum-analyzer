@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 (2022-12-XX)
+- dependency updates
+- MSRV is now `1.61.0`
+- `FrequencySpectrum::apply_scaling_fn` now requires a reference to `&mut self`:
+  This is breaking but only for a small percentage of users.
+- `FrequencySpectrum` is now `Send` and interior mutability is dropped:
+  You can wrap the struct in a `Mutex` or similar types now!
+- small internal code quality and performance improvements
+
 ## 1.2.6 (2022-07-20)
 - fixed wrong scaling in `scaling::divide_by_N_sqrt` (<https://github.com/phip1611/spectrum-analyzer/issues/41>)
 

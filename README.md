@@ -1,25 +1,21 @@
 # Rust: library for frequency spectrum analysis using FFT
-A simple and fast `no_std` library to get the frequency spectrum of a digital signal (e.g. audio) using FFT.
-It follows the KISS principle and consists of simple building blocks/optional features. In short, this is 
-a convenient wrapper around several FFT implementations which you can choose from during compilation time
-via Cargo features.
+An easy to use and fast `no_std` library (with `alloc`) to get the frequency
+spectrum of a digital signal (e.g. audio) using FFT.
 
-**I'm not an expert on digital signal processing. Code contributions are highly welcome! 🙂**
-
-The **MSRV** (minimum supported Rust version) is 1.56.1 stable, because this crate uses
-Rust edition 2021.
+The **MSRV** (minimum supported Rust version) is `1.61.0`.
 
 ## I want to understand how FFT can be used to get a spectrum
 Please see file [/EDUCATIONAL.md](/EDUCATIONAL.md).
 
 ## How to use (including `no_std`-environments)
-Most tips and comments are located inside the code, so please check out the repository on
-Github! Anyway, the most basic usage looks like this:
+Most tips and comments are located inside the code, so please check out the
+repository on GitHub! Anyway, the most basic usage looks like this:
 
 ### FFT implementation as compile time configuration via Cargo features
-By default this crate uses the `real`-module from the great `microfft`-crate. It's the fastest implementation
-and as of version `v0.5.0` there should be no valid reason why you should ever change this. The multiple features
-are there mainly for educational reasons and to support me while programming/testing.
+By default, this crate uses the `real`-module from the great `microfft`-crate.
+It's the fastest implementation and as of version `v0.5.0` there should be no
+valid reason why you should ever change this. The multiple features are there
+mainly for educational reasons and to support me during programming/testing.
 
 ### Cargo.toml
 ```toml
@@ -68,7 +64,6 @@ fn main() {
 ## Performance
 *Measurements taken on i7-1165G7 @ 2.80GHz (Single-threaded) with optimized build*
 
-
 | Operation                                              | Time   |
 | ------------------------------------------------------ | ------:|
 | Hann Window with 4096 samples                          | ≈68µs  |
@@ -78,8 +73,8 @@ fn main() {
 | FFT (`microfft/complex`) to spectrum with 4096 samples | ≈250µs |
 
 ## Example Visualizations
-In the following examples you can see a basic visualization of the spectrum from `0 to 4000Hz` for 
-a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `44100Hz` sampling rate. The peaks for the 
+In the following examples you can see a basic visualization of the spectrum from `0 to 4000Hz` for
+a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `44100Hz` sampling rate. The peaks for the
 given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms of audio signal.
 
 **The noise (wrong peaks) also comes from clipping of the added sine waves!**
@@ -89,34 +84,38 @@ Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with no window function.](res/spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.")
 
 ### Spectrum with *Hann window function* on samples before FFT
-Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.
+Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a
+little. Because this example has few noise, you don't see much difference.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](res/spectrum_sine_waves_50_1000_3777hz--hann-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ### Spectrum with *Hamming window function* on samples before FFT
-Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.
+Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a
+little. Because this example has few noise, you don't see much difference.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](res/spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ## Live Audio + Spectrum Visualization
-Execute example `$ cargo run --release --example live-visualization`. It will show you
-how you can visualize audio data in realtime + the current spectrum.
+Execute example `$ cargo run --release --example live-visualization`. It will
+show you how you can visualize audio data in realtime + the current spectrum.
 
 ![Example visualization of real-time audio + spectrum analysis](res/live_demo_spectrum_green_day_holiday.gif "Example visualization of real-time audio + spectrum analysis")
 
 ## Building and Executing Tests
-To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian). This is required because
-not all tests are "automatic unit tests" but also tests that you need to check visually, by looking at the
-generated diagram of the spectrum.
+To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian).
+This is required because not all tests are "automatic unit tests" but also tests
+that you need to check visually, by looking at the generated diagram of the
+spectrum.
 
 ## Trivia / FAQ
 ### Why f64 and no f32?
-I tested f64 but the additional accuracy doesn't pay out the ~40% calculation overhead (on x86_64).
+I tested f64 but the additional accuracy doesn't pay out the ~40% calculation
+overhead (on x86_64).
 ### What can I do against the noise?
-Apply a window function, like Hann window or Hamming window. But I'm not an expert on this.
+Apply a window function, like Hann window or Hamming window.
 
 ## Good resources with more information
-- Interpreting FFT Results: https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
-- FFT basic concepts: https://www.youtube.com/watch?v=z7X6jgFnB6Y
-- „The Fundamentals of FFT-Based Signal Analysis and Measurement“ https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf
-- Fast Fourier Transforms (FFTs) and Windowing: https://www.youtube.com/watch?v=dCeHOf4cJE0
+- Interpreting FFT Results: <https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/>
+- FFT basic concepts: <https://www.youtube.com/watch?v=z7X6jgFnB6Y>
+- „The Fundamentals of FFT-Based Signal Analysis and Measurement“ <https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf>
+- Fast Fourier Transforms (FFTs) and Windowing: <https://www.youtube.com/watch?v=dCeHOf4cJE0>
 
-Also check out my blog post! https://phip1611.de/2021/03/programmierung-und-skripte/frequency-spectrum-analysis-with-fft-in-rust/
+Also check out my [blog post](https://phip1611.de/2021/03/programmierung-und-skripte/frequency-spectrum-analysis-with-fft-in-rust/).

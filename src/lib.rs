@@ -21,13 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-//! A simple and fast `no_std` library to get the frequency spectrum of a digital signal
-//! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
-//! blocks/optional features.
-//!
-//! In short, this is a convenient wrapper around a FFT implementation. You choose the
-//! implementation at compile time via Cargo features. This crate uses
-//! "microfft" by default for FFT. See README for more advise.
+//! An easy to use and fast `no_std` library (with `alloc`) to get the frequency
+//! spectrum of a digital signal (e.g. audio) using FFT.
 //!
 //! ## Examples
 //! ### Scaling via dynamic closure
@@ -45,14 +40,15 @@ SOFTWARE.
 //! ### Scaling via static function
 //! ```rust
 //! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
-//! use spectrum_analyzer::scaling::scale_to_zero_to_one;
+//! use spectrum_analyzer::scaling::divide_by_N_sqrt;
 //! // get data from audio source
 //! let samples = vec![0.0, 1.1, 5.5, -5.5];
 //! let res = samples_fft_to_spectrum(
 //!         &samples,
 //!         44100,
 //!         FrequencyLimit::All,
-//!         Some(&scale_to_zero_to_one),
+//!         // Recommended scaling/normalization by `rustfft`.
+//!         Some(&divide_by_N_sqrt),
 //! );
 //! ```
 
