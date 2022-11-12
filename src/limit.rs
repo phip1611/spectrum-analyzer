@@ -167,10 +167,10 @@ mod tests {
 
     #[test]
     fn test_ok() {
-        let _ = FrequencyLimit::Min(50.0).verify(100.0).unwrap();
-        let _ = FrequencyLimit::Max(50.0).verify(100.0).unwrap();
+        FrequencyLimit::Min(50.0).verify(100.0).unwrap();
+        FrequencyLimit::Max(50.0).verify(100.0).unwrap();
         // useless, but not an hard error
-        let _ = FrequencyLimit::Range(50.0, 50.0).verify(100.0).unwrap();
-        let _ = FrequencyLimit::Range(50.0, 70.0).verify(100.0).unwrap();
+        FrequencyLimit::Range(50.0, 50.0).verify(100.0).unwrap();
+        FrequencyLimit::Range(50.0, 70.0).verify(100.0).unwrap();
     }
 }
