@@ -238,7 +238,7 @@ pub fn samples_fft_to_spectrum(
 ///
 /// ## Return value
 /// New object of type [`FrequencySpectrum`].
-#[inline(always)]
+#[inline]
 fn fft_result_to_spectrum(
     samples_len: usize,
     fft_result: &[Complex32],
@@ -361,7 +361,7 @@ fn fft_result_to_spectrum(
 /// ## More info
 /// * <https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution>
 /// * <https://stackoverflow.com/questions/4364823/>
-#[inline(always)]
+#[inline]
 fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
     sampling_rate as f32 / samples_len as f32
 }

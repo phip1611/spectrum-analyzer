@@ -84,7 +84,7 @@ impl FrequencySpectrum {
     ///                 if the spectrum is obtained with a frequency limit.
     /// * `working_buffer` Mutable buffer with the same length as `data`
     ///                    required to calculate certain metrics.
-    #[inline(always)]
+    #[inline]
     #[must_use]
     pub fn new(
         data: Vec<(Frequency, FrequencyValue)>,
@@ -122,7 +122,7 @@ impl FrequencySpectrum {
     ///
     /// ## Parameters
     /// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`].
-    #[inline(always)]
+    #[inline]
     pub fn apply_scaling_fn(
         &mut self,
         scaling_fn: &SpectrumScalingFunction,
@@ -166,27 +166,27 @@ impl FrequencySpectrum {
     }
 
     /// Returns the average frequency value of the spectrum.
-    #[inline(always)]
+    #[inline]
     pub fn average(&self) -> FrequencyValue {
         self.average
     }
 
     /// Returns the median frequency value of the spectrum.
-    #[inline(always)]
+    #[inline]
     pub fn median(&self) -> FrequencyValue {
         self.median
     }
 
     /// Returns the maximum (frequency, frequency value)-pair of the spectrum
     /// **regarding the frequency value**.
-    #[inline(always)]
+    #[inline]
     pub fn max(&self) -> (Frequency, FrequencyValue) {
         self.max
     }
 
     /// Returns the minimum (frequency, frequency value)-pair of the spectrum
     /// **regarding the frequency value**.
-    #[inline(always)]
+    #[inline]
     pub fn min(&self) -> (Frequency, FrequencyValue) {
         self.min
     }
@@ -194,25 +194,25 @@ impl FrequencySpectrum {
     /// Returns [`FrequencySpectrum::max().1`] - [`FrequencySpectrum::min().1`],
     /// i.e. the range of the frequency values (not the frequencies itself,
     /// but their amplitudes/values).
-    #[inline(always)]
+    #[inline]
     pub fn range(&self) -> FrequencyValue {
         self.max().1 - self.min().1
     }
 
     /// Returns the underlying data.
-    #[inline(always)]
+    #[inline]
     pub fn data(&self) -> &[(Frequency, FrequencyValue)] {
         &self.data
     }
 
     /// Returns the frequency resolution of this spectrum.
-    #[inline(always)]
+    #[inline]
     pub const fn frequency_resolution(&self) -> f32 {
         self.frequency_resolution
     }
 
     /// Returns the number of samples used to obtain this spectrum.
-    #[inline(always)]
+    #[inline]
     pub const fn samples_len(&self) -> u32 {
         self.samples_len
     }
@@ -223,7 +223,7 @@ impl FrequencySpectrum {
     ///
     /// This method could return the Nyquist frequency, if there was no Frequency
     /// limit while obtaining the spectrum.
-    #[inline(always)]
+    #[inline]
     pub fn max_fr(&self) -> Frequency {
         self.data[self.data.len() - 1].0
     }
@@ -233,7 +233,7 @@ impl FrequencySpectrum {
     /// This corresponds to the [`crate::limit::FrequencyLimit`] of the spectrum.
     ///
     /// This method could return the DC component, see [`Self::dc_component`].
-    #[inline(always)]
+    #[inline]
     pub fn min_fr(&self) -> Frequency {
         self.data[0].0
     }
@@ -252,7 +252,7 @@ impl FrequencySpectrum {
     /// tend to filter out any DC component at the analogue level. In cases where you might
     /// be interested it can be calculated directly as an average in the usual way, without
     /// resorting to a DFT/FFT.* - Paul R.
-    #[inline(always)]
+    #[inline]
     pub fn dc_component(&self) -> Option<FrequencyValue> {
         let (maybe_dc_component, dc_value) = &self.data[0];
         if maybe_dc_component.val() == 0.0 {
@@ -280,7 +280,7 @@ impl FrequencySpectrum {
     ///
     /// ## Return
     /// Either exact value of approximated value, determined by [`Self::frequency_resolution`].
-    #[inline(always)]
+    #[inline]
     pub fn freq_val_exact(&self, search_fr: f32) -> FrequencyValue {
         // lowest frequency in the spectrum
         let (min_fr, min_fr_val) = self.data[0];
@@ -359,7 +359,7 @@ impl FrequencySpectrum {
     ///
     /// ## Return
     /// Closest matching point in spectrum, determined by [`Self::frequency_resolution`].
-    #[inline(always)]
+    #[inline]
     pub fn freq_val_closest(&self, search_fr: f32) -> (Frequency, FrequencyValue) {
         // lowest frequency in the spectrum
         let (min_fr, min_fr_val) = self.data[0];
@@ -431,7 +431,7 @@ impl FrequencySpectrum {
     ///
     /// ## Return
     /// New `BTreeMap` from frequency to frequency value.
-    #[inline(always)]
+    #[inline]
     pub fn to_map(&self, scale_fn: Option<&dyn Fn(f32) -> u32>) -> BTreeMap<u32, f32> {
         self.data
             .iter()
@@ -444,7 +444,7 @@ impl FrequencySpectrum {
     /// amplitudes.
     ///
     /// To do so, it needs to create a sorted copy of the data.
-    #[inline(always)]
+    #[inline]
     fn calc_statistics(&mut self, working_buffer: &mut [(Frequency, FrequencyValue)]) {
         // We create a copy with all data from `self.data` but we sort it by the
         // frequency value and not the frequency. This way, we can easily find the
@@ -505,7 +505,7 @@ impl FrequencySpectrum {
 
 /*impl FromIterator<(Frequency, FrequencyValue)> for FrequencySpectrum {
 
-    #[inline(always)]
+    #[inline]
     fn from_iter<T: IntoIterator<Item=(Frequency, FrequencyValue)>>(iter: T) -> Self {
         // 1024 is just a guess: most likely 2048 is a common FFT length,
         // i.e. 1024 results for the frequency spectrum.
@@ -529,7 +529,7 @@ impl FrequencySpectrum {
 ///
 /// ## Return Value
 /// y coordinate of searched point C
-#[inline(always)]
+#[inline]
 fn calculate_y_coord_between_points(
     (x1, y1): (f32, f32),
     (x2, y2): (f32, f32),

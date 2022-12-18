@@ -42,14 +42,14 @@ pub type FrequencyValue = OrderableF32;
 pub struct OrderableF32(f32);
 
 impl OrderableF32 {
-    #[inline(always)]
+    #[inline]
     pub const fn val(&self) -> f32 {
         self.0
     }
 }
 
 impl From<f32> for OrderableF32 {
-    #[inline(always)]
+    #[inline]
     fn from(val: f32) -> Self {
         debug_assert!(!val.is_nan(), "NaN-values are not supported!");
         debug_assert!(!val.is_infinite(), "Infinite-values are not supported!");
@@ -64,7 +64,7 @@ impl Display for OrderableF32 {
 }
 
 impl Ord for OrderableF32 {
-    #[inline(always)]
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.partial_cmp(other).unwrap()
     }
@@ -73,7 +73,7 @@ impl Ord for OrderableF32 {
 impl Eq for OrderableF32 {}
 
 impl PartialEq for OrderableF32 {
-    #[inline(always)]
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         matches!(self.cmp(other), Ordering::Equal)
     }
@@ -81,7 +81,7 @@ impl PartialEq for OrderableF32 {
 
 impl PartialOrd for OrderableF32 {
     #[allow(clippy::float_cmp)]
-    #[inline(always)]
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // self.cmp(other).is_eq()
         Some(if self.val() < other.val() {
@@ -97,7 +97,7 @@ impl PartialOrd for OrderableF32 {
 impl Add for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn add(self, other: Self) -> Self::Output {
         (self.val() + other.val()).into()
     }
@@ -106,7 +106,7 @@ impl Add for OrderableF32 {
 impl Sub for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn sub(self, other: Self) -> Self::Output {
         (self.val() - other.val()).into()
     }
@@ -115,7 +115,7 @@ impl Sub for OrderableF32 {
 impl Mul for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         (self.val() * other.val()).into()
     }
@@ -124,7 +124,7 @@ impl Mul for OrderableF32 {
 impl Div for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn div(self, other: Self) -> Self::Output {
         let quotient = self.val() / other.val();
         debug_assert!(!quotient.is_nan(), "NaN is not allowed");

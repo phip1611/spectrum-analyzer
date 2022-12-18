@@ -49,7 +49,7 @@ impl FftImpl {
     ///
     /// ## Return value
     /// New vector with elements of FFT output/result.
-    #[inline(always)]
+    #[inline]
     fn samples_to_complex(samples: &[f32]) -> Vec<Complex32> {
         samples
             .iter()
@@ -59,7 +59,7 @@ impl FftImpl {
 }
 
 impl Fft<Complex32> for FftImpl {
-    #[inline(always)]
+    #[inline]
     fn fft_apply(samples: &[f32]) -> Vec<Complex32> {
         let buffer = Self::samples_to_complex(samples);
 
@@ -104,7 +104,7 @@ impl Fft<Complex32> for FftImpl {
         }
     }
 
-    #[inline(always)]
+    #[inline]
     fn fft_relevant_res_samples_count(samples_len: usize) -> usize {
         // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
         // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
