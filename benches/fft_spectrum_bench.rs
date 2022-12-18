@@ -4,12 +4,12 @@ use spectrum_analyzer::{
 };
 
 fn spectrum_without_scaling(samples: &[f32]) -> FrequencySpectrum {
-    samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap()
+    samples_fft_to_spectrum(samples, 44100, FrequencyLimit::All, None).unwrap()
 }
 
 fn spectrum_with_scaling(samples: &[f32]) -> FrequencySpectrum {
     samples_fft_to_spectrum(
-        &samples,
+        samples,
         44100,
         FrequencyLimit::All,
         Some(&scaling::divide_by_N_sqrt),
