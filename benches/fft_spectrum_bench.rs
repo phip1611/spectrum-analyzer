@@ -18,7 +18,7 @@ fn spectrum_with_scaling(samples: &[f32]) -> FrequencySpectrum {
 }
 
 fn spectrum_with_multiple_scaling(samples: &[f32]) -> FrequencySpectrum {
-    let spectrum = spectrum_with_scaling(samples);
+    let mut spectrum = spectrum_with_scaling(samples);
     spectrum
         .apply_scaling_fn(&scaling::divide_by_N_sqrt)
         .unwrap();

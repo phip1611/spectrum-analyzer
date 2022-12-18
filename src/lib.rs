@@ -328,7 +328,7 @@ fn fft_result_to_spectrum(
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
     // create spectrum object
-    let spectrum = FrequencySpectrum::new(frequency_vec, frequency_resolution, samples_len as u32);
+    let mut spectrum = FrequencySpectrum::new(frequency_vec, frequency_resolution, samples_len as u32);
 
     // optionally scale
     if let Some(scaling_fn) = scaling_fn {

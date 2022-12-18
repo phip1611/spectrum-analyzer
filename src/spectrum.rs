@@ -28,46 +28,46 @@ use crate::frequency::{Frequency, FrequencyValue};
 use crate::scaling::{SpectrumDataStats, SpectrumScalingFunction};
 use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
-use core::cell::{Cell, Ref, RefCell};
 
-/// Convenient wrapper around the processed FFT result which describes each frequency and
-/// its value/amplitude in the analyzed slice of samples. It only consists of the frequencies
-/// which were desired, e.g. specified via
-/// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`] was called.
+/// Convenient wrapper around the processed FFT result which describes each
+/// frequency and its value/amplitude from the analyzed samples. It only
+/// contains the frequencies that were desired, e.g., specified via
+/// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`]
+/// was called.
 ///
-/// This means, the spectrum can cover all data from the DC component (0Hz) to the
-/// Nyquist frequency.
+/// This means, the spectrum can cover all data from the DC component (0Hz) to
+/// the Nyquist frequency.
 ///
-/// All results are related to the sampling rate provided to the library function which
-/// creates objects of this struct!
+/// All results are related to the sampling rate provided to the library
+/// function which creates objects of this struct!
 #[derive(Debug, Default)]
 pub struct FrequencySpectrum {
-    /// Raw data. Vector is sorted from lowest
+    /// All (Frequency, FrequencyValue) data pairs sorted by lowest frequency
+    /// to the highest frequency.Vector is sorted from lowest
     /// frequency to highest and data is normalized/scaled
     /// according to all applied scaling functions.
-    data: RefCell<Vec<(Frequency, FrequencyValue)>>,
+    data: Vec<(Frequency, FrequencyValue)>,
     /// Frequency resolution of the examined samples in Hertz,
     /// i.e the frequency steps between elements in the vector
     /// inside field [`Self::data`].
     frequency_resolution: f32,
-    /// Number of samples. This property must be kept separately, because
-    /// `data.borrow().len()` might contain less than N elements, if the
-    /// spectrum was created with a [`crate::limit::FrequencyLimit`] .
+    /// Number of samples that were analyzed. Might be bigger than the length
+    /// of `data`, if the spectrum was created with a [`crate::limit::FrequencyLimit`] .
     samples_len: u32,
     /// Average value of frequency value/magnitude/amplitude
     /// corresponding to data in [`FrequencySpectrum::data`].
-    average: Cell<FrequencyValue>,
+    average: FrequencyValue,
     /// Median value of frequency value/magnitude/amplitude
     /// corresponding to data in [`FrequencySpectrum::data`].
-    median: Cell<FrequencyValue>,
+    median: FrequencyValue,
     /// Pair of (frequency, frequency value/magnitude/amplitude) where
     /// frequency value is **minimal** inside the spectrum.
     /// Corresponding to data in [`FrequencySpectrum::data`].
-    min: Cell<(Frequency, FrequencyValue)>,
+    min: (Frequency, FrequencyValue),
     /// Pair of (frequency, frequency value/magnitude/amplitude) where
     /// frequency value is **maximum** inside the spectrum.
     /// Corresponding to data in [`FrequencySpectrum::data`].
-    max: Cell<(Frequency, FrequencyValue)>,
+    max: (Frequency, FrequencyValue),
 }
 
 impl FrequencySpectrum {
@@ -93,15 +93,15 @@ impl FrequencySpectrum {
             data.len()
         );
 
-        let obj = Self {
-            data: RefCell::new(data),
+        let mut obj = Self {
+            data,
             frequency_resolution,
             samples_len,
             // default/placeholder values
-            average: Cell::new(FrequencyValue::from(-1.0)),
-            median: Cell::new(FrequencyValue::from(-1.0)),
-            min: Cell::new((Frequency::from(-1.0), FrequencyValue::from(-1.0))),
-            max: Cell::new((Frequency::from(-1.0), FrequencyValue::from(-1.0))),
+            average: FrequencyValue::from(-1.0),
+            median: FrequencyValue::from(-1.0),
+            min: (Frequency::from(-1.0), FrequencyValue::from(-1.0)),
+            max: (Frequency::from(-1.0), FrequencyValue::from(-1.0)),
         };
 
         // Important to call this once initially.
@@ -119,7 +119,7 @@ impl FrequencySpectrum {
     /// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`].
     #[inline(always)]
     pub fn apply_scaling_fn(
-        &self,
+        &mut self,
         scaling_fn: &SpectrumScalingFunction,
     ) -> Result<(), SpectrumAnalyzerError> {
         // This represents statistics about the spectrum in its current state
@@ -128,37 +128,32 @@ impl FrequencySpectrum {
         // On the first invocation of this function, these values represent the
         // statistics for the unscaled, hence initial, spectrum.
         let stats = SpectrumDataStats {
-            min: self.min.get().1.val(),
-            max: self.max.get().1.val(),
-            average: self.average.get().val(),
-            median: self.median.get().val(),
+            min: self.min.1.val(),
+            max: self.max.1.val(),
+            average: self.average.val(),
+            median: self.median.val(),
             // attention! not necessarily `data.len()`!
             n: self.samples_len as f32,
         };
 
-        // dedicated scope to drop the `RefMut` behind `data` before the call
-        // to `calc_statistics`.
-        {
-            let mut data = self.data.borrow_mut();
 
-            // Iterate over the whole spectrum and scale each frequency value.
-            // I use a regular for loop instead of for_each(), so that I can
-            // early return a result here
-            for (_fr, fr_val) in &mut *data {
-                // scale value
-                let scaled_val: f32 = scaling_fn(fr_val.val(), &stats);
+        // Iterate over the whole spectrum and scale each frequency value.
+        // I use a regular for loop instead of for_each(), so that I can
+        // early return a result here
+        for (_fr, fr_val) in &mut self.data {
+            // scale value
+            let scaled_val: f32 = scaling_fn(fr_val.val(), &stats);
 
-                // sanity check
-                if scaled_val.is_nan() || scaled_val.is_infinite() {
-                    return Err(SpectrumAnalyzerError::ScalingError(
-                        fr_val.val(),
-                        scaled_val,
-                    ));
-                }
-
-                // Update value in spectrum
-                *fr_val = scaled_val.into()
+            // sanity check
+            if scaled_val.is_nan() || scaled_val.is_infinite() {
+                return Err(SpectrumAnalyzerError::ScalingError(
+                    fr_val.val(),
+                    scaled_val,
+                ));
             }
+
+            // Update value in spectrum
+            *fr_val = scaled_val.into()
         }
 
         self.calc_statistics();
@@ -168,27 +163,27 @@ impl FrequencySpectrum {
     /// Returns the average frequency value of the spectrum.
     #[inline(always)]
     pub fn average(&self) -> FrequencyValue {
-        self.average.get()
+        self.average
     }
 
     /// Returns the median frequency value of the spectrum.
     #[inline(always)]
     pub fn median(&self) -> FrequencyValue {
-        self.median.get()
+        self.median
     }
 
     /// Returns the maximum (frequency, frequency value)-pair of the spectrum
     /// **regarding the frequency value**.
     #[inline(always)]
     pub fn max(&self) -> (Frequency, FrequencyValue) {
-        self.max.get()
+        self.max
     }
 
     /// Returns the minimum (frequency, frequency value)-pair of the spectrum
     /// **regarding the frequency value**.
     #[inline(always)]
     pub fn min(&self) -> (Frequency, FrequencyValue) {
-        self.min.get()
+        self.min
     }
 
     /// Returns [`FrequencySpectrum::max().1`] - [`FrequencySpectrum::min().1`],
@@ -201,8 +196,8 @@ impl FrequencySpectrum {
 
     /// Returns the underlying data.
     #[inline(always)]
-    pub fn data(&self) -> Ref<Vec<(Frequency, FrequencyValue)>> {
-        self.data.borrow()
+    pub fn data(&self) -> &[(Frequency, FrequencyValue)] {
+        &self.data
     }
 
     /// Returns the frequency resolution of this spectrum.
@@ -225,8 +220,7 @@ impl FrequencySpectrum {
     /// limit while obtaining the spectrum.
     #[inline(always)]
     pub fn max_fr(&self) -> Frequency {
-        let data = self.data.borrow();
-        data[data.len() - 1].0
+        self.data[self.data.len() - 1].0
     }
 
     /// Getter for the lowest frequency that is captured inside this spectrum.
@@ -236,8 +230,7 @@ impl FrequencySpectrum {
     /// This method could return the DC component, see [`Self::dc_component`].
     #[inline(always)]
     pub fn min_fr(&self) -> Frequency {
-        let data = self.data.borrow();
-        data[0].0
+        self.data[0].0
     }
 
     /// Returns the *DC Component* or also called *DC bias* which corresponds
@@ -256,8 +249,7 @@ impl FrequencySpectrum {
     /// resorting to a DFT/FFT.* - Paul R.
     #[inline(always)]
     pub fn dc_component(&self) -> Option<FrequencyValue> {
-        let data = self.data.borrow();
-        let (maybe_dc_component, dc_value) = &data[0];
+        let (maybe_dc_component, dc_value) = &self.data[0];
         if maybe_dc_component.val() == 0.0 {
             Some(*dc_value)
         } else {
@@ -285,13 +277,11 @@ impl FrequencySpectrum {
     /// Either exact value of approximated value, determined by [`Self::frequency_resolution`].
     #[inline(always)]
     pub fn freq_val_exact(&self, search_fr: f32) -> FrequencyValue {
-        let data = self.data.borrow();
-
         // lowest frequency in the spectrum
-        // TODO use minFrequency() and maxFrequency()
-        let (min_fr, min_fr_val) = data[0];
+        let (min_fr, min_fr_val) = self.data[0];
         // highest frequency in the spectrum
-        let (max_fr, max_fr_val) = data[data.len() - 1];
+        let (max_fr, max_fr_val) = self.data[self.data.len() - 1];
+
 
         // https://docs.rs/float-cmp/0.8.0/float_cmp/
         let equals_min_fr = float_cmp::approx_eq!(f32, min_fr.val(), search_fr, ulps = 3);
@@ -317,7 +307,7 @@ impl FrequencySpectrum {
         // We search for Point C (x=search_fr, y=???) between Point A and Point B iteratively.
         // Point B is always the successor of A.
 
-        for two_points in data.iter().as_slice().windows(2) {
+        for two_points in self.data.iter().as_slice().windows(2) {
             let point_a = two_points[0];
             let point_b = two_points[1];
             let point_a_x = point_a.0.val();
@@ -367,13 +357,10 @@ impl FrequencySpectrum {
     /// Closest matching point in spectrum, determined by [`Self::frequency_resolution`].
     #[inline(always)]
     pub fn freq_val_closest(&self, search_fr: f32) -> (Frequency, FrequencyValue) {
-        let data = self.data.borrow();
-
         // lowest frequency in the spectrum
-        // TODO use minFrequency() and maxFrequency()
-        let (min_fr, min_fr_val) = data[0];
+        let (min_fr, min_fr_val) = self.data[0];
         // highest frequency in the spectrum
-        let (max_fr, max_fr_val) = data[data.len() - 1];
+        let (max_fr, max_fr_val) = self.data[self.data.len() - 1];
 
         // https://docs.rs/float-cmp/0.8.0/float_cmp/
         let equals_min_fr = float_cmp::approx_eq!(f32, min_fr.val(), search_fr, ulps = 3);
@@ -397,7 +384,7 @@ impl FrequencySpectrum {
             );
         }
 
-        for two_points in data.iter().as_slice().windows(2) {
+        for two_points in self.data.iter().as_slice().windows(2) {
             let point_a = two_points[0];
             let point_b = two_points[1];
             let point_a_x = point_a.0;
@@ -443,7 +430,6 @@ impl FrequencySpectrum {
     #[inline(always)]
     pub fn to_map(&self, scale_fn: Option<&dyn Fn(f32) -> u32>) -> BTreeMap<u32, f32> {
         self.data
-            .borrow()
             .iter()
             .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
             .map(|(fr, fr_val)| (scale_fn.map_or(fr as u32, |fnc| (fnc)(fr)), fr_val))
@@ -455,9 +441,9 @@ impl FrequencySpectrum {
     ///
     /// To do so, it needs to create a sorted copy of the data.
     #[inline(always)]
-    fn calc_statistics(&self) {
+    fn calc_statistics(&mut self) {
         // TODO this clone is not only space-inefficient but also expensive!
-        let mut data_sorted = self.data.borrow().clone();
+        let mut data_sorted = self.data.clone();
         data_sorted.sort_by(|(_l_fr, l_fr_val), (_r_fr, r_fr_val)| {
             // compare by frequency value, from min to max
             l_fr_val.cmp(r_fr_val)
@@ -491,10 +477,10 @@ impl FrequencySpectrum {
         // check that I get the comparison right (and not from max to min)
         debug_assert!(min.1 <= max.1, "min must be <= max");
 
-        self.min.replace(min);
-        self.max.replace(max);
-        self.average.replace(average);
-        self.median.replace(median);
+        self.min = min;
+        self.max = max;
+        self.average = average;
+        self.median = median;
     }
 }
 
