@@ -28,10 +28,10 @@ SOFTWARE.
 
 use alloc::boxed::Box;
 
-/// Helper struct for [`SpectrumScalingFunction`], that gets passed into the
-/// function together with the actual value. This structure can be used to scale
-/// each value. All properties reference the current data of a
-/// [`crate::spectrum::FrequencySpectrum`].
+/// Helper struct for [`SpectrumScalingFunction`] that is passed into the
+/// scaling function together with the current frequency value. This structure
+/// can be used to scale each value. All properties reference the current data
+/// of a [`crate::spectrum::FrequencySpectrum`].
 ///
 /// This uses `f32` in favor of [`crate::FrequencyValue`] because the latter led to
 /// some implementation problems.
@@ -45,8 +45,8 @@ pub struct SpectrumDataStats {
     pub average: f32,
     /// Median frequency value in spectrum.
     pub median: f32,
-    /// Number of samples (`samples.len()`). Already
-    /// casted to f32, to avoid repeatedly casting in a loop for each value.
+    /// Number of samples (`samples.len()`). Already casted to f32, to avoid
+    /// repeatedly casting in a loop for each value.
     pub n: f32,
 }
 

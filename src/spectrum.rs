@@ -103,14 +103,17 @@ impl FrequencySpectrum {
             min: Cell::new((Frequency::from(-1.0), FrequencyValue::from(-1.0))),
             max: Cell::new((Frequency::from(-1.0), FrequencyValue::from(-1.0))),
         };
-        // IMPORTANT!!
+
+        // Important to call this once initially.
         obj.calc_statistics();
         obj
     }
 
-    /// Applies the function `scaling_fn` to each element and updates
-    /// `min`, `max`, etc. afterwards accordingly. It ensures that no value
-    /// is `NaN` or `Infinity` afterwards (regarding IEEE-754).
+    /// Applies the function `scaling_fn` to each element and updates several
+    /// metrics about the spectrum, such as `min` and `max`, afterwards
+    /// accordingly. It ensures that no value is `NaN` or `Infinity`
+    /// (regarding IEEE-754) after `scaling_fn` was applied. Otherwise,
+    /// `SpectrumAnalyzerError::ScalingError` is returned.
     ///
     /// ## Parameters
     /// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`].
@@ -119,31 +122,43 @@ impl FrequencySpectrum {
         &self,
         scaling_fn: &SpectrumScalingFunction,
     ) -> Result<(), SpectrumAnalyzerError> {
+        // This represents statistics about the spectrum in its current state
+        // which a scaling function may use to scale values.
+        //
+        // On the first invocation of this function, these values represent the
+        // statistics for the unscaled, hence initial, spectrum.
+        let stats = SpectrumDataStats {
+            min: self.min.get().1.val(),
+            max: self.max.get().1.val(),
+            average: self.average.get().val(),
+            median: self.median.get().val(),
+            // attention! not necessarily `data.len()`!
+            n: self.samples_len as f32,
+        };
+
+        // dedicated scope to drop the `RefMut` behind `data` before the call
+        // to `calc_statistics`.
         {
-            // drop RefMut<> from borrow_mut() before calc_statistics
             let mut data = self.data.borrow_mut();
 
-            let stats = SpectrumDataStats {
-                min: self.min.get().1.val(),
-                max: self.max.get().1.val(),
-                average: self.average.get().val(),
-                median: self.median.get().val(),
-                // attention! not necessarily `data.len()`!
-                n: self.samples_len as f32,
-            };
-
+            // Iterate over the whole spectrum and scale each frequency value.
+            // I use a regular for loop instead of for_each(), so that I can
+            // early return a result here
             for (_fr, fr_val) in &mut *data {
-                // regular for instead of for_each(), so that I can early return a result here
+                // scale value
                 let scaled_val: f32 = scaling_fn(fr_val.val(), &stats);
+
+                // sanity check
                 if scaled_val.is_nan() || scaled_val.is_infinite() {
                     return Err(SpectrumAnalyzerError::ScalingError(
                         fr_val.val(),
                         scaled_val,
                     ));
                 }
+
+                // Update value in spectrum
                 *fr_val = scaled_val.into()
             }
-            // drop RefMut<> from borrow_mut() before calc_statistics
         }
 
         self.calc_statistics();
@@ -435,7 +450,10 @@ impl FrequencySpectrum {
             .collect()
     }
 
-    /// Calculates min, max, median and average of the frequency values/magnitudes/amplitudes.
+    /// Calculates the `min`, `max`, `median`, and `average` of the frequency values/magnitudes/
+    /// amplitudes.
+    ///
+    /// To do so, it needs to create a sorted copy of the data.
     #[inline(always)]
     fn calc_statistics(&self) {
         // TODO this clone is not only space-inefficient but also expensive!
