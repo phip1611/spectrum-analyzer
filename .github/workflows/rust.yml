@@ -39,6 +39,9 @@ jobs:
       - run: cargo test --all-targets --no-default-features --features "microfft-complex"
       - run: cargo test --all-targets --no-default-features --features "microfft-real"
 
+      # run benchmark: right now, there is no reporting or so from the results
+      - run: cargo bench
+
       # test `no_std`-build with all features/fft implementations
       - run: rustup target add thumbv7em-none-eabihf
       - run: cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-complex"

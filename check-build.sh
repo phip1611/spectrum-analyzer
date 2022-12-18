@@ -12,6 +12,8 @@ cargo test --all-targets --no-default-features --features "rustfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-complex"
 cargo test --all-targets --no-default-features --features "microfft-real"
 
+cargo bench
+
 cargo fmt -- --check # (--check doesn't change the files)
 
 cargo doc
