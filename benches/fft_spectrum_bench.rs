@@ -19,14 +19,17 @@ fn spectrum_with_scaling(samples: &[f32]) -> FrequencySpectrum {
 
 fn spectrum_with_multiple_scaling(samples: &[f32]) -> FrequencySpectrum {
     let mut spectrum = spectrum_with_scaling(samples);
+
+    let mut working_buffer = vec![(0.0.into(), 0.0.into()); spectrum.data().len()];
+
     spectrum
-        .apply_scaling_fn(&scaling::divide_by_N_sqrt)
+        .apply_scaling_fn(&scaling::divide_by_N_sqrt, &mut working_buffer)
         .unwrap();
     spectrum
-        .apply_scaling_fn(&scaling::divide_by_N_sqrt)
+        .apply_scaling_fn(&scaling::divide_by_N_sqrt, &mut working_buffer)
         .unwrap();
     spectrum
-        .apply_scaling_fn(&scaling::divide_by_N_sqrt)
+        .apply_scaling_fn(&scaling::divide_by_N_sqrt, &mut working_buffer)
         .unwrap();
     spectrum
 }

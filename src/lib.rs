@@ -94,7 +94,7 @@ extern crate std;
 
 // We use alloc crate, because this is no_std
 // The macros are only needed when we test
-#[cfg_attr(test, macro_use)]
+#[macro_use]
 extern crate alloc;
 
 use alloc::vec::Vec;
@@ -327,12 +327,19 @@ fn fft_result_to_spectrum(
         // collect all into an sorted vector (from lowest frequency to highest)
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
+    let mut working_buffer = vec![(0.0.into(), 0.0.into()); frequency_vec.len()];
+
     // create spectrum object
-    let mut spectrum = FrequencySpectrum::new(frequency_vec, frequency_resolution, samples_len as u32);
+    let mut spectrum = FrequencySpectrum::new(
+        frequency_vec,
+        frequency_resolution,
+        samples_len as u32,
+        &mut working_buffer,
+    );
 
     // optionally scale
     if let Some(scaling_fn) = scaling_fn {
-        spectrum.apply_scaling_fn(scaling_fn)?
+        spectrum.apply_scaling_fn(scaling_fn, &mut working_buffer)?
     }
 
     Ok(spectrum)
