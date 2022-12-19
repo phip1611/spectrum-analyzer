@@ -40,6 +40,8 @@ use alloc::vec::Vec;
 ///
 /// All results are related to the sampling rate provided to the library
 /// function which creates objects of this struct!
+///
+/// This struct can be shared across thread boundaries.
 #[derive(Debug, Default)]
 pub struct FrequencySpectrum {
     /// All (Frequency, FrequencyValue) data pairs sorted by lowest frequency
@@ -533,6 +535,16 @@ fn calculate_y_coord_between_points(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Test if a frequency spectrum can be sent to other threads.
+    #[test]
+    fn test_send() {
+        #[allow(unused)]
+        // test if this compiles
+        fn consume(s: FrequencySpectrum) {
+            let _: &dyn Send = &s;
+        }
+    }
 
     #[test]
     fn test_calculate_y_coord_between_points() {
