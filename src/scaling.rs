@@ -99,14 +99,12 @@ pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats
 /// Function is of type [`SpectrumScalingFunction`]. Expects that [`SpectrumDataStats::min`] is
 /// not negative.
 #[must_use]
-pub fn scale_to_zero_to_one(val: f32, stats: &SpectrumDataStats) -> f32 {
-    // usually not the case, except you use other scaling functions first,
-    // that transforms the value to a negative one
-    /*if stats.min < 0.0 {
-        val = val + stats.min;
-    }*/
+pub fn scale_to_zero_to_one(frequency_magnitude: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!frequency_magnitude.is_infinite());
+    debug_assert!(!frequency_magnitude.is_nan());
+    debug_assert!(frequency_magnitude >= 0.0);
     if stats.max != 0.0 {
-        val / stats.max
+        frequency_magnitude / stats.max
     } else {
         0.0
     }
@@ -116,11 +114,14 @@ pub fn scale_to_zero_to_one(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// by the length of samples, so that values of different samples lengths are comparable.
 #[allow(non_snake_case)]
 #[must_use]
-pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
+pub fn divide_by_N(frequency_magnitude: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!frequency_magnitude.is_infinite());
+    debug_assert!(!frequency_magnitude.is_nan());
+    debug_assert!(frequency_magnitude >= 0.0);
     if stats.n == 0.0 {
-        val
+        frequency_magnitude
     } else {
-        val / stats.n
+        frequency_magnitude / stats.n
     }
 }
 
@@ -129,12 +130,15 @@ pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
 #[must_use]
-pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
+pub fn divide_by_N_sqrt(frequency_magnitude: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!frequency_magnitude.is_infinite());
+    debug_assert!(!frequency_magnitude.is_nan());
+    debug_assert!(frequency_magnitude >= 0.0);
     if stats.n == 0.0 {
-        val
+        frequency_magnitude
     } else {
         // https://docs.rs/rustfft/latest/rustfft/#normalization
-        val / libm::sqrtf(stats.n)
+        frequency_magnitude / libm::sqrtf(stats.n)
     }
 }
 
@@ -144,7 +148,8 @@ pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// a `'static` lifetime. This will be fixed if someone needs this.
 ///
 /// # Example
-/// ```ignored
+/// ```
+/// use spectrum_analyzer::scaling::{combined, divide_by_N, scale_20_times_log10};
 /// let fncs = combined(&[&divide_by_N, &scale_20_times_log10]);
 /// ```
 pub fn combined(fncs: &'static [&SpectrumScalingFunction]) -> Box<SpectrumScalingFunction> {

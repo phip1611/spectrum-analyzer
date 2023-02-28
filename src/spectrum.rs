@@ -23,6 +23,7 @@ SOFTWARE.
 */
 //! Module for the struct [`FrequencySpectrum`].
 
+use self::math::*;
 use crate::error::SpectrumAnalyzerError;
 use crate::frequency::{Frequency, FrequencyValue};
 use crate::scaling::{SpectrumDataStats, SpectrumScalingFunction};
@@ -433,24 +434,39 @@ impl FrequencySpectrum {
         panic!("Here be dragons");
     }
 
-    /// Returns a `BTreeMap`. The key is of type u32.
-    /// (`f32` is not `Ord`, hence we can't use it as key.) You can optionally specify a
-    /// scale function, e.g. multiply all frequencies with 1000 for better
-    /// accuracy when represented as unsigned integer.
+    /// Wrapper around [`Self::freq_val_exact`] that consumes [mel].
     ///
-    /// ## Parameters
-    /// * `scale_fn` optional scale function, e.g. multiply all frequencies with 1000 for better
-    ///              accuracy when represented as unsigned integer.
-    ///
-    /// ## Return
-    /// New `BTreeMap` from frequency to frequency value.
+    /// [mel]: https://en.wikipedia.org/wiki/Mel_scale
     #[inline]
     #[must_use]
-    pub fn to_map(&self, scale_fn: Option<&dyn Fn(f32) -> u32>) -> BTreeMap<u32, f32> {
+    pub fn mel_val(&self, mel_val: f32) -> FrequencyValue {
+        let hz = mel_to_hertz(mel_val);
+        self.freq_val_exact(hz)
+    }
+
+    /// Returns a [`BTreeMap`] with all value pairs. The key is of type [`u32`]
+    /// because [`f32`] is not [`Ord`].
+    #[inline]
+    #[must_use]
+    pub fn to_map(&self) -> BTreeMap<u32, f32> {
         self.data
             .iter()
-            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
-            .map(|(fr, fr_val)| (scale_fn.map_or(fr as u32, |fnc| (fnc)(fr)), fr_val))
+            .map(|(fr, fr_val)| (fr.val() as u32, fr_val.val()))
+            .collect()
+    }
+
+    /// Like [`Self::to_map`] but converts the frequency (x-axis) to [mels]. The
+    /// resulting map contains more results in a higher density the higher the
+    /// mel value gets. This comes from the logarithmic transformation from
+    /// hertz to mels.
+    ///
+    /// [mels]: https://en.wikipedia.org/wiki/Mel_scale
+    #[inline]
+    #[must_use]
+    pub fn to_mel_map(&self) -> BTreeMap<u32, f32> {
+        self.data
+            .iter()
+            .map(|(fr, fr_val)| (hertz_to_mel(fr.val()) as u32, fr_val.val()))
             .collect()
     }
 
@@ -532,35 +548,91 @@ impl FrequencySpectrum {
     }
 }*/
 
-/// Calculates the y coordinate of Point C between two given points A and B
-/// if the x-coordinate of C is known. It does that by putting a linear function
-/// through the two given points.
-///
-/// ## Parameters
-/// - `(x1, y1)` x and y of point A
-/// - `(x2, y2)` x and y of point B
-/// - `x_coord` x coordinate of searched point C
-///
-/// ## Return Value
-/// y coordinate of searched point C
-#[inline]
-fn calculate_y_coord_between_points(
-    (x1, y1): (f32, f32),
-    (x2, y2): (f32, f32),
-    x_coord: f32,
-) -> f32 {
-    // e.g. Points (100, 1.0) and (200, 0.0)
-    // y=f(x)=-0.01x + c
-    // 1.0 = f(100) = -0.01x + c
-    // c = 1.0 + 0.01*100 = 2.0
-    // y=f(180)=-0.01*180 + 2.0
+mod math {
+    // use super::*;
 
-    // gradient, anstieg
-    let slope = (y2 - y1) / (x2 - x1);
-    // calculate c in y=f(x)=slope * x + c
-    let c = y1 - slope * x1;
+    /// Calculates the y coordinate of Point C between two given points A and B
+    /// if the x-coordinate of C is known. It does that by putting a linear function
+    /// through the two given points.
+    ///
+    /// ## Parameters
+    /// - `(x1, y1)` x and y of point A
+    /// - `(x2, y2)` x and y of point B
+    /// - `x_coord` x coordinate of searched point C
+    ///
+    /// ## Return Value
+    /// y coordinate of searched point C
+    #[inline]
+    pub fn calculate_y_coord_between_points(
+        (x1, y1): (f32, f32),
+        (x2, y2): (f32, f32),
+        x_coord: f32,
+    ) -> f32 {
+        // e.g. Points (100, 1.0) and (200, 0.0)
+        // y=f(x)=-0.01x + c
+        // 1.0 = f(100) = -0.01x + c
+        // c = 1.0 + 0.01*100 = 2.0
+        // y=f(180)=-0.01*180 + 2.0
 
-    slope * x_coord + c
+        // gradient, anstieg
+        let slope = (y2 - y1) / (x2 - x1);
+        // calculate c in y=f(x)=slope * x + c
+        let c = y1 - slope * x1;
+
+        slope * x_coord + c
+    }
+
+    /// Converts hertz to [mel](https://en.wikipedia.org/wiki/Mel_scale).
+    pub fn hertz_to_mel(hz: f32) -> f32 {
+        assert!(hz >= 0.0);
+        2595.0 * libm::log10f(1.0 + (hz / 700.0))
+    }
+
+    /// Converts [mel](https://en.wikipedia.org/wiki/Mel_scale) to hertz.
+    pub fn mel_to_hertz(mel: f32) -> f32 {
+        assert!(mel >= 0.0);
+        700.0 * (libm::powf(10.0, mel / 2595.0) - 1.0)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_calculate_y_coord_between_points() {
+            assert_eq!(
+                // expected y coordinate
+                0.5,
+                calculate_y_coord_between_points(
+                    (100.0, 1.0),
+                    (200.0, 0.0),
+                    150.0,
+                ),
+                "Must calculate middle point between points by laying a linear function through the two points"
+            );
+            // Must calculate arbitrary point between points by laying a linear function through the
+            // two points.
+            float_cmp::assert_approx_eq!(
+                f32,
+                0.2,
+                calculate_y_coord_between_points((100.0, 1.0), (200.0, 0.0), 180.0,),
+                ulps = 3
+            );
+        }
+
+        #[test]
+        fn test_mel() {
+            float_cmp::assert_approx_eq!(f32, hertz_to_mel(0.0), 0.0, epsilon = 0.1);
+            float_cmp::assert_approx_eq!(f32, hertz_to_mel(500.0), 607.4, epsilon = 0.1);
+            float_cmp::assert_approx_eq!(f32, hertz_to_mel(5000.0), 2363.5, epsilon = 0.1);
+
+            let conv = |hz: f32| mel_to_hertz(hertz_to_mel(hz));
+
+            float_cmp::assert_approx_eq!(f32, conv(0.0), 0.0, epsilon = 0.1);
+            float_cmp::assert_approx_eq!(f32, conv(1000.0), 1000.0, epsilon = 0.1);
+            float_cmp::assert_approx_eq!(f32, conv(10000.0), 10000.0, epsilon = 0.1);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -569,40 +641,12 @@ mod tests {
 
     /// Test if a frequency spectrum can be sent to other threads.
     #[test]
-    const fn test_send() {
+    const fn test_impl_send() {
         #[allow(unused)]
         // test if this compiles
         fn consume(s: FrequencySpectrum) {
             let _: &dyn Send = &s;
         }
-    }
-
-    #[test]
-    fn test_calculate_y_coord_between_points() {
-        assert_eq!(
-            // expected y coordinate
-            0.5,
-            calculate_y_coord_between_points(
-                (100.0, 1.0),
-                (200.0, 0.0),
-                150.0,
-            ),
-            "Must calculate middle point between points by laying a linear function through the two points"
-        );
-        assert!(
-            // https://docs.rs/float-cmp/0.8.0/float_cmp/
-            float_cmp::approx_eq!(
-                f32,
-                0.2,
-                calculate_y_coord_between_points(
-                    (100.0, 1.0),
-                    (200.0, 0.0),
-                    180.0,
-                ),
-                ulps = 3
-            ),
-            "Must calculate arbitrary point between points by laying a linear function through the two points"
-        );
     }
 
     #[test]
@@ -936,5 +980,21 @@ mod tests {
             maximum,
             "Should return the maximum frequency value!"
         )
+    }
+
+    #[test]
+    fn test_mel_getter() {
+        let mut spectrum_vector = vec![
+            (0.0_f32.into(), 5.0_f32.into()),
+            (450.0.into(), 200.0.into()),
+        ];
+
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0,
+            spectrum_vector.len() as _,
+            &mut spectrum_vector,
+        );
+        let _ = spectrum.mel_val(450.0);
     }
 }

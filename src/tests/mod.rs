@@ -95,21 +95,21 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
 
     spectrum_static_plotters_png_visualize(
         // spectrum_static_png_visualize(
-        &spectrum_no_window.to_map(None),
+        &spectrum_no_window.to_map(),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--no-window.png",
     );
 
     spectrum_static_plotters_png_visualize(
         // spectrum_static_png_visualize(
-        &spectrum_hamming_window.to_map(None),
+        &spectrum_hamming_window.to_map(),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hamming-window.png",
     );
 
     spectrum_static_plotters_png_visualize(
         // spectrum_static_png_visualize(
-        &spectrum_hann_window.to_map(None),
+        &spectrum_hann_window.to_map(),
         TEST_OUT_DIR,
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hann-window.png",
     );
@@ -179,17 +179,17 @@ fn test_spectrum_power() {
         .unwrap();*/
 
     spectrum_static_plotters_png_visualize(
-        &spectrum_short_window.to_map(None),
+        &spectrum_short_window.to_map(),
         TEST_OUT_DIR,
         "test_spectrum_power__short_window.png",
     );
     spectrum_static_plotters_png_visualize(
-        &spectrum_long_window.to_map(None),
+        &spectrum_long_window.to_map(),
         TEST_OUT_DIR,
         "test_spectrum_power__long_window.png",
     );
     /*spectrum_static_plotters_png_visualize(
-        &spectrum_long_window.to_map(None),
+        &spectrum_long_window.to_map(),
         TEST_OUT_DIR,
         "test_spectrum_power__very_long_window.png",
     );*/
