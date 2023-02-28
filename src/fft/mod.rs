@@ -42,15 +42,8 @@ SOFTWARE.
 //! `crate::tests::test_spectrum_and_visualize_sine_waves_50_1000_3777hz` by invoking it
 //! with different features (FFT implementations) enabled.
 
-#[cfg(feature = "microfft-real")]
 mod microfft_real;
-#[cfg(feature = "microfft-real")]
 pub use microfft_real::*;
-
-#[cfg(feature = "rustfft-complex")]
-mod rustfft_complex;
-#[cfg(feature = "rustfft-complex")]
-pub use rustfft_complex::*;
 
 use alloc::vec::Vec;
 

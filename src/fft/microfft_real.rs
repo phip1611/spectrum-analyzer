@@ -21,9 +21,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-//! Real FFT using `microfft::real`.
-//! Works in `no_std`-environments, maximum sample length is 4096 (with microfft version 0.4.0)
-//! and it's faster than a "typical" complex FFT.
+//! Real FFT using [`microfft::real`] that is very fast and also works in `no_std`
+//! environments. It is faster than regular fft (with the `rustfft` crate for
+//! example).
 
 use alloc::vec::Vec;
 
@@ -36,8 +36,7 @@ use microfft::real;
 /// it's own version that gets used in lib.rs for binary compatibility.
 pub use microfft::Complex32;
 
-/// Dummy struct with no properties but used as a type
-/// to implement a concrete FFT strategy using (`microfft::real`).
+/// Dummy struct with no properties used implement a concrete FFT strategy.
 pub struct FftImpl;
 
 impl Fft<Complex32> for FftImpl {

@@ -1,7 +1,6 @@
 # Changelog
 
 ## 1.3.0 (2022-12-XX)
-- dependency updates
 - MSRV is now `1.61.0`
 - `FrequencySpectrum::apply_scaling_fn` now requires a reference to `&mut self`:
   This is breaking but only for a small percentage of users. Performance is
@@ -12,8 +11,10 @@
   This is breaking but only for a small percentage of users.
 - `FrequencySpectrum::to_mel_map` added for getting the spectrum in the
   [mel](https://en.wikipedia.org/wiki/Mel_scale) scale.
-- dropped feature `microfft-complex` and made it clearer if and when you should
-  choose a different FFT implementation
+- dropped all optional FFT features (`microfft-complex`, `microfft-real`,
+  `rustfft-complex`) and made `microfft-real` the default.
+  This is breaking but only for a small percentage of users.
+- dependency updates
 - small internal code quality and performance improvements
 
 ## 1.2.6 (2022-07-20)

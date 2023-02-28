@@ -73,17 +73,6 @@ SOFTWARE.
 #![deny(rustdoc::all)]
 #![no_std]
 
-#[cfg(any(
-    all(feature = "microfft-real", feature = "rustfft-complex"),
-    not(any(
-        feature = "microfft-real",
-        feature = "rustfft-complex"
-    ))
-))]
-compile_error!(
-    "You must use exactly one FFT implementation. Check Cargo compile-time features of this crate!"
-);
-
 // enable std in tests (println!() for example)
 #[cfg_attr(test, macro_use)]
 #[cfg(test)]
@@ -129,7 +118,8 @@ mod tests;
 ///             You should apply an window function (like Hann) on the data first.
 ///             The final frequency resolution is `sample_rate / (N / 2)`
 ///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples =>
-///             better accuracy/frequency resolution.
+///             better accuracy/frequency resolution. The amount of samples must
+///             be a power of 2. If you don't have enough data, provide zeroes.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
 /// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`] for details.
