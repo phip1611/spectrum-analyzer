@@ -74,12 +74,9 @@ SOFTWARE.
 #![no_std]
 
 #[cfg(any(
-    all(feature = "microfft-real", feature = "microfft-complex"),
     all(feature = "microfft-real", feature = "rustfft-complex"),
-    all(feature = "microfft-complex", feature = "rustfft-complex"),
     not(any(
         feature = "microfft-real",
-        feature = "microfft-complex",
         feature = "rustfft-complex"
     ))
 ))]

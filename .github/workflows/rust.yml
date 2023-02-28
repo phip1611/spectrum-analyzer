@@ -30,13 +30,11 @@ jobs:
       # build with all features/fft implementations
       - run: cargo build --all-targets
       - run: cargo build --all-targets --no-default-features --features "rustfft-complex"
-      - run: cargo build --all-targets --no-default-features --features "microfft-complex"
       - run: cargo build --all-targets --no-default-features --features "microfft-real"
 
       # run tests with all features/fft implementations
       - run: cargo test --all-targets
       - run: cargo test --all-targets --no-default-features --features "rustfft-complex"
-      - run: cargo test --all-targets --no-default-features --features "microfft-complex"
       - run: cargo test --all-targets --no-default-features --features "microfft-real"
 
       # run benchmark: right now, there is no reporting or so from the results
@@ -44,13 +42,11 @@ jobs:
 
       # test `no_std`-build with all features/fft implementations
       - run: rustup target add thumbv7em-none-eabihf
-      - run: cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-complex"
       - run: cargo check --target thumbv7em-none-eabihf --no-default-features --features "microfft-real"
 
       # run examples with all features/fft implementations
       - run: cargo run --release --example mp3-samples
       - run: cargo run --release --example mp3-samples --no-default-features --features "rustfft-complex"
-      - run: cargo run --release --example mp3-samples --no-default-features --features "microfft-complex"
       - run: cargo run --release --example mp3-samples --no-default-features --features "microfft-real"
 
   style_checks:
@@ -74,15 +70,11 @@ jobs:
         run: cargo clippy
       - name: Clippy (rustfft-complex)
         run: cargo clippy --no-default-features --features "rustfft-complex"
-      - name: Clippy (microfft-complex)
-        run: cargo clippy --no-default-features --features "microfft-complex"
       - name: Clippy (microfft-real)
         run: cargo clippy --no-default-features --features "microfft-real"
       - name: Rustdoc (default feature)
         run: cargo doc
       - name: Rustdoc (rustfft-complex)
         run: cargo doc --no-default-features --features "rustfft-complex"
-      - name: Rustdoc (microfft-complex)
-        run: cargo doc --no-default-features --features "microfft-complex"
       - name: Rustdoc (microfft-real)
         run: cargo doc --no-default-features --features "microfft-real"

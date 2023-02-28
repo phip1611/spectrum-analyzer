@@ -12,7 +12,8 @@
   This is breaking but only for a small percentage of users.
 - `FrequencySpectrum::to_mel_map` added for getting the spectrum in the
   [mel](https://en.wikipedia.org/wiki/Mel_scale) scale.
--
+- dropped feature `microfft-complex` and made it clearer if and when you should
+  choose a different FFT implementation
 - small internal code quality and performance improvements
 
 ## 1.2.6 (2022-07-20)

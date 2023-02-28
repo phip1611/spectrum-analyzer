@@ -32,8 +32,6 @@ harness = false
 default = ["microfft-real"]
 # std
 rustfft-complex = ["rustfft"]
-# no_std
-microfft-complex = ["microfft"]
 # no_std, overall fastest
 microfft-real = ["microfft"]
 
