@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -84,14 +84,14 @@ pub type SpectrumScalingFunction = dyn Fn(f32, &SpectrumDataStats) -> f32;
 /// ```
 /// Function is of type [`SpectrumScalingFunction`].
 #[must_use]
-pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats) -> f32 {
-    debug_assert!(!frequency_magnitude.is_infinite());
-    debug_assert!(!frequency_magnitude.is_nan());
-    debug_assert!(frequency_magnitude >= 0.0);
-    if frequency_magnitude == 0.0 {
+pub fn scale_20_times_log10(fr_val: f32, _stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
+    if fr_val == 0.0 {
         0.0
     } else {
-        20.0 * libm::log10f(frequency_magnitude)
+        20.0 * libm::log10f(fr_val)
     }
 }
 
@@ -99,12 +99,12 @@ pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats
 /// Function is of type [`SpectrumScalingFunction`]. Expects that [`SpectrumDataStats::min`] is
 /// not negative.
 #[must_use]
-pub fn scale_to_zero_to_one(frequency_magnitude: f32, stats: &SpectrumDataStats) -> f32 {
-    debug_assert!(!frequency_magnitude.is_infinite());
-    debug_assert!(!frequency_magnitude.is_nan());
-    debug_assert!(frequency_magnitude >= 0.0);
+pub fn scale_to_zero_to_one(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
     if stats.max != 0.0 {
-        frequency_magnitude / stats.max
+        fr_val / stats.max
     } else {
         0.0
     }
@@ -114,14 +114,14 @@ pub fn scale_to_zero_to_one(frequency_magnitude: f32, stats: &SpectrumDataStats)
 /// by the length of samples, so that values of different samples lengths are comparable.
 #[allow(non_snake_case)]
 #[must_use]
-pub fn divide_by_N(frequency_magnitude: f32, stats: &SpectrumDataStats) -> f32 {
-    debug_assert!(!frequency_magnitude.is_infinite());
-    debug_assert!(!frequency_magnitude.is_nan());
-    debug_assert!(frequency_magnitude >= 0.0);
+pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
     if stats.n == 0.0 {
-        frequency_magnitude
+        fr_val
     } else {
-        frequency_magnitude / stats.n
+        fr_val / stats.n
     }
 }
 
@@ -130,15 +130,15 @@ pub fn divide_by_N(frequency_magnitude: f32, stats: &SpectrumDataStats) -> f32 {
 /// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
 #[must_use]
-pub fn divide_by_N_sqrt(frequency_magnitude: f32, stats: &SpectrumDataStats) -> f32 {
-    debug_assert!(!frequency_magnitude.is_infinite());
-    debug_assert!(!frequency_magnitude.is_nan());
-    debug_assert!(frequency_magnitude >= 0.0);
+pub fn divide_by_N_sqrt(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
     if stats.n == 0.0 {
-        frequency_magnitude
+        fr_val
     } else {
         // https://docs.rs/rustfft/latest/rustfft/#normalization
-        frequency_magnitude / libm::sqrtf(stats.n)
+        fr_val / libm::sqrtf(stats.n)
     }
 }
 
@@ -195,7 +195,7 @@ mod tests {
         let _combined_static = combined(&[&scale_20_times_log10, &divide_by_N, &divide_by_N_sqrt]);
 
         // doesn't compile yet.. fix this once someone requests it
-        /*let closure_scaling_fnc = |frequency_magnitude: f32, _stats: &SpectrumDataStats| {
+        /*let closure_scaling_fnc = |fr_val: f32, _stats: &SpectrumDataStats| {
            0.0
         };
 

@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,16 +28,14 @@ use core::cmp::Ordering;
 use core::fmt::{Display, Formatter, Result};
 use core::ops::{Add, Div, Mul, Sub};
 
-/// A frequency. A convenient wrapper type around `f32`.
+/// A frequency in Hertz. A convenient wrapper type around `f32`.
 pub type Frequency = OrderableF32;
-/// The value of a frequency in a frequency spectrum. Convenient wrapper around `f32`.
-/// Not necessarily the magnitude of the complex numbers because scaling/normalization
-/// functions could have been applied.
+/// The value of a [`Frequency`] in a frequency spectrum. Also called the
+/// magnitude.
 pub type FrequencyValue = OrderableF32;
 
-/// Small convenient wrapper around `f32`.
-/// Mainly required to make `f32` operable in a sorted tree map.
-/// You should only use the type aliases `Frequency` and `FrequencyValue`.
+/// Wrapper around [`f32`] that guarantees a valid number, hence, the number is
+/// neither `NaN` or `infinite`. This makes the number orderable and sortable.
 #[derive(Debug, Copy, Clone, Default)]
 pub struct OrderableF32(f32);
 
