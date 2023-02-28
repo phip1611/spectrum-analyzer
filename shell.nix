@@ -2,6 +2,7 @@
   pkgs.mkShell rec {
     nativeBuildInputs = with pkgs; [
       pkg-config
+      cargo-nextest
     ];
 
     buildInputs = with pkgs; [

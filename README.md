@@ -22,19 +22,13 @@ mainly for educational reasons and to support me during programming/testing.
 # by default feature "microfft-real" is used
 [dependencies]
 spectrum-analyzer = "<latest version, see crates.io>"
-
-# or if you need another feature (FFT implementation)
-[dependencies.spectrum-analyzer]
-default-features = false # important! only one feature at a time works!
-version = "<latest version, see crates.io>"
-features = ["rustfft-complex"] # or on of the other features
 ```
 
 ### your_binary.rs
 ```rust
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use spectrum_analyzer::windows::hann_window;
-use spectrum_analyzer::scaling::divide_by_N;
+use spectrum_analyzer::scaling::divide_by_N_sqrt;
 
 /// Minimal example.
 fn main() {
@@ -52,7 +46,7 @@ fn main() {
         // optional frequency limit: e.g. only interested in frequencies 50 <= f <= 150?
         FrequencyLimit::All,
         // optional scale
-        Some(&divide_by_N),
+        Some(&divide_by_N_sqrt),
     ).unwrap();
 
     for (fr, fr_val) in spectrum_hann_window.data().iter() {
@@ -64,13 +58,16 @@ fn main() {
 ## Performance
 *Measurements taken on i7-1165G7 @ 2.80GHz (Single-threaded) with optimized build*
 
-| Operation                                              | Time   |
-| ------------------------------------------------------ | ------:|
-| Hann Window with 4096 samples                          | ≈68µs  |
-| Hamming Window with 4096 samples                       | ≈118µs |
-| FFT (`rustfft/complex`) to spectrum with 4096 samples  | ≈170µs |
-| FFT (`microfft/real`) to spectrum with 4096 samples    | ≈90µs  |
-| FFT (`microfft/complex`) to spectrum with 4096 samples | ≈250µs |
+I've tested multiple FFT implementations. Below you can find out why I decided
+to use `microfft`.
+
+| Operation                                               | Time   |
+|---------------------------------------------------------| ------:|
+| Hann Window with 4096 samples                           | ≈68µs  |
+| Hamming Window with 4096 samples                        | ≈118µs |
+| FFT (`rustfft`) to spectrum with 4096 samples           | ≈170µs |
+| FFT (`microfft::real`) to spectrum with 4096 samples    | ≈90µs  |
+| FFT (`microfft::complex`) to spectrum with 4096 samples | ≈250µs |
 
 ## Example Visualizations
 In the following examples you can see a basic visualization of the spectrum from `0 to 4000Hz` for
