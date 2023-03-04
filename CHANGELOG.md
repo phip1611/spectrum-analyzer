@@ -3,7 +3,9 @@
 # 1.4.0 (2023-03-04)
 - dropped all optional FFT features (`microfft-complex`, `microfft-real`,
   `rustfft-complex`) and made `microfft::real` the default FFT implementation.
-  This is breaking but only for a small percentage of users.
+  This is breaking but only for a small percentage of users. There was no
+  benefit from that feature and `microfft::real`, the default, was already the
+  fastest for no_std as well as std targets.
 - dependency updates
 
 ## 1.3.0 (2023-03-04)

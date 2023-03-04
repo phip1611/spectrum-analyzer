@@ -7,15 +7,10 @@ The **MSRV** (minimum supported Rust version) is `1.61.0`.
 ## I want to understand how FFT can be used to get a spectrum
 Please see file [/EDUCATIONAL.md](/EDUCATIONAL.md).
 
-## How to use (including `no_std`-environments)
+## How to use (including `no_std`-contexts)
 Most tips and comments are located inside the code, so please check out the
 repository on GitHub! Anyway, the most basic usage looks like this:
 
-### FFT implementation as compile time configuration via Cargo features
-By default, this crate uses the `real`-module from the great `microfft`-crate.
-It's the fastest implementation and as of version `v0.5.0` there should be no
-valid reason why you should ever change this. The multiple features are there
-mainly for educational reasons and to support me during programming/testing.
 
 ### Cargo.toml
 ```toml
@@ -59,7 +54,8 @@ fn main() {
 *Measurements taken on i7-1165G7 @ 2.80GHz (Single-threaded) with optimized build*
 
 I've tested multiple FFT implementations. Below you can find out why I decided
-to use `microfft`.
+to use `microfft::real`. It is not only the fastest, but also works in `no_std`
+contexts.
 
 | Operation                                               | Time   |
 |---------------------------------------------------------| ------:|

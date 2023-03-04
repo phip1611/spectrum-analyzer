@@ -27,20 +27,15 @@ jobs:
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
         run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
 
-      # build with all features/fft implementations
       - run: cargo build --all-targets
-
-      # run tests with all features/fft implementations
       - run: cargo test --all-targets
 
       # run benchmark: right now, there is no reporting or so from the results
       - run: cargo bench
 
-      # test `no_std`-build with all features/fft implementations
       - run: rustup target add thumbv7em-none-eabihf
       - run: cargo build --target thumbv7em-none-eabihf
 
-      # run examples with all features/fft implementations
       - run: cargo run --release --example mp3-samples
 
   style_checks:
