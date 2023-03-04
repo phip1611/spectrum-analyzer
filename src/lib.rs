@@ -73,20 +73,6 @@ SOFTWARE.
 #![deny(rustdoc::all)]
 #![no_std]
 
-#[cfg(any(
-    all(feature = "microfft-real", feature = "microfft-complex"),
-    all(feature = "microfft-real", feature = "rustfft-complex"),
-    all(feature = "microfft-complex", feature = "rustfft-complex"),
-    not(any(
-        feature = "microfft-real",
-        feature = "microfft-complex",
-        feature = "rustfft-complex"
-    ))
-))]
-compile_error!(
-    "You must use exactly one FFT implementation. Check Cargo compile-time features of this crate!"
-);
-
 // enable std in tests (println!() for example)
 #[cfg_attr(test, macro_use)]
 #[cfg(test)]
@@ -100,7 +86,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 use crate::error::SpectrumAnalyzerError;
-use crate::fft::{Complex32, Fft, FftImpl};
+use crate::fft::{Complex32, FftImpl};
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
 pub use crate::limit::FrequencyLimitError;
@@ -132,7 +118,8 @@ mod tests;
 ///             You should apply an window function (like Hann) on the data first.
 ///             The final frequency resolution is `sample_rate / (N / 2)`
 ///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples =>
-///             better accuracy/frequency resolution.
+///             better accuracy/frequency resolution. The amount of samples must
+///             be a power of 2. If you don't have enough data, provide zeroes.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
 /// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`] for details.
@@ -206,7 +193,7 @@ pub fn samples_fft_to_spectrum(
     // chosen at compile time (via Cargo feature).
     // If a complex FFT implementation was chosen, this will internally
     // transform all data to Complex numbers.
-    let buffer = FftImpl::fft_apply(samples);
+    let fft_res = FftImpl::calc(samples);
 
     // This function:
     // 1) calculates the corresponding frequency of each index in the FFT result
@@ -216,7 +203,7 @@ pub fn samples_fft_to_spectrum(
     // 5) collects everything into the struct "FrequencySpectrum"
     fft_result_to_spectrum(
         samples.len(),
-        &buffer,
+        &fft_res,
         sampling_rate,
         frequency_limit,
         scaling_fn,
@@ -230,7 +217,7 @@ pub fn samples_fft_to_spectrum(
 /// ## Parameters
 /// * `samples_len` Length of samples. This is a dedicated field because it can't always be
 ///                 derived from `fft_result.len()`. There are for example differences for
-///                  `fft_result.len()` in real and complex FFT.
+///                 `fft_result.len()` in real and complex FFT algorithms.
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
 /// * `sampling_rate` sampling_rate, e.g. `44100 [Hz]`
 /// * `frequency_limit` Frequency limit. See [`FrequencyLimit´]
@@ -264,7 +251,7 @@ fn fft_result_to_spectrum(
         //
         // Indices (samples_len / 2)..len() are mirrored/negative. You can also see this here:
         // https://www.gaussianwaves.com/gaussianwaves/wp-content/uploads/2015/11/realDFT_complexDFT.png
-        .take(FftImpl::fft_relevant_res_samples_count(samples_len))
+        .take(samples_len / 2 + 1)
         // to (index, fft-result)-pairs
         .enumerate()
         // calc index => corresponding frequency

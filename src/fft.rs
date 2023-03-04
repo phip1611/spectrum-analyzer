@@ -21,13 +21,13 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-//! Real FFT using `microfft::real`.
-//! Works in `no_std`-environments, maximum sample length is 4096 (with microfft version 0.4.0)
-//! and it's faster than a "typical" complex FFT.
+
+//! Real FFT using [`microfft::real`] that is very fast and also works in `no_std`
+//! environments. It is faster than regular fft (with the `rustfft` crate for
+//! example). The difference to a complex FFT, as with `rustfft` is, that the
+//! result vector contains less results as there are no mirrored frequencies.
 
 use alloc::vec::Vec;
-
-use crate::fft::Fft;
 use core::convert::TryInto;
 use microfft::real;
 
@@ -36,13 +36,21 @@ use microfft::real;
 /// it's own version that gets used in lib.rs for binary compatibility.
 pub use microfft::Complex32;
 
-/// Dummy struct with no properties but used as a type
-/// to implement a concrete FFT strategy using (`microfft::real`).
+/// Real FFT using [`microfft::real`].
 pub struct FftImpl;
 
-impl Fft<Complex32> for FftImpl {
+impl FftImpl {
+    /// Calculates the FFT For the given input samples and returns a Vector of
+    /// of [`Complex32`] with length `samples.len() / 2 + 1`, where the first
+    /// index corresponds to the DC component and the last index to the Nyquist
+    /// frequency.
+    ///
+    /// # Parameters
+    /// - `samples`: Array with samples. Each value must be a regular floating
+    ///              point number (no NaN or infinite) and the length must be
+    ///              a power of two. Otherwise, the function panics.
     #[inline]
-    fn fft_apply(samples: &[f32]) -> Vec<Complex32> {
+    pub(crate) fn calc(samples: &[f32]) -> Vec<Complex32> {
         let buffer = samples;
         let mut res = {
             if buffer.len() == 2 {
@@ -94,29 +102,12 @@ impl Fft<Complex32> for FftImpl {
             }
         };
 
-        // `microfft::real` documentation says: the Nyquist frequency real value is
-        // packed inside the imaginary part of the DC component.
+        // `microfft::real` documentation says: the Nyquist frequency real value
+        // is packed inside the imaginary part of the DC component.
         let nyquist_fr_pos_val = res[0].im;
         res[0].im = 0.0;
         // manually add the nyquist frequency
         res.push(Complex32::new(nyquist_fr_pos_val, 0.0));
         res
-    }
-
-    #[inline]
-    fn fft_relevant_res_samples_count(samples_len: usize) -> usize {
-        // `microfft::real` uses a real FFT and the result is exactly
-        // N/2 elements of type Complex<f32> long. The documentation of
-        // `microfft::real` says about this:
-        //   The produced output is the first half out the output returned by
-        //   the corresponding `N`-point CFFT, i.e. the real DC value and
-        //   `N/2 - 1` positive-frequency terms. Additionally, the real-valued
-        //   coefficient at the Nyquist frequency is packed into the imaginary part
-        //   of the DC bin.
-        //
-        // But as you can see in apply_fft() I manually add the Nyquist frequency
-        // therefore "+1". For this real-FFT implementation this equals to the total
-        // length of fft_apply()-result
-        samples_len / 2 + 1
     }
 }
