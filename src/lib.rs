@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,13 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-//! A simple and fast `no_std` library to get the frequency spectrum of a digital signal
-//! (e.g. audio) using FFT. It follows the KISS principle and consists of simple building
-//! blocks/optional features.
-//!
-//! In short, this is a convenient wrapper around a FFT implementation. You choose the
-//! implementation at compile time via Cargo features. This crate uses
-//! "microfft" by default for FFT. See README for more advise.
+//! An easy to use and fast `no_std` library (with `alloc`) to get the frequency
+//! spectrum of a digital signal (e.g. audio) using FFT.
 //!
 //! ## Examples
 //! ### Scaling via dynamic closure
@@ -45,14 +40,15 @@ SOFTWARE.
 //! ### Scaling via static function
 //! ```rust
 //! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
-//! use spectrum_analyzer::scaling::scale_to_zero_to_one;
+//! use spectrum_analyzer::scaling::divide_by_N_sqrt;
 //! // get data from audio source
 //! let samples = vec![0.0, 1.1, 5.5, -5.5];
 //! let res = samples_fft_to_spectrum(
 //!         &samples,
 //!         44100,
 //!         FrequencyLimit::All,
-//!         Some(&scale_to_zero_to_one),
+//!         // Recommended scaling/normalization by `rustfft`.
+//!         Some(&divide_by_N_sqrt),
 //! );
 //! ```
 
@@ -60,6 +56,7 @@ SOFTWARE.
     clippy::all,
     clippy::cargo,
     clippy::nursery,
+    clippy::must_use_candidate
     // clippy::restriction,
     // clippy::pedantic
 )]
@@ -97,7 +94,7 @@ extern crate std;
 
 // We use alloc crate, because this is no_std
 // The macros are only needed when we test
-#[cfg_attr(test, macro_use)]
+#[macro_use]
 extern crate alloc;
 
 use alloc::vec::Vec;
@@ -241,7 +238,7 @@ pub fn samples_fft_to_spectrum(
 ///
 /// ## Return value
 /// New object of type [`FrequencySpectrum`].
-#[inline(always)]
+#[inline]
 fn fft_result_to_spectrum(
     samples_len: usize,
     fft_result: &[Complex32],
@@ -330,12 +327,19 @@ fn fft_result_to_spectrum(
         // collect all into an sorted vector (from lowest frequency to highest)
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
+    let mut working_buffer = vec![(0.0.into(), 0.0.into()); frequency_vec.len()];
+
     // create spectrum object
-    let spectrum = FrequencySpectrum::new(frequency_vec, frequency_resolution, samples_len as u32);
+    let mut spectrum = FrequencySpectrum::new(
+        frequency_vec,
+        frequency_resolution,
+        samples_len as u32,
+        &mut working_buffer,
+    );
 
     // optionally scale
     if let Some(scaling_fn) = scaling_fn {
-        spectrum.apply_scaling_fn(scaling_fn)?
+        spectrum.apply_scaling_fn(scaling_fn, &mut working_buffer)?
     }
 
     Ok(spectrum)
@@ -355,9 +359,9 @@ fn fft_result_to_spectrum(
 /// Frequency resolution in Hertz.
 ///
 /// ## More info
-/// * https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution
-/// * https://stackoverflow.com/questions/4364823/
-#[inline(always)]
+/// * <https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution>
+/// * <https://stackoverflow.com/questions/4364823/>
+#[inline]
 fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
     sampling_rate as f32 / samples_len as f32
 }

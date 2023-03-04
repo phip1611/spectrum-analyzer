@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,28 +28,26 @@ use core::cmp::Ordering;
 use core::fmt::{Display, Formatter, Result};
 use core::ops::{Add, Div, Mul, Sub};
 
-/// A frequency. A convenient wrapper type around `f32`.
+/// A frequency in Hertz. A convenient wrapper type around `f32`.
 pub type Frequency = OrderableF32;
-/// The value of a frequency in a frequency spectrum. Convenient wrapper around `f32`.
-/// Not necessarily the magnitude of the complex numbers because scaling/normalization
-/// functions could have been applied.
+/// The value of a [`Frequency`] in a frequency spectrum. Also called the
+/// magnitude.
 pub type FrequencyValue = OrderableF32;
 
-/// Small convenient wrapper around `f32`.
-/// Mainly required to make `f32` operable in a sorted tree map.
-/// You should only use the type aliases `Frequency` and `FrequencyValue`.
+/// Wrapper around [`f32`] that guarantees a valid number, hence, the number is
+/// neither `NaN` or `infinite`. This makes the number orderable and sortable.
 #[derive(Debug, Copy, Clone, Default)]
 pub struct OrderableF32(f32);
 
 impl OrderableF32 {
-    #[inline(always)]
+    #[inline]
     pub const fn val(&self) -> f32 {
         self.0
     }
 }
 
 impl From<f32> for OrderableF32 {
-    #[inline(always)]
+    #[inline]
     fn from(val: f32) -> Self {
         debug_assert!(!val.is_nan(), "NaN-values are not supported!");
         debug_assert!(!val.is_infinite(), "Infinite-values are not supported!");
@@ -64,7 +62,7 @@ impl Display for OrderableF32 {
 }
 
 impl Ord for OrderableF32 {
-    #[inline(always)]
+    #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
         self.partial_cmp(other).unwrap()
     }
@@ -73,7 +71,7 @@ impl Ord for OrderableF32 {
 impl Eq for OrderableF32 {}
 
 impl PartialEq for OrderableF32 {
-    #[inline(always)]
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         matches!(self.cmp(other), Ordering::Equal)
     }
@@ -81,7 +79,7 @@ impl PartialEq for OrderableF32 {
 
 impl PartialOrd for OrderableF32 {
     #[allow(clippy::float_cmp)]
-    #[inline(always)]
+    #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         // self.cmp(other).is_eq()
         Some(if self.val() < other.val() {
@@ -97,7 +95,7 @@ impl PartialOrd for OrderableF32 {
 impl Add for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn add(self, other: Self) -> Self::Output {
         (self.val() + other.val()).into()
     }
@@ -106,7 +104,7 @@ impl Add for OrderableF32 {
 impl Sub for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn sub(self, other: Self) -> Self::Output {
         (self.val() - other.val()).into()
     }
@@ -115,7 +113,7 @@ impl Sub for OrderableF32 {
 impl Mul for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn mul(self, other: Self) -> Self::Output {
         (self.val() * other.val()).into()
     }
@@ -124,7 +122,7 @@ impl Mul for OrderableF32 {
 impl Div for OrderableF32 {
     type Output = Self;
 
-    #[inline(always)]
+    #[inline]
     fn div(self, other: Self) -> Self::Output {
         let quotient = self.val() / other.val();
         debug_assert!(!quotient.is_nan(), "NaN is not allowed");

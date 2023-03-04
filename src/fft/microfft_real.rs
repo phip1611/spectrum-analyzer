@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,7 +41,7 @@ pub use microfft::Complex32;
 pub struct FftImpl;
 
 impl Fft<Complex32> for FftImpl {
-    #[inline(always)]
+    #[inline]
     fn fft_apply(samples: &[f32]) -> Vec<Complex32> {
         let buffer = samples;
         let mut res = {
@@ -103,7 +103,7 @@ impl Fft<Complex32> for FftImpl {
         res
     }
 
-    #[inline(always)]
+    #[inline]
     fn fft_relevant_res_samples_count(samples_len: usize) -> usize {
         // `microfft::real` uses a real FFT and the result is exactly
         // N/2 elements of type Complex<f32> long. The documentation of

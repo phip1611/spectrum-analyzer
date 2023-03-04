@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -28,10 +28,10 @@ SOFTWARE.
 
 use alloc::boxed::Box;
 
-/// Helper struct for [`SpectrumScalingFunction`], that gets passed into the
-/// function together with the actual value. This structure can be used to scale
-/// each value. All properties reference the current data of a
-/// [`crate::spectrum::FrequencySpectrum`].
+/// Helper struct for [`SpectrumScalingFunction`] that is passed into the
+/// scaling function together with the current frequency value. This structure
+/// can be used to scale each value. All properties reference the current data
+/// of a [`crate::spectrum::FrequencySpectrum`].
 ///
 /// This uses `f32` in favor of [`crate::FrequencyValue`] because the latter led to
 /// some implementation problems.
@@ -45,8 +45,8 @@ pub struct SpectrumDataStats {
     pub average: f32,
     /// Median frequency value in spectrum.
     pub median: f32,
-    /// Number of samples (`samples.len()`). Already
-    /// casted to f32, to avoid repeatedly casting in a loop for each value.
+    /// Number of samples (`samples.len()`). Already casted to f32, to avoid
+    /// repeatedly casting in a loop for each value.
     pub n: f32,
 }
 
@@ -83,28 +83,28 @@ pub type SpectrumScalingFunction = dyn Fn(f32, &SpectrumDataStats) -> f32;
 /// );
 /// ```
 /// Function is of type [`SpectrumScalingFunction`].
-pub fn scale_20_times_log10(frequency_magnitude: f32, _stats: &SpectrumDataStats) -> f32 {
-    debug_assert!(!frequency_magnitude.is_infinite());
-    debug_assert!(!frequency_magnitude.is_nan());
-    debug_assert!(frequency_magnitude >= 0.0);
-    if frequency_magnitude == 0.0 {
+#[must_use]
+pub fn scale_20_times_log10(fr_val: f32, _stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
+    if fr_val == 0.0 {
         0.0
     } else {
-        20.0 * libm::log10f(frequency_magnitude)
+        20.0 * libm::log10f(fr_val)
     }
 }
 
 /// Scales each frequency value/amplitude in the spectrum to interval `[0.0; 1.0]`.
 /// Function is of type [`SpectrumScalingFunction`]. Expects that [`SpectrumDataStats::min`] is
 /// not negative.
-pub fn scale_to_zero_to_one(val: f32, stats: &SpectrumDataStats) -> f32 {
-    // usually not the case, except you use other scaling functions first,
-    // that transforms the value to a negative one
-    /*if stats.min < 0.0 {
-        val = val + stats.min;
-    }*/
+#[must_use]
+pub fn scale_to_zero_to_one(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
     if stats.max != 0.0 {
-        val / stats.max
+        fr_val / stats.max
     } else {
         0.0
     }
@@ -113,11 +113,15 @@ pub fn scale_to_zero_to_one(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// Divides each value by N. Several resources recommend that the FFT result should be divided
 /// by the length of samples, so that values of different samples lengths are comparable.
 #[allow(non_snake_case)]
-pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
+#[must_use]
+pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
     if stats.n == 0.0 {
-        val
+        fr_val
     } else {
-        val / stats.n
+        fr_val / stats.n
     }
 }
 
@@ -125,12 +129,16 @@ pub fn divide_by_N(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// in the `rustfft` documentation (but is generally applicable).
 /// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
-pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
+#[must_use]
+pub fn divide_by_N_sqrt(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
+    debug_assert!(!fr_val.is_infinite());
+    debug_assert!(!fr_val.is_nan());
+    debug_assert!(fr_val >= 0.0);
     if stats.n == 0.0 {
-        val
+        fr_val
     } else {
         // https://docs.rs/rustfft/latest/rustfft/#normalization
-        val / libm::sqrtf(stats.n)
+        fr_val / libm::sqrtf(stats.n)
     }
 }
 
@@ -140,7 +148,8 @@ pub fn divide_by_N_sqrt(val: f32, stats: &SpectrumDataStats) -> f32 {
 /// a `'static` lifetime. This will be fixed if someone needs this.
 ///
 /// # Example
-/// ```ignored
+/// ```
+/// use spectrum_analyzer::scaling::{combined, divide_by_N, scale_20_times_log10};
 /// let fncs = combined(&[&divide_by_N, &scale_20_times_log10]);
 /// ```
 pub fn combined(fncs: &'static [&SpectrumScalingFunction]) -> Box<SpectrumScalingFunction> {
@@ -186,7 +195,7 @@ mod tests {
         let _combined_static = combined(&[&scale_20_times_log10, &divide_by_N, &divide_by_N_sqrt]);
 
         // doesn't compile yet.. fix this once someone requests it
-        /*let closure_scaling_fnc = |frequency_magnitude: f32, _stats: &SpectrumDataStats| {
+        /*let closure_scaling_fnc = |fr_val: f32, _stats: &SpectrumDataStats| {
            0.0
         };
 

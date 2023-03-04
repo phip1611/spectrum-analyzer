@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -49,7 +49,8 @@ pub enum FrequencyLimit {
 
 impl FrequencyLimit {
     /// Returns the minimum value, if any.
-    #[inline(always)]
+    #[inline]
+    #[must_use]
     pub const fn maybe_min(&self) -> Option<f32> {
         match self {
             Self::Min(min) => Some(*min),
@@ -59,7 +60,8 @@ impl FrequencyLimit {
     }
 
     /// Returns the maximum value, if any.
-    #[inline(always)]
+    #[inline]
+    #[must_use]
     pub const fn maybe_max(&self) -> Option<f32> {
         match self {
             Self::Max(max) => Some(*max),
@@ -70,14 +72,16 @@ impl FrequencyLimit {
 
     /// Returns the minimum value, panics if it's none.
     /// Unwrapped version of [`Self::maybe_min`].
-    #[inline(always)]
+    #[inline]
+    #[must_use]
     pub fn min(&self) -> f32 {
         self.maybe_min().expect("Must contain a value!")
     }
 
     /// Returns the minimum value, panics if it's none.
     /// Unwrapped version of [`Self::maybe_max`].
-    #[inline(always)]
+    #[inline]
+    #[must_use]
     pub fn max(&self) -> f32 {
         self.maybe_max().expect("Must contain a value!")
     }
@@ -163,10 +167,10 @@ mod tests {
 
     #[test]
     fn test_ok() {
-        let _ = FrequencyLimit::Min(50.0).verify(100.0).unwrap();
-        let _ = FrequencyLimit::Max(50.0).verify(100.0).unwrap();
+        FrequencyLimit::Min(50.0).verify(100.0).unwrap();
+        FrequencyLimit::Max(50.0).verify(100.0).unwrap();
         // useless, but not an hard error
-        let _ = FrequencyLimit::Range(50.0, 50.0).verify(100.0).unwrap();
-        let _ = FrequencyLimit::Range(50.0, 70.0).verify(100.0).unwrap();
+        FrequencyLimit::Range(50.0, 50.0).verify(100.0).unwrap();
+        FrequencyLimit::Range(50.0, 70.0).verify(100.0).unwrap();
     }
 }

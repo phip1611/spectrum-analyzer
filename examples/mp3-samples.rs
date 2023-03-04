@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2021 Philipp Schuster
+Copyright (c) 2023 Philipp Schuster
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -212,31 +212,31 @@ fn to_spectrum_and_plot(
     }*/
 
     spectrum_static_plotters_png_visualize(
-        &spectrum_no_window.to_map(None),
+        &spectrum_no_window.to_map(),
         TEST_OUT_DIR,
         &format!("{}--no-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
-        &spectrum_hamming_window.to_map(None),
+        &spectrum_hamming_window.to_map(),
         TEST_OUT_DIR,
         &format!("{}--hamming-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
-        &spectrum_hann_window.to_map(None),
+        &spectrum_hann_window.to_map(),
         TEST_OUT_DIR,
         &format!("{}--hann-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
-        &spectrum_blackman_harris_4term_window.to_map(None),
+        &spectrum_blackman_harris_4term_window.to_map(),
         TEST_OUT_DIR,
         &format!("{}--blackman-harris-4-term-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
-        &spectrum_blackman_harris_7term_window.to_map(None),
+        &spectrum_blackman_harris_7term_window.to_map(),
         TEST_OUT_DIR,
         &format!("{}--blackman-harris-7-term-window.png", filename),
     );
