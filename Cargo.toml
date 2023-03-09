@@ -30,6 +30,7 @@ microfft = { version = "0.5", features = ["size-16384"] }
 float-cmp = "0.9"
 # sin() cos() log10() etc for no_std-environments; these are not part of Core library
 libm = "0.2"
+paste = "1.0"
 
 [dev-dependencies]
 # readmp3 files in tests and examples
