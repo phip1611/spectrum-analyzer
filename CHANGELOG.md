@@ -1,5 +1,8 @@
 # Changelog
 
+# Unreleased
+- internal code improvements
+
 # 1.4.0 (2023-03-04)
 - dropped all optional FFT features (`microfft-complex`, `microfft-real`,
   `rustfft-complex`) and made `microfft::real` the default FFT implementation.

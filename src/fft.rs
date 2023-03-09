@@ -36,6 +36,24 @@ use microfft::real;
 /// it's own version that gets used in lib.rs for binary compatibility.
 pub use microfft::Complex32;
 
+/// Calculates the real FFT by invoking the proper function corresponding to the
+/// buffer length.
+macro_rules! real_fft_n {
+    ($buffer:expr, $( $i:literal ),*) => {
+        match $buffer.len() {
+            $(
+                $i => {
+                    let mut buffer: [_; $i] = $buffer.try_into().unwrap();
+                    paste::paste! (
+                        real::[<rfft_$i>]
+                    )(&mut buffer).to_vec()
+                }
+            )*
+            _ => { unimplemented!("unexpected buffer len") }
+        }
+    };
+}
+
 /// Real FFT using [`microfft::real`].
 pub struct FftImpl;
 
@@ -51,63 +69,15 @@ impl FftImpl {
     ///              a power of two. Otherwise, the function panics.
     #[inline]
     pub(crate) fn calc(samples: &[f32]) -> Vec<Complex32> {
-        let buffer = samples;
-        let mut res = {
-            if buffer.len() == 2 {
-                let mut buffer: [_; 2] = buffer.try_into().unwrap();
-                real::rfft_2(&mut buffer).to_vec()
-            } else if buffer.len() == 4 {
-                let mut buffer: [_; 4] = buffer.try_into().unwrap();
-                real::rfft_4(&mut buffer).to_vec()
-            } else if buffer.len() == 8 {
-                let mut buffer: [_; 8] = buffer.try_into().unwrap();
-                real::rfft_8(&mut buffer).to_vec()
-            } else if buffer.len() == 16 {
-                let mut buffer: [_; 16] = buffer.try_into().unwrap();
-                real::rfft_16(&mut buffer).to_vec()
-            } else if buffer.len() == 32 {
-                let mut buffer: [_; 32] = buffer.try_into().unwrap();
-                real::rfft_32(&mut buffer).to_vec()
-            } else if buffer.len() == 64 {
-                let mut buffer: [_; 64] = buffer.try_into().unwrap();
-                real::rfft_64(&mut buffer).to_vec()
-            } else if buffer.len() == 128 {
-                let mut buffer: [_; 128] = buffer.try_into().unwrap();
-                real::rfft_128(&mut buffer).to_vec()
-            } else if buffer.len() == 256 {
-                let mut buffer: [_; 256] = buffer.try_into().unwrap();
-                real::rfft_256(&mut buffer).to_vec()
-            } else if buffer.len() == 512 {
-                let mut buffer: [_; 512] = buffer.try_into().unwrap();
-                real::rfft_512(&mut buffer).to_vec()
-            } else if buffer.len() == 1024 {
-                let mut buffer: [_; 1024] = buffer.try_into().unwrap();
-                real::rfft_1024(&mut buffer).to_vec()
-            } else if buffer.len() == 2048 {
-                let mut buffer: [_; 2048] = buffer.try_into().unwrap();
-                real::rfft_2048(&mut buffer).to_vec()
-            } else if buffer.len() == 4096 {
-                let mut buffer: [_; 4096] = buffer.try_into().unwrap();
-                real::rfft_4096(&mut buffer).to_vec()
-            } else if buffer.len() == 8192 {
-                let mut buffer: [_; 8192] = buffer.try_into().unwrap();
-                real::rfft_8192(&mut buffer).to_vec()
-            } else if buffer.len() == 16384 {
-                let mut buffer: [_; 16384] = buffer.try_into().unwrap();
-                real::rfft_16384(&mut buffer).to_vec()
-            } else {
-                panic!(
-                    "`microfft::real` only supports powers of 2 between 2 and 16384 as amount of samples!"
-                );
-            }
-        };
+        let mut fft_res: Vec<Complex32> =
+            real_fft_n!(samples, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384);
 
         // `microfft::real` documentation says: the Nyquist frequency real value
         // is packed inside the imaginary part of the DC component.
-        let nyquist_fr_pos_val = res[0].im;
-        res[0].im = 0.0;
+        let nyquist_fr_pos_val = fft_res[0].im;
+        fft_res[0].im = 0.0;
         // manually add the nyquist frequency
-        res.push(Complex32::new(nyquist_fr_pos_val, 0.0));
-        res
+        fft_res.push(Complex32::new(nyquist_fr_pos_val, 0.0));
+        fft_res
     }
 }
