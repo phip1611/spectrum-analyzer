@@ -14,7 +14,7 @@ jobs:
         rust:
           - stable
           - nightly
-          - 1.61.0 # MSRV
+          - 1.63.0 # MSRV
     steps:
       - uses: actions/checkout@v4
       - name: Setup Rust toolchain
@@ -41,7 +41,7 @@ jobs:
     strategy:
       matrix:
         rust:
-          - 1.61.0 # MSRV
+          - 1.63.0 # MSRV
     steps:
       - uses: actions/checkout@v4
       - name: Setup Rust toolchain

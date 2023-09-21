@@ -1,6 +1,8 @@
 # Changelog
 
-# Unreleased
+# 1.5.0 (2023-09-21)
+- **BREAKING** MSRV is now `1.63.0`
+- updated all dependencies
 - internal code improvements
 
 # 1.4.0 (2023-03-04)
@@ -12,7 +14,7 @@
 - dependency updates
 
 ## 1.3.0 (2023-03-04)
-- MSRV is now `1.61.0`
+- MSRV is now `1.63.0`
 - `FrequencySpectrum::apply_scaling_fn` now requires a reference to `&mut self`:
   This is breaking but only for a small percentage of users. Performance is
   slightly improved as less heap allocations are required.
