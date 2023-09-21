@@ -1,7 +1,7 @@
 name: Build
 
 # Triggers the workflow on push or pull request events (for any branch in a repository)
-on: [ push, pull_request ]
+on: [ push, pull_request, merge_group ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -60,4 +60,4 @@ jobs:
       - name: Clippy
         run: cargo clippy --all-targets
       - name: Rustdoc
-        run: cargo doc --document-private-items
+        run: cargo doc --document-private-items --no-deps
