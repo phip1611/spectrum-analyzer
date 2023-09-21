@@ -1,8 +1,9 @@
 # Changelog
 
 # 1.5.0 (2023-09-21)
+- fixed the build by updating the dependencies
+- apart from that, no changes happened
 - **BREAKING** MSRV is now `1.63.0`
-- updated all dependencies
 - internal code improvements
 
 # 1.4.0 (2023-03-04)
