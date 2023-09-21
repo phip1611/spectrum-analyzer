@@ -16,14 +16,12 @@ jobs:
           - nightly
           - 1.61.0 # MSRV
     steps:
-      - uses: actions/checkout@v2
-      # Important preparation step: override the latest default Rust version in GitHub CI
-      # with the current value of the iteration in the "strategy.matrix.rust"-array.
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: default
           toolchain: ${{ matrix.rust }}
-          override: true
+          components: clippy, rustfmt
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
         run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
 
@@ -45,14 +43,12 @@ jobs:
         rust:
           - 1.61.0 # MSRV
     steps:
-      - uses: actions/checkout@v2
-      # Important preparation step: override the latest default Rust version in GitHub CI
-      # with the current value of the iteration in the "strategy.matrix.rust"-array.
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: default
           toolchain: ${{ matrix.rust }}
-          override: true
+          components: clippy, rustfmt
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
         run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
       - name: Rustfmt
