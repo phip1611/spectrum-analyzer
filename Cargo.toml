@@ -25,7 +25,7 @@ name = "fft_spectrum_bench"
 harness = false
 
 [dependencies]
-microfft = { version = "0.5.1", features = ["size-16384"] }
+microfft = { git = "https://gitlab.com/arthur.juliao/microfft-rs.git" , features = ["size-32768"] }
 # approx. compare floats; not only in tests but also during runtime
 float-cmp = "0.9.0"
 # sin() cos() log10() etc for no_std-environments; these are not part of Core library
