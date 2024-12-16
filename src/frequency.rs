@@ -64,7 +64,13 @@ impl Display for OrderableF32 {
 impl Ord for OrderableF32 {
     #[inline]
     fn cmp(&self, other: &Self) -> Ordering {
-        self.partial_cmp(other).unwrap()
+        if self.val() < other.val() {
+            Ordering::Less
+        } else if self.val() == other.val() {
+            Ordering::Equal
+        } else {
+            Ordering::Greater
+        }
     }
 }
 
@@ -81,14 +87,7 @@ impl PartialOrd for OrderableF32 {
     #[allow(clippy::float_cmp)]
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        // self.cmp(other).is_eq()
-        Some(if self.val() < other.val() {
-            Ordering::Less
-        } else if self.val() == other.val() {
-            Ordering::Equal
-        } else {
-            Ordering::Greater
-        })
+        Some(self.cmp(other))
     }
 }
 

@@ -22,19 +22,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 //! This module contains convenient public transform functions that you can use
-//! as parameters in [`crate::samples_fft_to_spectrum`] for scaling the
-//! frequency value (the FFT result). They act as "idea/inspiration". Feel free
-//! to either compose them or create your own derivation from them.
-
+//! as parameters in [`samples_fft_to_spectrum`] for scaling the frequency value
+//! (the FFT result).
+//!
+//! They act as "idea/inspiration". Feel free to either compose them or create
+//! your own derivation from them.
+//!
+//! [`samples_fft_to_spectrum`]: crate::samples_fft_to_spectrum
 use alloc::boxed::Box;
 
 /// Helper struct for [`SpectrumScalingFunction`] that is passed into the
-/// scaling function together with the current frequency value. This structure
-/// can be used to scale each value. All properties reference the current data
-/// of a [`crate::spectrum::FrequencySpectrum`].
+/// scaling function together with the current frequency value.
 ///
-/// This uses `f32` in favor of [`crate::FrequencyValue`] because the latter led to
+/// This structure can be used to scale each value. All properties reference the
+/// current data of a [`FrequencySpectrum`].
+///
+/// This uses `f32` in favor of [`FrequencyValue`] because the latter led to
 /// some implementation problems.
+///
+/// [`FrequencySpectrum`]: crate::FrequencySpectrum
+/// [`FrequencyValue`]: crate::FrequencyValue
 #[derive(Debug)]
 pub struct SpectrumDataStats {
     /// Minimal frequency value in spectrum.
@@ -50,25 +57,35 @@ pub struct SpectrumDataStats {
     pub n: f32,
 }
 
-/// Describes the type for a function that scales/normalizes the data inside [`crate::FrequencySpectrum`].
-/// The scaling only affects the value/amplitude of the frequency, but not the frequency itself.
-/// It is applied to every single element.
+/// Describes the type for a function that scales/normalizes the data inside
+/// [`FrequencySpectrum`].
 ///
-/// A scaling function can be used for example to subtract the minimum (`min`) from each value.
-/// It is optional to use the second parameter [`SpectrumDataStats`].
-/// and the type works with static functions as well as dynamically created closures.
+/// The scaling only affects the value/amplitude of the frequency, but not the
+/// frequency itself. It is applied to every single element.
 ///
-/// You must take care of, that you don't have division by zero in your function or
-/// that the result is NaN or Infinity (regarding IEEE-754). If the result is NaN or Infinity,
-/// the library will return `Err`.
+/// A scaling function can be used for example to subtract the minimum (`min`)
+/// from each value. It is optional to use the second parameter
+/// [`SpectrumDataStats`].
 ///
-/// This uses `f32` in favor of [`crate::FrequencyValue`] because the latter led to
+/// The type works with static functions as well as dynamically created
+/// closures.
+///
+/// You must take care of, that you don't have division by zero in your function
+/// or that the result is NaN or Infinity (regarding IEEE-754). If the result
+/// is NaN or Infinity, the library will return `Err`.
+///
+/// This uses `f32` in favor of [`FrequencyValue`] because the latter led to
 /// some implementation problems.
+///
+/// [`FrequencySpectrum`]: crate::FrequencySpectrum
+/// [`FrequencyValue`]: crate::FrequencyValue
 pub type SpectrumScalingFunction = dyn Fn(f32, &SpectrumDataStats) -> f32;
 
 /// Calculates the base 10 logarithm of each frequency magnitude and
-/// multiplies it with 20. This scaling is quite common, you can
-/// find more information for example here:
+/// multiplies it with 20.
+///
+/// This scaling is quite common, you can find more information for example
+/// here:
 /// <https://www.sjsu.edu/people/burford.furman/docs/me120/FFT_tutorial_NI.pdf>
 ///
 /// ## Usage
@@ -125,8 +142,10 @@ pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
     }
 }
 
-/// Like [`divide_by_N`] but divides each value by `sqrt(N)`. This is the recommended scaling
-/// in the `rustfft` documentation (but is generally applicable).
+/// Like [`divide_by_N`] but divides each value by `sqrt(N)`.
+///
+/// This is the recommended scaling in the `rustfft` documentation (but is
+/// generally applicable).
 /// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
 #[must_use]
@@ -183,7 +202,7 @@ mod tests {
             .into_iter()
             .map(|x| scaling_fn(x, &stats))
             .collect::<Vec<_>>();
-        let expected = vec![0.0_f32, 0.2, 0.4, 0.6, 0.8, 1.0];
+        let expected = [0.0_f32, 0.2, 0.4, 0.6, 0.8, 1.0];
         for (expected_val, actual_val) in expected.iter().zip(scaled_data.iter()) {
             float_cmp::approx_eq!(f32, *expected_val, *actual_val, ulps = 3);
         }

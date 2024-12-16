@@ -23,9 +23,11 @@ SOFTWARE.
 */
 //! Module for the struct [`FrequencyLimit`].
 
-/// Can be used to specify a desired frequency limit. If you know that you only
-/// need frequencies `f <= 1000Hz`, `1000 <= f <= 6777`, or `10000 <= f`, then this
-/// can help you to accelerate overall computation speed and memory usage.
+/// Can be used to specify a desired frequency limit.
+///
+/// If you know that you only need frequencies `f <= 1000Hz`,
+/// `1000 <= f <= 6777`, or `10000 <= f`, then this can help you to accelerate
+/// overall computation speed and memory usage.
 ///
 /// Please note that due to frequency inaccuracies the FFT result may not contain
 /// a value for `1000Hz` but for `998.76Hz`!
