@@ -28,7 +28,7 @@ harness = false
 [dependencies]
 float-cmp = "~0.10.0"
 libm = "~0.2.7"
-microfft = { version = "~0.5.1", features = ["size-16384"] }
+microfft = { version = "~0.6.0", features = ["size-16384"] }
 paste = "~1.0.14"
 
 [dev-dependencies]
