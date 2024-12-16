@@ -1,12 +1,16 @@
 # Changelog
 
-# 1.5.0 (2023-09-21)
+## 1.5.1 (2024-12-16)
+- dependency updates
+- MSRV bump but only for the tests and examples, not library users
+
+## 1.5.0 (2023-09-21)
 - fixed the build by updating the dependencies
 - apart from that, no changes happened
 - **BREAKING** MSRV is now `1.63.0`
 - internal code improvements
 
-# 1.4.0 (2023-03-04)
+## 1.4.0 (2023-03-04)
 - dropped all optional FFT features (`microfft-complex`, `microfft-real`,
   `rustfft-complex`) and made `microfft::real` the default FFT implementation.
   This is breaking but only for a small percentage of users. There was no

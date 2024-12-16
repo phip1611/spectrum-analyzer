@@ -4,6 +4,12 @@ spectrum of a digital signal (e.g. audio) using FFT.
 
 The **MSRV** (minimum supported Rust version) is `1.63.0`.
 
+## Supported Platforms
+
+The base library supports all standard and non-standard targets, such as
+machines running Linux, Ubuntu, Windows, but also embedded systems running
+custom software.
+
 ## I want to understand how FFT can be used to get a spectrum
 Please see file [/EDUCATIONAL.md](/EDUCATIONAL.md).
 
