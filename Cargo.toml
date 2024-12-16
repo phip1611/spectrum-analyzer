@@ -4,11 +4,12 @@ description = """
 An easy to use and fast `no_std` library (with `alloc`) to get the frequency
 spectrum of a digital signal (e.g. audio) using FFT.
 """
-version = "1.5.0"
+version = "1.5.1"
 authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2021"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
-categories = ["multimedia", "no-std"]
+categories = ["multimedia", "no-std", "no-std::no-alloc"]
+rust-version = "1.63" # MSRV of base library, not examples and benchmarks
 readme = "README.md"
 license = "MIT"
 homepage = "https://github.com/phip1611/spectrum-analyzer"
@@ -25,29 +26,25 @@ name = "fft_spectrum_bench"
 harness = false
 
 [dependencies]
-microfft = { version = "0.5.1", features = ["size-16384"] }
-# approx. compare floats; not only in tests but also during runtime
-float-cmp = "0.9.0"
-# sin() cos() log10() etc for no_std-environments; these are not part of Core library
-libm = "0.2.7"
-paste = "1.0.14"
+float-cmp = "~0.10.0"
+libm = "~0.2.7"
+microfft = { version = "~0.5.1", features = ["size-16384"] }
+paste = "~1.0.14"
 
 [dev-dependencies]
-# readmp3 files in tests and examples
-minimp3 = "0.5.1"
-# visualize spectrum in tests and examples
-audio-visualizer = "0.4.0"
-# get audio input in examples
-cpal = "0.15.2"
-# audio data buffering
-ringbuffer = "0.15.0"
-rand = "0.8.5" # for benchmark
-# exit in examples
-ctrlc = "~3.3.1" # locked because of repo MSRV
-# for benchmark
-criterion = "~0.4.0" # locked because of repo MSRV
+audio-visualizer = "~0.4.0"
+minimp3 = "~0.5.1"
+
+# Additional dependencies for: examples
+cpal = "~0.15.2"
+ctrlc = "~3.4.0"
+ringbuffer = "~0.15.0"
+
+# Additional dependencies for: benchmarks
+criterion = "~0.5.0"
+rand = "0.8.5"
 
 
-# otherwise FFT and other code is too slow
+# Faster code in tests, otherwise FFT is too slow
 [profile.dev]
 opt-level = 1
