@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.5.1 (2024-12-16)
+## 1.6.0 (2024-12-16)
 - dependency updates
 - MSRV bump but only for the tests and examples, not library users
 
