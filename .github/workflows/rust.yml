@@ -21,6 +21,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.63.0 # MSRV
+      - uses: Swatinem/rust-cache@v2
       - run: cargo build
       - run: rustup target add thumbv7em-none-eabihf
       - run: cargo build --target thumbv7em-none-eabihf
@@ -39,6 +40,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
         run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
 
@@ -67,6 +69,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
         run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
       - name: Rustfmt
