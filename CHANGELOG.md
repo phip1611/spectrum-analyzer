@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Added FFT buffer size of 32768
+
 ## 1.6.0 (2024-12-16)
 - dependency updates
 - MSRV bump but only for the tests and examples, not library users

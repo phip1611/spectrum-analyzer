@@ -69,8 +69,9 @@ impl FftImpl {
     ///              a power of two. Otherwise, the function panics.
     #[inline]
     pub(crate) fn calc(samples: &[f32]) -> Vec<Complex32> {
-        let mut fft_res: Vec<Complex32> =
-            real_fft_n!(samples, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384);
+        let mut fft_res: Vec<Complex32> = real_fft_n!(
+            samples, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
+        );
 
         // `microfft::real` documentation says: the Nyquist frequency real value
         // is packed inside the imaginary part of the DC component.
