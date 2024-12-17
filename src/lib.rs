@@ -73,25 +73,22 @@ SOFTWARE.
 #![deny(rustdoc::all)]
 #![no_std]
 
-// enable std in tests (println!() for example)
 #[cfg_attr(test, macro_use)]
 #[cfg(test)]
 extern crate std;
 
-// We use alloc crate, because this is no_std
-// The macros are only needed when we test
 #[macro_use]
 extern crate alloc;
 
-use alloc::vec::Vec;
-
-use crate::error::SpectrumAnalyzerError;
-use crate::fft::{Complex32, FftImpl};
 pub use crate::frequency::{Frequency, FrequencyValue};
 pub use crate::limit::FrequencyLimit;
 pub use crate::limit::FrequencyLimitError;
-use crate::scaling::SpectrumScalingFunction;
 pub use crate::spectrum::FrequencySpectrum;
+
+use crate::error::SpectrumAnalyzerError;
+use crate::fft::{Complex32, FftImpl};
+use crate::scaling::SpectrumScalingFunction;
+use alloc::vec::Vec;
 
 pub mod error;
 mod fft;
@@ -311,7 +308,7 @@ fn fft_result_to_spectrum(
         .map(|(fr, complex_res)| (fr, complex_to_magnitude(complex_res)))
         // transform to my thin convenient orderable f32 wrappers
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
-        // collect all into an sorted vector (from lowest frequency to highest)
+        // collect all into a sorted vector (from lowest frequency to highest)
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
     let mut working_buffer = vec![(0.0.into(), 0.0.into()); frequency_vec.len()];
@@ -353,9 +350,9 @@ fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
     sampling_rate as f32 / samples_len as f32
 }
 
-/// Maps a [`Complex32`] to it's magnitude as `f32`. This is done
-/// by calculating `sqrt(re*re + im*im)`. This is required to convert
-/// the complex FFT result back to real values.
+/// Maps a [`Complex32`] to its magnitude as `f32`. This is done by calculating
+/// `sqrt(re*re + im*im)`. This is required to convert the complex FFT results
+/// back to real values.
 ///
 /// ## Parameters
 /// * `val` A single value from the FFT output buffer of type [`Complex32`].

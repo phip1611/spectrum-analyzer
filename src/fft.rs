@@ -22,10 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-//! Real FFT using [`microfft::real`] that is very fast and also works in `no_std`
-//! environments. It is faster than regular fft (with the `rustfft` crate for
-//! example). The difference to a complex FFT, as with `rustfft` is, that the
-//! result vector contains less results as there are no mirrored frequencies.
+//! Real FFT using [`microfft::real`] that is very fast and also works in
+//! `no_std` environments. It is faster than regular fft (with the `rustfft`
+//! crate for example). The difference to a complex FFT, as with `rustfft` is,
+//! that the result vector contains fewer results as there are no mirrored
+//! frequencies.
+
+/// FFT base result type.
+pub use microfft::Complex32;
 
 use alloc::vec::Vec;
 use core::convert::TryInto;
