@@ -1,11 +1,14 @@
 # Changelog
 
-## Unreleased
-- Added FFT buffer size of 32768
+## Unreleased (yet)
 
-## 1.6.0 (2024-12-16)
+
+## 1.6.0 (2024-12-17)
 - dependency updates
 - MSRV bump but only for the tests and examples, not library users
+- Added FFT buffer size of 32768
+- Optimized implementation, resulting in less unnecessary copying of data
+- Removed excessive stack usage for large input data
 
 ## 1.5.0 (2023-09-21)
 - fixed the build by updating the dependencies
