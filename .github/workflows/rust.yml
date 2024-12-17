@@ -55,6 +55,20 @@ jobs:
 
       - run: cargo run --release --example mp3-samples
 
+  miri:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: nightly
+          components: miri
+      - uses: Swatinem/rust-cache@v2
+      - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
+        run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
+      - run: cargo miri test --all-features
+
   style_checks:
     runs-on: ubuntu-latest
     strategy:
