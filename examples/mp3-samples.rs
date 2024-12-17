@@ -59,7 +59,8 @@ fn test_out_dir() -> PathBuf {
         });
     let path = path.join("test_generated");
     if !path.exists() {
-        std::fs::create_dir(path.clone()).unwrap();
+        // This can fail, as tests are run in parallel.
+        let _ = std::fs::create_dir(path.clone());
     }
     path
 }
