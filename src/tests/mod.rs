@@ -33,15 +33,28 @@ use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_
 use audio_visualizer::waveform::plotters_png_file::waveform_static_plotters_png_visualize;
 use audio_visualizer::Channels;
 use core::cmp::max;
+use std::path::PathBuf;
 
-// /// Directory with test samples (e.g. mp3) can be found here.
-// const TEST_SAMPLES_DIR: &str = "test/samples";
-/// If tests create files, they should be stored here.
-const TEST_OUT_DIR: &str = "test/out";
+/// Returns the location where tests should store files they produce.
+fn test_out_dir() -> PathBuf {
+    let path = std::env::var("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+            let dir = PathBuf::from(dir);
+            dir.join("target")
+        });
+    let path = path.join("test_generated");
+    if !path.exists() {
+        std::fs::create_dir(path.clone()).unwrap();
+    }
+    path
+}
 
 mod sine;
 
 #[test]
+#[cfg_attr(miri, ignore)] // runs forever + no real value add
 fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     let sine_audio = sine_wave_audio_data_multiple(&[50.0, 1000.0, 3777.0], 44100, 1000);
 
@@ -49,7 +62,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     waveform_static_plotters_png_visualize(
         &sine_audio,
         Channels::Mono,
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--WAVEFORM.png",
     );
 
@@ -96,21 +109,21 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     spectrum_static_plotters_png_visualize(
         // spectrum_static_png_visualize(
         &spectrum_no_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--no-window.png",
     );
 
     spectrum_static_plotters_png_visualize(
         // spectrum_static_png_visualize(
         &spectrum_hamming_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hamming-window.png",
     );
 
     spectrum_static_plotters_png_visualize(
         // spectrum_static_png_visualize(
         &spectrum_hann_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hann-window.png",
     );
 
@@ -140,6 +153,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
 /// divided by their corresponding N (length of samples), the values must match
 /// (with a small delta).
 #[test]
+#[cfg_attr(miri, ignore)] // runs forever + no real value add
 fn test_spectrum_power() {
     let interesting_frequency = 2048.0;
     let sine_audio = sine_wave_audio_data_multiple(&[interesting_frequency], 44100, 1000);
@@ -180,17 +194,17 @@ fn test_spectrum_power() {
 
     spectrum_static_plotters_png_visualize(
         &spectrum_short_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         "test_spectrum_power__short_window.png",
     );
     spectrum_static_plotters_png_visualize(
         &spectrum_long_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         "test_spectrum_power__long_window.png",
     );
     /*spectrum_static_plotters_png_visualize(
         &spectrum_long_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         "test_spectrum_power__very_long_window.png",
     );*/
 
@@ -283,6 +297,7 @@ fn test_spectrum_frequency_limit_inclusive() {
 
 /// Tests that the spectrum contains the Nyquist frequency.
 #[test]
+#[cfg_attr(miri, ignore)] // runs forever + no real value add
 fn test_spectrum_nyquist_theorem() {
     let dummy_audio_samples = vec![0.0; 4096];
     let spectrum =
@@ -313,6 +328,7 @@ fn test_spectrum_nyquist_theorem() {
 /// Tests that the spectrum contains the Nyquist frequency using a sine wave at almost Nyquist
 /// frequency.
 #[test]
+#[cfg_attr(miri, ignore)] // runs forever + no real value add
 fn test_spectrum_nyquist_theorem2() {
     let sine_audio = sine_wave_audio_data_multiple(
         // 22050.0 results in aliasing and no good results
@@ -426,6 +442,7 @@ fn test_scaling_produces_error() {
 
 /// Test that the scaling actually has the effect that we expect it to have.
 #[test]
+#[cfg_attr(miri, ignore)] // runs forever + no real value add
 fn test_divide_by_n_has_effect() {
     let audio_data = sine_wave_audio_data_multiple(&[100.0, 200.0, 400.0], 1000, 2000);
     let audio_data = audio_data.into_iter().map(|x| x as f32).collect::<Vec<_>>();

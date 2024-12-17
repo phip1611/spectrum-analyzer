@@ -45,9 +45,24 @@ use spectrum_analyzer::scaling::scale_to_zero_to_one;
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use std::fs::File;
+use std::path::PathBuf;
 use std::time::Instant;
 
-const TEST_OUT_DIR: &str = "test/out";
+/// Returns the location where tests should store files they produce.
+fn test_out_dir() -> PathBuf {
+    let path = std::env::var("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| {
+            let dir = std::env::var("CARGO_MANIFEST_DIR").unwrap();
+            let dir = PathBuf::from(dir);
+            dir.join("target")
+        });
+    let path = path.join("test_generated");
+    if !path.exists() {
+        std::fs::create_dir(path.clone()).unwrap();
+    }
+    path
+}
 
 fn main() {
     println!("bass drum example:");
@@ -213,31 +228,31 @@ fn to_spectrum_and_plot(
 
     spectrum_static_plotters_png_visualize(
         &spectrum_no_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         &format!("{}--no-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hamming_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         &format!("{}--hamming-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hann_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         &format!("{}--hann-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_4term_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         &format!("{}--blackman-harris-4-term-window.png", filename),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_7term_window.to_map(),
-        TEST_OUT_DIR,
+        test_out_dir().to_str().unwrap(),
         &format!("{}--blackman-harris-7-term-window.png", filename),
     );
 }
