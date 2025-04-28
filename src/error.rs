@@ -28,6 +28,8 @@ SOFTWARE.
 //! located in submodules.
 
 use crate::limit::FrequencyLimitError;
+use core::error::Error;
+use core::fmt::{Display, Formatter};
 
 /// Describes main errors of the library. Almost all errors
 /// are caused by wrong input.
@@ -39,7 +41,7 @@ pub enum SpectrumAnalyzerError {
     NaNValuesNotSupported,
     /// Infinity-values (regarding floating point representation) in samples are not supported!
     InfinityValuesNotSupported,
-    /// See [`crate::limit::FrequencyLimitError`].
+    /// The frequency is invalid. See [`FrequencyLimitError`].
     InvalidFrequencyLimit(FrequencyLimitError),
     /// The number of samples must be a power of two in order for the FFT.
     SamplesLengthNotAPowerOfTwo,
@@ -47,4 +49,34 @@ pub enum SpectrumAnalyzerError {
     /// infinity or NaN, according to IEEE-754. This is invalid. Check
     /// your scaling function!
     ScalingError(f32, f32),
+}
+
+impl Display for SpectrumAnalyzerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match self {
+            SpectrumAnalyzerError::TooFewSamples => write!(f, "Too few samples!"),
+            SpectrumAnalyzerError::NaNValuesNotSupported => {
+                write!(f, "NaN values are not supported!")
+            }
+            SpectrumAnalyzerError::InfinityValuesNotSupported => {
+                write!(f, "Infinity values are not supported!")
+            }
+            SpectrumAnalyzerError::InvalidFrequencyLimit(e) => {
+                write!(f, "Invalid frequency limit: {}", e)
+            }
+            SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo => {
+                write!(f, "Samples length must be a power of two!")
+            }
+            SpectrumAnalyzerError::ScalingError(a, b) => write!(f, "Scaling error: {} -> {}", a, b),
+        }
+    }
+}
+
+impl Error for SpectrumAnalyzerError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            SpectrumAnalyzerError::InvalidFrequencyLimit(e) => Some(e),
+            _ => None,
+        }
+    }
 }
