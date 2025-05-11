@@ -219,8 +219,7 @@ fn test_spectrum_power() {
     //let ac_deviation = ac_abs_diff / max(a, c).val();
     assert!(
         ab_deviation < 0.122,
-        "Values must more or less equal, because both were divided by their N. deviation={}",
-        ab_deviation
+        "Values must more or less equal, because both were divided by their N. deviation={ab_deviation}"
     );
     //assert!(
     //    ac_deviation < 0.07,
@@ -458,10 +457,7 @@ fn test_divide_by_n_has_effect() {
         let actual_with_scaling = scaled_spectrum.data()[i].1.val();
         assert!(
             (actual_no_scaling / 1024.0 - actual_with_scaling) < 0.1,
-            "[{}] actual_no_scaling={} should be roughly 1024 times bigger than actual_with_scaling={}",
-            i,
-            actual_no_scaling,
-            actual_with_scaling,
+            "[{i}] actual_no_scaling={actual_no_scaling} should be roughly 1024 times bigger than actual_with_scaling={actual_with_scaling}",
         );
     }
 

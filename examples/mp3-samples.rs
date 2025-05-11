@@ -233,31 +233,31 @@ fn to_spectrum_and_plot(
     spectrum_static_plotters_png_visualize(
         &spectrum_no_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--no-window.png", filename),
+        &format!("{filename}--no-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hamming_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--hamming-window.png", filename),
+        &format!("{filename}--hamming-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hann_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--hann-window.png", filename),
+        &format!("{filename}--hann-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_4term_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--blackman-harris-4-term-window.png", filename),
+        &format!("{filename}--blackman-harris-4-term-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_7term_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--blackman-harris-7-term-window.png", filename),
+        &format!("{filename}--blackman-harris-7-term-window.png"),
     );
 }
 
