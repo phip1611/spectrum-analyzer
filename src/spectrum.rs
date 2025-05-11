@@ -81,11 +81,11 @@ impl FrequencySpectrum {
     /// ## Parameters
     /// * `data` Vector with all ([`Frequency`], [`FrequencyValue`])-tuples
     /// * `frequency_resolution` Resolution in Hertz. This equals to
-    ///                          `data[1].0 - data[0].0`.
+    ///   `data[1].0 - data[0].0`.
     /// * `samples_len` Number of samples. Might be bigger than `data.len()`
-    ///                 if the spectrum is obtained with a frequency limit.
+    ///   if the spectrum is obtained with a frequency limit.
     /// * `working_buffer` Mutable buffer with the same length as `data`
-    ///                    required to calculate certain metrics.
+    ///   required to calculate certain metrics.
     #[inline]
     #[must_use]
     pub fn new(
@@ -209,6 +209,7 @@ impl FrequencySpectrum {
     /// Returns the underlying data.
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn data(&self) -> &[(Frequency, FrequencyValue)] {
         &self.data
     }

@@ -28,6 +28,8 @@ SOFTWARE.
 //! located in submodules.
 
 use crate::limit::FrequencyLimitError;
+use core::error::Error;
+use core::fmt::{Display, Formatter};
 
 /// Describes main errors of the library. Almost all errors
 /// are caused by wrong input.
@@ -39,12 +41,42 @@ pub enum SpectrumAnalyzerError {
     NaNValuesNotSupported,
     /// Infinity-values (regarding floating point representation) in samples are not supported!
     InfinityValuesNotSupported,
-    /// See [`crate::limit::FrequencyLimitError`].
+    /// The frequency is invalid. See [`FrequencyLimitError`].
     InvalidFrequencyLimit(FrequencyLimitError),
     /// The number of samples must be a power of two in order for the FFT.
     SamplesLengthNotAPowerOfTwo,
     /// After applying the scaling function on a specific item, the returned value is either
     /// infinity or NaN, according to IEEE-754. This is invalid. Check
     /// your scaling function!
-    ScalingError(f32, f32),
+    ScalingError(f32 /* orig */, f32 /* new */),
+}
+
+impl Display for SpectrumAnalyzerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::TooFewSamples => write!(f, "Too few samples!"),
+            Self::NaNValuesNotSupported => {
+                write!(f, "NaN values are not supported!")
+            }
+            Self::InfinityValuesNotSupported => {
+                write!(f, "Infinity values are not supported!")
+            }
+            Self::InvalidFrequencyLimit(e) => {
+                write!(f, "Invalid frequency limit: {e}")
+            }
+            Self::SamplesLengthNotAPowerOfTwo => {
+                write!(f, "Samples length must be a power of two!")
+            }
+            Self::ScalingError(a, b) => write!(f, "Scaling error: {a} -> {b}"),
+        }
+    }
+}
+
+impl Error for SpectrumAnalyzerError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::InvalidFrequencyLimit(e) => Some(e),
+            _ => None,
+        }
+    }
 }

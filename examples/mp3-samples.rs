@@ -40,13 +40,16 @@ SOFTWARE.
 #![deny(rustdoc::all)]
 
 use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
-use minimp3::{Decoder as Mp3Decoder, Error as Mp3Error, Frame as Mp3Frame};
 use spectrum_analyzer::scaling::scale_to_zero_to_one;
 use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Instant;
+use symphonia::core::audio::{AudioBuffer, Signal};
+use symphonia::core::io::MediaSourceStream;
+use symphonia::core::probe::Hint;
+use symphonia::default::{get_codecs, get_probe};
 
 /// Returns the location where tests should store files they produce.
 fn test_out_dir() -> PathBuf {
@@ -230,70 +233,78 @@ fn to_spectrum_and_plot(
     spectrum_static_plotters_png_visualize(
         &spectrum_no_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--no-window.png", filename),
+        &format!("{filename}--no-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hamming_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--hamming-window.png", filename),
+        &format!("{filename}--hamming-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_hann_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--hann-window.png", filename),
+        &format!("{filename}--hann-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_4term_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--blackman-harris-4-term-window.png", filename),
+        &format!("{filename}--blackman-harris-4-term-window.png"),
     );
 
     spectrum_static_plotters_png_visualize(
         &spectrum_blackman_harris_7term_window.to_map(),
         test_out_dir().to_str().unwrap(),
-        &format!("{}--blackman-harris-7-term-window.png", filename),
+        &format!("{filename}--blackman-harris-7-term-window.png"),
     );
 }
 
-/// Reads an MP3 and returns the audio data as mono channel + the sample rate in Hertz.
-fn read_mp3_to_mono(file: &str) -> (Vec<i16>, u32) {
-    let mut decoder = Mp3Decoder::new(File::open(file).unwrap());
+/// Reads an mp3 file and returns mono samples.
+fn read_mp3_to_mono<P: AsRef<Path>>(file: P) -> (Vec<i16>, u32) {
+    let file = File::open(file).unwrap();
+    let mss = MediaSourceStream::new(Box::new(file), Default::default());
+    let probed = get_probe()
+        .format(
+            &Hint::default(),
+            mss,
+            &Default::default(),
+            &Default::default(),
+        )
+        .unwrap();
+    let mut format_reader = probed.format;
+    let track = format_reader.tracks().first().unwrap();
+    let mut decoder = get_codecs()
+        .make(&track.codec_params, &Default::default())
+        .unwrap();
 
-    let mut sampling_rate = 0;
-    let mut mono_samples = vec![];
-    loop {
-        match decoder.next_frame() {
-            Ok(Mp3Frame {
-                data: samples_of_frame,
-                sample_rate,
-                channels,
-                ..
-            }) => {
-                // that's a bird weird of the original API. Why should channels or sampling
-                // rate change from frame to frame?
-
-                // Should be constant throughout the MP3 file.
-                sampling_rate = sample_rate;
-
-                if channels == 2 {
-                    for (i, sample) in samples_of_frame.iter().enumerate().step_by(2) {
-                        let sample = *sample as i32;
-                        let next_sample = samples_of_frame[i + 1] as i32;
-                        mono_samples.push(((sample + next_sample) as f32 / 2.0) as i16);
-                    }
-                } else if channels == 1 {
-                    mono_samples.extend_from_slice(&samples_of_frame);
-                } else {
-                    panic!("Unsupported number of channels={}", channels);
-                }
+    let mut audio_data_lrlr = Vec::new();
+    let mut sampling_rate = None;
+    while let Ok(packet) = format_reader.next_packet() {
+        if let Ok(audio_buf_ref) = decoder.decode(&packet) {
+            let audio_spec = audio_buf_ref.spec();
+            if sampling_rate.is_none() {
+                sampling_rate.replace(audio_spec.rate);
             }
-            Err(Mp3Error::Eof) => break,
-            Err(e) => panic!("{:?}", e),
+
+            let mut audio_buf_i16 =
+                AudioBuffer::<i16>::new(audio_buf_ref.frames() as u64, *audio_spec);
+            audio_buf_ref.convert(&mut audio_buf_i16);
+
+            match audio_spec.channels.count() {
+                2 => {
+                    let iter = audio_buf_i16
+                        .chan(0)
+                        .iter()
+                        .zip(audio_buf_i16.chan(1))
+                        // LRLR interleavment to mono
+                        .map(|(&l, &r)| ((l as i32 + r as i32) / 2) as i16);
+                    audio_data_lrlr.extend(iter);
+                }
+                n => panic!("Unsupported amount of channels: {n}"),
+            }
         }
     }
-
-    (mono_samples, sampling_rate as u32)
+    (audio_data_lrlr, sampling_rate.unwrap())
 }

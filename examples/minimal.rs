@@ -47,6 +47,6 @@ fn main() {
     .unwrap();
 
     for (fr, fr_val) in spectrum_hann_window.data().iter() {
-        println!("{}Hz => {}", fr, fr_val)
+        println!("{fr}Hz => {fr_val}")
     }
 }

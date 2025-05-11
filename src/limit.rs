@@ -23,6 +23,9 @@ SOFTWARE.
 */
 //! Module for the struct [`FrequencyLimit`].
 
+use core::error::Error;
+use core::fmt::{Display, Formatter};
+
 /// Can be used to specify a desired frequency limit.
 ///
 /// If you know that you only need frequencies `f <= 1000Hz`,
@@ -127,6 +130,18 @@ pub enum FrequencyLimitError {
     /// first member of the tuple is bigger than the second.
     InvalidRange(f32, f32),
 }
+
+impl Display for FrequencyLimitError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::ValueBelowMinimum(x) => write!(f, "Value below minimum: {x}"),
+            Self::ValueAboveNyquist(x) => write!(f, "Value above Nyquist: {x}"),
+            Self::InvalidRange(min, max) => write!(f, "Invalid range: {min} <= x <= {max}"),
+        }
+    }
+}
+
+impl Error for FrequencyLimitError {}
 
 #[cfg(test)]
 mod tests {

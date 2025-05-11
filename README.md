@@ -2,7 +2,7 @@
 An easy to use and fast `no_std` library (with `alloc`) to get the frequency
 spectrum of a digital signal (e.g. audio) using FFT.
 
-The **MSRV** (minimum supported Rust version) is `1.63.0`.
+The **MSRV** (minimum supported Rust version) is `1.81.0`.
 
 ## Supported Platforms
 
