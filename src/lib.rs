@@ -112,11 +112,11 @@ mod tests;
 /// to their magnitude.
 ///
 /// * `samples` raw audio, e.g. 16bit audio data but as f32.
-///             You should apply a window function (like Hann) on the data first.
-///             The final frequency resolution is `sample_rate / (N / 2)`
-///             e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples =>
-///             better accuracy/frequency resolution. The amount of samples must
-///             be a power of 2. If you don't have enough data, provide zeroes.
+///   You should apply a window function (like Hann) on the data first.
+///   The final frequency resolution is `sample_rate / (N / 2)`
+///   e.g. `44100/(16384/2) == 5.383Hz`, i.e. more samples =>
+///   better accuracy/frequency resolution. The amount of samples must
+///   be a power of 2. If you don't have enough data, provide zeroes.
 /// * `sampling_rate` The used sampling_rate, e.g. `44100 [Hz]`.
 /// * `frequency_limit` The [`FrequencyLimit`].
 /// * `scaling_fn` See [`SpectrumScalingFunction`] for details.
@@ -213,8 +213,8 @@ pub fn samples_fft_to_spectrum(
 ///
 /// ## Parameters
 /// * `samples_len` Length of samples. This is a dedicated field because it can't always be
-///                 derived from `fft_result.len()`. There are for example differences for
-///                 `fft_result.len()` in real and complex FFT algorithms.
+///   derived from `fft_result.len()`. There are for example differences for
+///   `fft_result.len()` in real and complex FFT algorithms.
 /// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
 /// * `sampling_rate` The used sampling_rate, e.g. `44100 [Hz]`.
 /// * `frequency_limit` The [`FrequencyLimit`].

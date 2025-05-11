@@ -134,9 +134,9 @@ pub enum FrequencyLimitError {
 impl Display for FrequencyLimitError {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::ValueBelowMinimum(x) => write!(f, "Value below minimum: {}", x),
-            Self::ValueAboveNyquist(x) => write!(f, "Value above Nyquist: {}", x),
-            Self::InvalidRange(min, max) => write!(f, "Invalid range: {} <= x <= {}", min, max),
+            Self::ValueBelowMinimum(x) => write!(f, "Value below minimum: {x}"),
+            Self::ValueAboveNyquist(x) => write!(f, "Value above Nyquist: {x}"),
+            Self::InvalidRange(min, max) => write!(f, "Invalid range: {min} <= x <= {max}"),
         }
     }
 }

@@ -48,26 +48,26 @@ pub enum SpectrumAnalyzerError {
     /// After applying the scaling function on a specific item, the returned value is either
     /// infinity or NaN, according to IEEE-754. This is invalid. Check
     /// your scaling function!
-    ScalingError(f32, f32),
+    ScalingError(f32 /* orig */, f32 /* new */),
 }
 
 impl Display for SpectrumAnalyzerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            SpectrumAnalyzerError::TooFewSamples => write!(f, "Too few samples!"),
-            SpectrumAnalyzerError::NaNValuesNotSupported => {
+            Self::TooFewSamples => write!(f, "Too few samples!"),
+            Self::NaNValuesNotSupported => {
                 write!(f, "NaN values are not supported!")
             }
-            SpectrumAnalyzerError::InfinityValuesNotSupported => {
+            Self::InfinityValuesNotSupported => {
                 write!(f, "Infinity values are not supported!")
             }
-            SpectrumAnalyzerError::InvalidFrequencyLimit(e) => {
-                write!(f, "Invalid frequency limit: {}", e)
+            Self::InvalidFrequencyLimit(e) => {
+                write!(f, "Invalid frequency limit: {e}")
             }
-            SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo => {
+            Self::SamplesLengthNotAPowerOfTwo => {
                 write!(f, "Samples length must be a power of two!")
             }
-            SpectrumAnalyzerError::ScalingError(a, b) => write!(f, "Scaling error: {} -> {}", a, b),
+            Self::ScalingError(a, b) => write!(f, "Scaling error: {a} -> {b}"),
         }
     }
 }
@@ -75,7 +75,7 @@ impl Display for SpectrumAnalyzerError {
 impl Error for SpectrumAnalyzerError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            SpectrumAnalyzerError::InvalidFrequencyLimit(e) => Some(e),
+            Self::InvalidFrequencyLimit(e) => Some(e),
             _ => None,
         }
     }
