@@ -2,6 +2,9 @@
 
 ## Unreleased (yet)
 
+## 1.7.0 (2025-05-11)
+- **BREAKING** MSRV is now `1.81.0`
+- Error types now implement the `Error` trait
 
 ## 1.6.0 (2024-12-17)
 - dependency updates

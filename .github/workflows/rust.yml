@@ -20,7 +20,7 @@ jobs:
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.63.0 # MSRV
+          toolchain: 1.81.0 # MSRV
       - uses: Swatinem/rust-cache@v2
       - run: cargo build
       - run: rustup target add thumbv7em-none-eabihf
