@@ -42,7 +42,7 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
-        run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
+        run: sudo apt update && sudo apt -y install libfontconfig-dev libasound2-dev libxkbcommon-dev
 
       - run: cargo build --all-targets
       - run: cargo test --all-targets
@@ -66,7 +66,7 @@ jobs:
           components: miri
       - uses: Swatinem/rust-cache@v2
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
-        run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
+        run: sudo apt update && sudo apt -y install libfontconfig-dev libasound2-dev libxkbcommon-dev
       - run: cargo miri test --all-features
 
   style_checks:
@@ -85,7 +85,7 @@ jobs:
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
       - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
-        run: sudo apt update && sudo apt -y install libasound2-dev libxkbcommon-dev
+        run: sudo apt update && sudo apt -y install libfontconfig-dev libasound2-dev libxkbcommon-dev
       - name: Rustfmt
         run: cargo fmt -- --check
       - name: Clippy

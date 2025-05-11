@@ -209,6 +209,7 @@ impl FrequencySpectrum {
     /// Returns the underlying data.
     #[inline]
     #[must_use]
+    #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn data(&self) -> &[(Frequency, FrequencyValue)] {
         &self.data
     }
