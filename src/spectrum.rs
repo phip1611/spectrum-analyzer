@@ -197,9 +197,10 @@ impl FrequencySpectrum {
         self.min
     }
 
-    /// Returns [`FrequencySpectrum::max().1`] - [`FrequencySpectrum::min().1`],
-    /// i.e. the range of the frequency values (not the frequencies itself,
-    /// but their amplitudes/values).
+    /// Returns <code>[FrequencySpectrum::max()].1</code> subtracted by
+    /// <code>[FrequencySpectrum::min()].1</code>, i.e. the range of the
+    /// frequency values (not the frequencies itself, but their
+    /// amplitudes/values).
     #[inline]
     #[must_use]
     pub fn range(&self) -> FrequencyValue {
