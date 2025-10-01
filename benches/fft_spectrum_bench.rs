@@ -1,8 +1,8 @@
-use std::hint::black_box;
 use criterion::{criterion_group, criterion_main, Criterion};
 use spectrum_analyzer::{
     samples_fft_to_spectrum, scaling, windows, FrequencyLimit, FrequencySpectrum,
 };
+use std::hint::black_box;
 
 fn spectrum_without_scaling(samples: &[f32]) -> FrequencySpectrum {
     samples_fft_to_spectrum(samples, 44100, FrequencyLimit::All, None).unwrap()
