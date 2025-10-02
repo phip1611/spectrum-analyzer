@@ -13,7 +13,7 @@ tests.
 If you want to understand that too:
 
 - check out all links provided [at the end of README.md](/README.md)
-- look into `lib.rs` (**probalby gives you 90 percent of the things you want to know**)
+- look into `lib.rs` (**probably gives you 90 percent of the things you want to know**)
   and the comments over the FFT abstraction in `src/fft/mod.rs` and
   `src/fft/rustfft-complex/mod.rs`.
 

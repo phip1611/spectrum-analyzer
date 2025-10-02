@@ -367,7 +367,7 @@ impl FrequencySpectrum {
     /// then `get_frequency_value_closest(320)` will return `(300.0, 0.5)`.
     ///
     /// ## Panics
-    /// If parameter `search_fre` (frequency) is below the lowest or the maximum
+    /// If parameter `search_fr` (frequency) is below the lowest or the maximum
     /// frequency, this function panics!
     ///
     /// ## Parameters
