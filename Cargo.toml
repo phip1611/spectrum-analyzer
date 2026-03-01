@@ -37,7 +37,7 @@ symphonia = { version = "0.5.4", default-features = false, features = ["mp3"] }
 
 # Additional dependencies for: benchmarks
 criterion = "~0.8.1"
-rand = "0.9.1"
+rand = "0.10.0"
 
 
 # Faster code in tests, otherwise FFT is too slow
