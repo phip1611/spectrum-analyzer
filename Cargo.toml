@@ -33,7 +33,7 @@ paste = "~1.0.15"
 
 [dev-dependencies]
 audio-visualizer = "~0.5.0"
-symphonia = { version = "0.5.4", default-features = false, features = ["mp3"] }
+symphonia = { version = "0.6.0", default-features = false, features = ["mp3"] }
 
 # Additional dependencies for: benchmarks
 criterion = "~0.8.1"
