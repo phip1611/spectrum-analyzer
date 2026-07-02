@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (yet)
+- fixed Blackman-Harris window functions
 - fixed Hamming window coefficients
 
 ## 1.7.0 (2025-05-11)
