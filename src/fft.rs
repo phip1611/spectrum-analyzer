@@ -105,12 +105,19 @@ impl FftImpl {
             32768
         );
 
+        const _: [(); size_of::<Complex32>()] = [(); 2 * size_of::<f32>()];
+        const _: [(); align_of::<Complex32>()] = [(); align_of::<f32>()];
+
         // We transform the original vector while preserving its memory, to
         // prevent any reallocation or unnecessary copying.
         let mut buffer = {
             let ptr = vec_buffer.as_mut_ptr().cast::<Complex32>();
             let len = vec_buffer.len() / 2;
             let capacity = vec_buffer.capacity() / 2;
+            // SAFETY: `Complex32` is layout-compatible with `[f32; 2]`, as
+            // asserted above. The allocation size is unchanged because both
+            // length and capacity are halved while the element size is doubled,
+            // and the alignments match.
             let new_buffer_view = unsafe { Vec::from_raw_parts(ptr, len, capacity) };
             mem::forget(vec_buffer);
             new_buffer_view
