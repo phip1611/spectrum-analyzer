@@ -22,10 +22,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 use audio_visualizer::dynamic::live_input::AudioDevAndCfg;
-use audio_visualizer::dynamic::window_top_btm::{open_window_connect_audio, TransformFn};
+use audio_visualizer::dynamic::window_top_btm::{TransformFn, open_window_connect_audio};
 use spectrum_analyzer::scaling::divide_by_N;
 use spectrum_analyzer::windows::hann_window;
-use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit, FrequencyValue};
+use spectrum_analyzer::{FrequencyLimit, FrequencyValue, samples_fft_to_spectrum};
 use std::cell::RefCell;
 use std::cmp::max;
 

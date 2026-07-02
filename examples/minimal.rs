@@ -24,7 +24,7 @@ SOFTWARE.
 
 use spectrum_analyzer::scaling::divide_by_N;
 use spectrum_analyzer::windows::hann_window;
-use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+use spectrum_analyzer::{FrequencyLimit, samples_fft_to_spectrum};
 
 /// Minimal example.
 fn main() {

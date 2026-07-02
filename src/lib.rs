@@ -56,7 +56,8 @@ SOFTWARE.
     clippy::all,
     clippy::cargo,
     clippy::nursery,
-    clippy::must_use_candidate
+    clippy::must_use_candidate,
+    clippy::undocumented_unsafe_blocks,
     // clippy::restriction,
     // clippy::pedantic
 )]
@@ -283,7 +284,7 @@ fn fft_result_to_spectrum(
         // ### BEGIN filtering: results in lower calculation and memory overhead!
         // check lower bound frequency (inclusive)
         .filter(|(fr, _fft_result)| {
-            maybe_min.map_or(true, |min_fr| {
+            maybe_min.is_none_or(|min_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
                 //            exactly the frequency, that a user requested
@@ -293,7 +294,7 @@ fn fft_result_to_spectrum(
         })
         // check upper bound frequency (inclusive)
         .filter(|(fr, _fft_result)| {
-            maybe_max.map_or(true, |max_fr| {
+            maybe_max.is_none_or(|max_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
                 //            exactly the frequency, that a user requested
@@ -310,6 +311,12 @@ fn fft_result_to_spectrum(
         .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
         // collect all into a sorted vector (from lowest frequency to highest)
         .collect::<Vec<(Frequency, FrequencyValue)>>();
+
+    // A valid frequency limit can still miss all FFT bins, or leave only one.
+    // Statistics and interpolation require at least two frequency points.
+    if frequency_vec.len() < 2 {
+        return Err(SpectrumAnalyzerError::FrequencyLimitTooNarrow);
+    }
 
     let mut working_buffer = vec![(0.0.into(), 0.0.into()); frequency_vec.len()];
 

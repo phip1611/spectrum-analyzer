@@ -57,9 +57,14 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 #[must_use]
 pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
+    if samples.len() <= 1 {
+        windowed_samples.extend_from_slice(samples);
+        return windowed_samples;
+    }
+
     let samples_len_f32 = samples.len() as f32;
     for (i, sample) in samples.iter().enumerate() {
-        let multiplier = 0.54 - (0.46 * (2.0 * PI * i as f32 / cosf(samples_len_f32 - 1.0)));
+        let multiplier = 0.54 - (0.46 * cosf(2.0 * PI * i as f32 / (samples_len_f32 - 1.0)));
         windowed_samples.push(multiplier * sample)
     }
     windowed_samples
@@ -115,26 +120,56 @@ pub fn blackman_harris_7term(samples: &[f32]) -> Vec<f32> {
 fn blackman_harris_xterm(samples: &[f32], alphas: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
 
+    if samples.len() <= 1 {
+        windowed_samples.extend_from_slice(samples);
+        return windowed_samples;
+    }
+
     let samples_len_f32 = samples.len() as f32;
 
-    for sample in samples.iter() {
+    for (i, sample) in samples.iter().enumerate() {
         // Will result in something like that:
         /* ALPHA0
-            + ALPHA1 * ((2.0 * PI * *samples[i])/samples_len_f32).cos()
-            + ALPHA2 * ((4.0 * PI * *samples[i])/samples_len_f32).cos()
-            + ALPHA3 * ((6.0 * PI * *samples[i])/samples_len_f32).cos()
+            + ALPHA1 * ((2.0 * PI * i)/(samples_len_f32 - 1.0)).cos()
+            + ALPHA2 * ((4.0 * PI * i)/(samples_len_f32 - 1.0)).cos()
+            + ALPHA3 * ((6.0 * PI * i)/(samples_len_f32 - 1.0)).cos()
         */
 
         let mut acc = 0.0;
         for (alpha_i, alpha) in alphas.iter().enumerate() {
             // in 1. iter. 0PI, then 2PI, then 4 PI, then 6 PI
             let two_pi_iteration = 2.0 * alpha_i as f32 * PI;
-            let cos = cosf((two_pi_iteration * sample) / samples_len_f32);
+            let cos = cosf((two_pi_iteration * i as f32) / (samples_len_f32 - 1.0));
             acc += alpha * cos;
         }
 
-        windowed_samples.push(acc)
+        windowed_samples.push(acc * sample)
     }
 
     windowed_samples
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hamming_window_coefficients() {
+        let windowed = hamming_window(&[1.0; 4]);
+        let expected = [0.08, 0.77, 0.77, 0.08];
+
+        for (actual, expected) in windowed.iter().zip(expected) {
+            float_cmp::assert_approx_eq!(f32, *actual, expected, epsilon = 0.00001);
+        }
+    }
+
+    #[test]
+    fn test_blackman_harris_4term_window_coefficients() {
+        let windowed = blackman_harris_4term(&[2.0; 4]);
+        let expected = [0.00012, 1.04115, 1.04115, 0.00012];
+
+        for (actual, expected) in windowed.iter().zip(expected) {
+            float_cmp::assert_approx_eq!(f32, *actual, expected, epsilon = 0.00001);
+        }
+    }
 }

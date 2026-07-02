@@ -1,6 +1,6 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use spectrum_analyzer::{
-    samples_fft_to_spectrum, scaling, windows, FrequencyLimit, FrequencySpectrum,
+    FrequencyLimit, FrequencySpectrum, samples_fft_to_spectrum, scaling, windows,
 };
 use std::hint::black_box;
 
@@ -47,7 +47,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| spectrum_without_scaling(black_box(&hann_window)))
     });
     c.bench_function("spectrum with scaling", |b| {
-        b.iter(|| spectrum_without_scaling(black_box(&hann_window)))
+        b.iter(|| spectrum_with_scaling(black_box(&hann_window)))
     });
     c.bench_function("spectrum with multiple scaling steps", |b| {
         b.iter(|| spectrum_with_multiple_scaling(black_box(&hann_window)))
