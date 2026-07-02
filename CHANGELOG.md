@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (yet)
+- fixed Hamming window coefficients
 
 ## 1.7.0 (2025-05-11)
 - **BREAKING** MSRV is now `1.81.0`

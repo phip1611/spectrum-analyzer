@@ -57,9 +57,14 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 #[must_use]
 pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
+    if samples.len() <= 1 {
+        windowed_samples.extend_from_slice(samples);
+        return windowed_samples;
+    }
+
     let samples_len_f32 = samples.len() as f32;
     for (i, sample) in samples.iter().enumerate() {
-        let multiplier = 0.54 - (0.46 * (2.0 * PI * i as f32 / cosf(samples_len_f32 - 1.0)));
+        let multiplier = 0.54 - (0.46 * cosf(2.0 * PI * i as f32 / (samples_len_f32 - 1.0)));
         windowed_samples.push(multiplier * sample)
     }
     windowed_samples
@@ -137,4 +142,19 @@ fn blackman_harris_xterm(samples: &[f32], alphas: &[f32]) -> Vec<f32> {
     }
 
     windowed_samples
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_hamming_window_coefficients() {
+        let windowed = hamming_window(&[1.0; 4]);
+        let expected = [0.08, 0.77, 0.77, 0.08];
+
+        for (actual, expected) in windowed.iter().zip(expected) {
+            float_cmp::assert_approx_eq!(f32, *actual, expected, epsilon = 0.00001);
+        }
+    }
 }
