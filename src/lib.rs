@@ -311,6 +311,12 @@ fn fft_result_to_spectrum(
         // collect all into a sorted vector (from lowest frequency to highest)
         .collect::<Vec<(Frequency, FrequencyValue)>>();
 
+    // A valid frequency limit can still miss all FFT bins, or leave only one.
+    // Statistics and interpolation require at least two frequency points.
+    if frequency_vec.len() < 2 {
+        return Err(SpectrumAnalyzerError::FrequencyLimitTooNarrow);
+    }
+
     let mut working_buffer = vec![(0.0.into(), 0.0.into()); frequency_vec.len()];
 
     // create spectrum object

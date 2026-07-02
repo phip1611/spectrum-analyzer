@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (yet)
+- fixed narrow frequency limits returning an internal panic
 - fixed median calculation for spectra with an odd number of bins
 - fixed Blackman-Harris window functions
 - fixed Hamming window coefficients
