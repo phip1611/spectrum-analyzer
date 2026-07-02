@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (yet)
+- **BREAKING** MSRV is now `1.85.1` and the crate uses the 2024 edition
 - fixed the scaled benchmark running the unscaled implementation
 - fixed the MP3 example using the 4-term Blackman-Harris window for its 7-term output
 - fixed `Frequency` and `FrequencyValue` accepting NaN and infinity in release builds

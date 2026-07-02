@@ -609,11 +609,7 @@ mod math {
             assert_eq!(
                 // expected y coordinate
                 0.5,
-                calculate_y_coord_between_points(
-                    (100.0, 1.0),
-                    (200.0, 0.0),
-                    150.0,
-                ),
+                calculate_y_coord_between_points((100.0, 1.0), (200.0, 0.0), 150.0,),
                 "Must calculate middle point between points by laying a linear function through the two points"
             );
             // Must calculate arbitrary point between points by laying a linear function through the

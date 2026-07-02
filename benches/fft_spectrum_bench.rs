@@ -1,6 +1,6 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use spectrum_analyzer::{
-    samples_fft_to_spectrum, scaling, windows, FrequencyLimit, FrequencySpectrum,
+    FrequencyLimit, FrequencySpectrum, samples_fft_to_spectrum, scaling, windows,
 };
 use std::hint::black_box;
 

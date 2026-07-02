@@ -44,7 +44,7 @@ use spectrum_analyzer::scaling::scale_to_zero_to_one;
 use spectrum_analyzer::windows::{
     blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window,
 };
-use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
+use spectrum_analyzer::{FrequencyLimit, samples_fft_to_spectrum};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
@@ -220,7 +220,11 @@ fn to_spectrum_and_plot(
         Some(&scale_to_zero_to_one),
     )
     .unwrap();
-    println!("[Measurement]: FFT to Spectrum with Blackmann Harris 4-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: FFT to Spectrum with Blackmann Harris 4-term window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
     let now = Instant::now();
     let spectrum_blackman_harris_7term_window = samples_fft_to_spectrum(
         &blackman_harris_7term_window,
@@ -229,7 +233,11 @@ fn to_spectrum_and_plot(
         Some(&scale_to_zero_to_one),
     )
     .unwrap();
-    println!("[Measurement]: FFT to Spectrum with Blackmann Harris 7-term window with {} samples took: {}µs", samples.len(), now.elapsed().as_micros());
+    println!(
+        "[Measurement]: FFT to Spectrum with Blackmann Harris 7-term window with {} samples took: {}µs",
+        samples.len(),
+        now.elapsed().as_micros()
+    );
 
     /*for (fr, fr_val) in spectrum_hamming_window.data().iter() {
         println!("{}Hz => {}", fr, fr_val)

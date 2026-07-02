@@ -27,11 +27,11 @@ use crate::error::SpectrumAnalyzerError;
 use crate::scaling::{divide_by_N, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
-use crate::{samples_fft_to_spectrum, FrequencyLimit};
+use crate::{FrequencyLimit, samples_fft_to_spectrum};
 use alloc::vec::Vec;
+use audio_visualizer::Channels;
 use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
 use audio_visualizer::waveform::plotters_png_file::waveform_static_plotters_png_visualize;
-use audio_visualizer::Channels;
 use core::cmp::max;
 use std::path::PathBuf;
 
