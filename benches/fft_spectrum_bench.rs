@@ -47,7 +47,7 @@ fn criterion_benchmark(c: &mut Criterion) {
         b.iter(|| spectrum_without_scaling(black_box(&hann_window)))
     });
     c.bench_function("spectrum with scaling", |b| {
-        b.iter(|| spectrum_without_scaling(black_box(&hann_window)))
+        b.iter(|| spectrum_with_scaling(black_box(&hann_window)))
     });
     c.bench_function("spectrum with multiple scaling steps", |b| {
         b.iter(|| spectrum_with_multiple_scaling(black_box(&hann_window)))

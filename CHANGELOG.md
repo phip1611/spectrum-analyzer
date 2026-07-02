@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (yet)
+- fixed the scaled benchmark running the unscaled implementation
 - fixed the MP3 example using the 4-term Blackman-Harris window for its 7-term output
 - fixed `Frequency` and `FrequencyValue` accepting NaN and infinity in release builds
 - fixed narrow frequency limits returning an internal panic
