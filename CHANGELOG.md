@@ -1,14 +1,17 @@
 # Changelog
 
 ## Unreleased (yet)
+
+## 1.8.0 (2026-07-02)
+
 - **BREAKING** MSRV is now `1.85.1` and the crate uses the 2024 edition
-- fixed the scaled benchmark running the unscaled implementation
-- fixed the MP3 example using the 4-term Blackman-Harris window for its 7-term output
-- fixed `Frequency` and `FrequencyValue` accepting NaN and infinity in release builds
-- fixed narrow frequency limits returning an internal panic
-- fixed median calculation for spectra with an odd number of bins
 - fixed Blackman-Harris window functions
 - fixed Hamming window coefficients
+- fixed median calculation for spectra with an odd number of bins
+- fixed `Frequency` and `FrequencyValue` accepting NaN and infinity in release builds
+- fixed narrow frequency limits returning an internal panic
+- fixed the scaled benchmark running the unscaled implementation
+- fixed the MP3 example using the 4-term Blackman-Harris window for its 7-term output
 
 ## 1.7.0 (2025-05-11)
 - **BREAKING** MSRV is now `1.81.0`
