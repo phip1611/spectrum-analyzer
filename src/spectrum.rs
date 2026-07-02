@@ -513,11 +513,14 @@ impl FrequencySpectrum {
 
         // median of all frequency values
         let median = {
-            // we assume that data_sorted_by_val.length() is always even, because
-            // it must be a power of 2 (for FFT)
-            let a = data_sorted_by_val[data_sorted_by_val.len() / 2 - 1].1;
-            let b = data_sorted_by_val[data_sorted_by_val.len() / 2].1;
-            (a + b) / 2.0.into()
+            let mid = data_sorted_by_val.len() / 2;
+            if data_sorted_by_val.len() % 2 == 0 {
+                let a = data_sorted_by_val[mid - 1].1;
+                let b = data_sorted_by_val[mid].1;
+                (a + b) / 2.0.into()
+            } else {
+                data_sorted_by_val[mid].1
+            }
         };
 
         // Because we sorted the vector from lowest to highest value, the
@@ -751,11 +754,7 @@ mod tests {
             );
             assert_eq!(200.0 - 0.0, spectrum.range().val(), "range() must work");
             assert_eq!(80.55556, spectrum.average().val(), "average() must work");
-            assert_eq!(
-                (50 + 100) as f32 / 2.0,
-                spectrum.median().val(),
-                "median() must work"
-            );
+            assert_eq!(100.0, spectrum.median().val(), "median() must work");
             assert_eq!(
                 50.0,
                 spectrum.frequency_resolution(),
