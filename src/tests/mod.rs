@@ -26,7 +26,7 @@ SOFTWARE.
 use crate::error::SpectrumAnalyzerError;
 use crate::scaling::{divide_by_N, scale_to_zero_to_one};
 use crate::tests::sine::sine_wave_audio_data_multiple;
-use crate::windows::{hamming_window, hann_window};
+use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
 use crate::{samples_fft_to_spectrum, FrequencyLimit};
 use alloc::vec::Vec;
 use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
@@ -78,55 +78,49 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     // get a window that we want to analyze
     // 1/44100 * 4096 => 0.0928s
     let window = &sine_audio[0..4096];
+    let out_dir = test_out_dir();
+    let out_dir = out_dir.to_str().unwrap();
 
-    let no_window = window;
-    let hamming_window = hamming_window(no_window);
-    let hann_window = hann_window(no_window);
+    let spectra = [
+        ("no-window", window.to_vec()),
+        ("hamming-window", hamming_window(window)),
+        ("hann-window", hann_window(window)),
+        (
+            "blackman-harris-4-term-window",
+            blackman_harris_4term(window),
+        ),
+        (
+            "blackman-harris-7-term-window",
+            blackman_harris_7term(window),
+        ),
+    ]
+    .into_iter()
+    .map(|(filename_suffix, samples)| {
+        let spectrum = samples_fft_to_spectrum(
+            &samples,
+            44100,
+            FrequencyLimit::Max(4000.0),
+            Some(&scale_to_zero_to_one),
+        )
+        .unwrap();
 
-    let spectrum_no_window = samples_fft_to_spectrum(
-        no_window,
-        44100,
-        FrequencyLimit::Max(4000.0),
-        Some(&scale_to_zero_to_one),
-    )
-    .unwrap();
+        spectrum_static_plotters_png_visualize(
+            &spectrum.to_map(),
+            out_dir,
+            &format!(
+                "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--{filename_suffix}.png"
+            ),
+        );
 
-    let spectrum_hann_window = samples_fft_to_spectrum(
-        &hann_window,
-        44100,
-        FrequencyLimit::Max(4000.0),
-        Some(&scale_to_zero_to_one),
-    )
-    .unwrap();
+        (filename_suffix, spectrum)
+    })
+    .collect::<Vec<_>>();
 
-    let spectrum_hamming_window = samples_fft_to_spectrum(
-        &hamming_window,
-        44100,
-        FrequencyLimit::Max(4000.0),
-        Some(&scale_to_zero_to_one),
-    )
-    .unwrap();
-
-    spectrum_static_plotters_png_visualize(
-        // spectrum_static_png_visualize(
-        &spectrum_no_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--no-window.png",
-    );
-
-    spectrum_static_plotters_png_visualize(
-        // spectrum_static_png_visualize(
-        &spectrum_hamming_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hamming-window.png",
-    );
-
-    spectrum_static_plotters_png_visualize(
-        // spectrum_static_png_visualize(
-        &spectrum_hann_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--hann-window.png",
-    );
+    let spectrum_hann_window = &spectra
+        .iter()
+        .find(|(filename_suffix, _spectrum)| *filename_suffix == "hann-window")
+        .unwrap()
+        .1;
 
     // test getters match spectrum
     // we use Hann windowed spectrum because the accuracy is much better than
