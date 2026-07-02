@@ -46,9 +46,12 @@ use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
-use symphonia::core::audio::{AudioBuffer, Signal};
+use symphonia::core::codecs::audio::AudioDecoderOptions;
+use symphonia::core::errors::Error;
+use symphonia::core::formats::probe::Hint;
+use symphonia::core::formats::{FormatOptions, TrackType};
 use symphonia::core::io::MediaSourceStream;
-use symphonia::core::probe::Hint;
+use symphonia::core::meta::MetadataOptions;
 use symphonia::default::{get_codecs, get_probe};
 
 /// Returns the location where tests should store files they produce.
@@ -265,45 +268,57 @@ fn to_spectrum_and_plot(
 fn read_mp3_to_mono<P: AsRef<Path>>(file: P) -> (Vec<i16>, u32) {
     let file = File::open(file).unwrap();
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
-    let probed = get_probe()
-        .format(
-            &Hint::default(),
+    let mut hint = Hint::new();
+    hint.with_extension("mp3");
+
+    let mut format_reader = get_probe()
+        .probe(
+            &hint,
             mss,
-            &Default::default(),
-            &Default::default(),
+            FormatOptions::default(),
+            MetadataOptions::default(),
         )
         .unwrap();
-    let mut format_reader = probed.format;
-    let track = format_reader.tracks().first().unwrap();
+    let track = format_reader.default_track(TrackType::Audio).unwrap();
+    let track_id = track.id;
     let mut decoder = get_codecs()
-        .make(&track.codec_params, &Default::default())
+        .make_audio_decoder(
+            track.codec_params.as_ref().unwrap().audio().unwrap(),
+            &AudioDecoderOptions::default(),
+        )
         .unwrap();
 
     let mut audio_data_lrlr = Vec::new();
     let mut sampling_rate = None;
-    while let Ok(packet) = format_reader.next_packet() {
-        if let Ok(audio_buf_ref) = decoder.decode(&packet) {
-            let audio_spec = audio_buf_ref.spec();
-            if sampling_rate.is_none() {
-                sampling_rate.replace(audio_spec.rate);
-            }
+    while let Some(packet) = format_reader.next_packet().unwrap() {
+        if packet.track_id != track_id {
+            continue;
+        }
 
-            let mut audio_buf_i16 =
-                AudioBuffer::<i16>::new(audio_buf_ref.frames() as u64, *audio_spec);
-            audio_buf_ref.convert(&mut audio_buf_i16);
-
-            match audio_spec.channels.count() {
-                2 => {
-                    let iter = audio_buf_i16
-                        .chan(0)
-                        .iter()
-                        .zip(audio_buf_i16.chan(1))
-                        // LRLR interleavment to mono
-                        .map(|(&l, &r)| ((l as i32 + r as i32) / 2) as i16);
-                    audio_data_lrlr.extend(iter);
+        match decoder.decode(&packet) {
+            Ok(audio_buf_ref) => {
+                let audio_spec = audio_buf_ref.spec();
+                if sampling_rate.is_none() {
+                    sampling_rate.replace(audio_spec.rate());
                 }
-                n => panic!("Unsupported amount of channels: {n}"),
+
+                let mut samples_interleaved = vec![0i16; audio_buf_ref.samples_interleaved()];
+                audio_buf_ref.copy_to_slice_interleaved(&mut samples_interleaved);
+
+                match audio_spec.channels().count() {
+                    1 => audio_data_lrlr.extend(samples_interleaved),
+                    2 => {
+                        let iter = samples_interleaved
+                            .chunks_exact(2)
+                            // LRLR interleavment to mono
+                            .map(|lr| ((lr[0] as i32 + lr[1] as i32) / 2) as i16);
+                        audio_data_lrlr.extend(iter);
+                    }
+                    n => panic!("Unsupported amount of channels: {n}"),
+                }
             }
+            Err(Error::DecodeError(_)) => continue,
+            Err(err) => panic!("{err}"),
         }
     }
     (audio_data_lrlr, sampling_rate.unwrap())
