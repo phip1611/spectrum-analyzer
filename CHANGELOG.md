@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (yet)
+- fixed `Frequency` and `FrequencyValue` accepting NaN and infinity in release builds
 - fixed narrow frequency limits returning an internal panic
 - fixed median calculation for spectra with an odd number of bins
 - fixed Blackman-Harris window functions

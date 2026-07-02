@@ -49,8 +49,8 @@ impl OrderableF32 {
 impl From<f32> for OrderableF32 {
     #[inline]
     fn from(val: f32) -> Self {
-        debug_assert!(!val.is_nan(), "NaN-values are not supported!");
-        debug_assert!(!val.is_infinite(), "Infinite-values are not supported!");
+        assert!(!val.is_nan(), "NaN-values are not supported!");
+        assert!(!val.is_infinite(), "Infinite-values are not supported!");
         Self(val)
     }
 }
@@ -150,5 +150,17 @@ mod tests {
         {
             assert_eq!(f1, f1, "Equal must work");
         }
+    }
+
+    #[test]
+    #[should_panic(expected = "NaN-values are not supported!")]
+    fn test_orderablef32_rejects_nan() {
+        let _ = OrderableF32::from(f32::NAN);
+    }
+
+    #[test]
+    #[should_panic(expected = "Infinite-values are not supported!")]
+    fn test_orderablef32_rejects_infinity() {
+        let _ = OrderableF32::from(f32::INFINITY);
     }
 }
