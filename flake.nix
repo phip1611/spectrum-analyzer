@@ -16,9 +16,9 @@
           runtimeDeps = with pkgs; [
             alsa-lib
             fontconfig
+            libxcursor
             libxkbcommon
-            xorg.libXcursor
-            xorg.libX11
+            libx11
           ];
         in
         pkgs.mkShell {
