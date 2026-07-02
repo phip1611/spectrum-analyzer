@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased (yet)
+- fixed the MP3 example using the 4-term Blackman-Harris window for its 7-term output
 - fixed `Frequency` and `FrequencyValue` accepting NaN and infinity in release builds
 - fixed narrow frequency limits returning an internal panic
 - fixed median calculation for spectra with an odd number of bins

@@ -41,7 +41,9 @@ SOFTWARE.
 
 use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
 use spectrum_analyzer::scaling::scale_to_zero_to_one;
-use spectrum_analyzer::windows::{blackman_harris_4term, hamming_window, hann_window};
+use spectrum_analyzer::windows::{
+    blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window,
+};
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use std::fs::File;
 use std::path::{Path, PathBuf};
@@ -161,7 +163,7 @@ fn to_spectrum_and_plot(
         samples.len(),
         now.elapsed().as_micros()
     );
-    let blackman_harris_7term_window = blackman_harris_4term(no_window);
+    let blackman_harris_7term_window = blackman_harris_7term(no_window);
     println!(
         "[Measurement]: Blackmann-Harris-7-term-Window with {} samples took: {}µs",
         samples.len(),
