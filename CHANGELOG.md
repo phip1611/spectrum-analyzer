@@ -4,6 +4,9 @@
 
 - perf: spectrum statistics (min/max/median/average) are computed in `O(n)`
   instead of sorting the data (up to ~50% faster spectrum computation)
+- perf: a `FrequencyLimit` now stops the bin iteration at its bounds instead
+  of testing every bin up to the Nyquist frequency (~30% faster for narrow
+  frequency limits)
 
 ## 1.8.0 (2026-07-02)
 

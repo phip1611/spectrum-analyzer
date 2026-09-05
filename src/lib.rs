@@ -282,18 +282,24 @@ fn fft_result_to_spectrum(
         })
         // #######################
         // ### BEGIN filtering: results in lower calculation and memory overhead!
+        // The frequency grows monotonically with the index, so the limit
+        // bounds correspond to a contiguous range of bins: `skip_while` stops
+        // testing once the lower bound is reached and `take_while` stops the
+        // iteration entirely at the upper bound (a `filter` would keep testing
+        // every bin up to the Nyquist frequency).
+        //
         // check lower bound frequency (inclusive)
-        .filter(|(fr, _fft_result)| {
-            maybe_min.is_none_or(|min_fr| {
+        .skip_while(|(fr, _fft_result)| {
+            maybe_min.is_some_and(|min_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
                 //            exactly the frequency, that a user requested
                 //            e.g. 1416.8 < limit < 1425.15
-                *fr >= min_fr
+                *fr < min_fr
             })
         })
         // check upper bound frequency (inclusive)
-        .filter(|(fr, _fft_result)| {
+        .take_while(|(fr, _fft_result)| {
             maybe_max.is_none_or(|max_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
