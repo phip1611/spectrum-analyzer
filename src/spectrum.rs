@@ -493,7 +493,7 @@ impl FrequencySpectrum {
             for (i, pair) in self.data.iter().enumerate() {
                 working_buffer[i] = *pair;
             }
-            working_buffer.sort_by(|(_l_fr, l_fr_val), (_r_fr, r_fr_val)| {
+            working_buffer.sort_unstable_by(|(_l_fr, l_fr_val), (_r_fr, r_fr_val)| {
                 // compare by frequency value, from min to max
                 l_fr_val.cmp(r_fr_val)
             });
