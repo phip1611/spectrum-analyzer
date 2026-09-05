@@ -165,12 +165,6 @@ pub fn samples_fft_to_spectrum(
         return Err(SpectrumAnalyzerError::TooFewSamples);
     }
     // do several checks on input data
-    if samples.iter().any(|x| x.is_nan()) {
-        return Err(SpectrumAnalyzerError::NaNValuesNotSupported);
-    }
-    if samples.iter().any(|x| x.is_infinite()) {
-        return Err(SpectrumAnalyzerError::InfinityValuesNotSupported);
-    }
     if !samples.len().is_power_of_two() {
         return Err(SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo);
     }
@@ -179,6 +173,16 @@ pub fn samples_fft_to_spectrum(
     frequency_limit
         .verify(max_detectable_frequency)
         .map_err(SpectrumAnalyzerError::InvalidFrequencyLimit)?;
+
+    // Check all samples in a single pass.
+    for sample in samples {
+        if sample.is_nan() {
+            return Err(SpectrumAnalyzerError::NaNValuesNotSupported);
+        }
+        if sample.is_infinite() {
+            return Err(SpectrumAnalyzerError::InfinityValuesNotSupported);
+        }
+    }
 
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples

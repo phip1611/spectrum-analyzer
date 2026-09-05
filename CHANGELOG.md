@@ -9,6 +9,10 @@
   frequency limits)
 - perf: the spectrum vector is allocated up front instead of growing through
   several re-allocations (~25-40% faster spectrum computation)
+- perf: input validation scans the samples once instead of twice (~5% faster);
+  cheap checks (power-of-two length, frequency limit) now run before the scan,
+  which may change the returned error variant for inputs with multiple
+  problems
 - Combined, `samples_fft_to_spectrum` got roughly 2-3x faster for 2048 samples
   and ~2.3x faster for 16384 samples
 
