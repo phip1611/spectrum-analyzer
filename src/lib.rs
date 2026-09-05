@@ -236,8 +236,14 @@ fn fft_result_to_spectrum(
 
     let frequency_resolution = fft_calc_frequency_resolution(sampling_rate, samples_len as u32);
 
-    // collect frequency => frequency value in Vector of Pairs/Tuples
-    let frequency_vec = fft_result
+    // Preallocate space for the maximum possible number of bins (DC component
+    // up to and including the Nyquist frequency): the filtered iterator below
+    // has no precise size hint, so collecting it directly would grow the
+    // vector with several re-allocations.
+    let mut frequency_vec = Vec::with_capacity(samples_len / 2 + 1);
+
+    // frequency => frequency value pairs
+    let bin_iter = fft_result
         .iter()
         // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
         // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
@@ -314,9 +320,12 @@ fn fft_result_to_spectrum(
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
         .map(|(fr, complex_res)| (fr, complex_to_magnitude(complex_res)))
         // transform to my thin convenient orderable f32 wrappers
-        .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
-        // collect all into a sorted vector (from lowest frequency to highest)
-        .collect::<Vec<(Frequency, FrequencyValue)>>();
+        .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)));
+
+    // collect all into a sorted vector (from lowest frequency to highest)
+    frequency_vec.extend(bin_iter);
+    // Give excess memory back if a frequency limit excluded many bins.
+    frequency_vec.shrink_to_fit();
 
     // A valid frequency limit can still miss all FFT bins, or leave only one.
     // Statistics and interpolation require at least two frequency points.
