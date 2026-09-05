@@ -165,12 +165,6 @@ pub fn samples_fft_to_spectrum(
         return Err(SpectrumAnalyzerError::TooFewSamples);
     }
     // do several checks on input data
-    if samples.iter().any(|x| x.is_nan()) {
-        return Err(SpectrumAnalyzerError::NaNValuesNotSupported);
-    }
-    if samples.iter().any(|x| x.is_infinite()) {
-        return Err(SpectrumAnalyzerError::InfinityValuesNotSupported);
-    }
     if !samples.len().is_power_of_two() {
         return Err(SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo);
     }
@@ -179,6 +173,16 @@ pub fn samples_fft_to_spectrum(
     frequency_limit
         .verify(max_detectable_frequency)
         .map_err(SpectrumAnalyzerError::InvalidFrequencyLimit)?;
+
+    // Check all samples in a single pass.
+    for sample in samples {
+        if sample.is_nan() {
+            return Err(SpectrumAnalyzerError::NaNValuesNotSupported);
+        }
+        if sample.is_infinite() {
+            return Err(SpectrumAnalyzerError::InfinityValuesNotSupported);
+        }
+    }
 
     // With FFT we transform an array of time-domain waveform samples
     // into an array of frequency-domain spectrum samples
@@ -236,8 +240,14 @@ fn fft_result_to_spectrum(
 
     let frequency_resolution = fft_calc_frequency_resolution(sampling_rate, samples_len as u32);
 
-    // collect frequency => frequency value in Vector of Pairs/Tuples
-    let frequency_vec = fft_result
+    // Preallocate space for the maximum possible number of bins (DC component
+    // up to and including the Nyquist frequency): the filtered iterator below
+    // has no precise size hint, so collecting it directly would grow the
+    // vector with several re-allocations.
+    let mut frequency_vec = Vec::with_capacity(samples_len / 2 + 1);
+
+    // frequency => frequency value pairs
+    let bin_iter = fft_result
         .iter()
         // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
         // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
@@ -282,18 +292,24 @@ fn fft_result_to_spectrum(
         })
         // #######################
         // ### BEGIN filtering: results in lower calculation and memory overhead!
+        // The frequency grows monotonically with the index, so the limit
+        // bounds correspond to a contiguous range of bins: `skip_while` stops
+        // testing once the lower bound is reached and `take_while` stops the
+        // iteration entirely at the upper bound (a `filter` would keep testing
+        // every bin up to the Nyquist frequency).
+        //
         // check lower bound frequency (inclusive)
-        .filter(|(fr, _fft_result)| {
-            maybe_min.is_none_or(|min_fr| {
+        .skip_while(|(fr, _fft_result)| {
+            maybe_min.is_some_and(|min_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
                 //            exactly the frequency, that a user requested
                 //            e.g. 1416.8 < limit < 1425.15
-                *fr >= min_fr
+                *fr < min_fr
             })
         })
         // check upper bound frequency (inclusive)
-        .filter(|(fr, _fft_result)| {
+        .take_while(|(fr, _fft_result)| {
             maybe_max.is_none_or(|max_fr| {
                 // inclusive!
                 // attention: due to the frequency resolution, we do not necessarily hit
@@ -308,9 +324,12 @@ fn fft_result_to_spectrum(
         //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
         .map(|(fr, complex_res)| (fr, complex_to_magnitude(complex_res)))
         // transform to my thin convenient orderable f32 wrappers
-        .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)))
-        // collect all into a sorted vector (from lowest frequency to highest)
-        .collect::<Vec<(Frequency, FrequencyValue)>>();
+        .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)));
+
+    // collect all into a sorted vector (from lowest frequency to highest)
+    frequency_vec.extend(bin_iter);
+    // Give excess memory back if a frequency limit excluded many bins.
+    frequency_vec.shrink_to_fit();
 
     // A valid frequency limit can still miss all FFT bins, or leave only one.
     // Statistics and interpolation require at least two frequency points.
