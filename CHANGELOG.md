@@ -2,6 +2,11 @@
 
 ## Unreleased (yet)
 
+## 1.9.0 (2026-09-05)
+
+Combined, `samples_fft_to_spectrum` got roughly 2-3x faster for 2048 samples
+and ~2.3x faster for 16384 samples.
+
 - perf: spectrum statistics (min/max/median/average) are computed in `O(n)`
   instead of sorting the data (up to ~50% faster spectrum computation)
 - perf: a `FrequencyLimit` now stops the bin iteration at its bounds instead
@@ -13,8 +18,6 @@
   cheap checks (power-of-two length, frequency limit) now run before the scan,
   which may change the returned error variant for inputs with multiple
   problems
-- Combined, `samples_fft_to_spectrum` got roughly 2-3x faster for 2048 samples
-  and ~2.3x faster for 16384 samples
 
 ## 1.8.0 (2026-07-02)
 
