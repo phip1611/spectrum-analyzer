@@ -476,58 +476,58 @@ impl FrequencySpectrum {
     /// Calculates the `min`, `max`, `median`, and `average` of the frequency values/magnitudes/
     /// amplitudes.
     ///
-    /// To do so, it needs to create a sorted copy of the data.
+    /// It needs a working buffer to find the median.
     #[inline]
     fn calc_statistics(&mut self, working_buffer: &mut [(Frequency, FrequencyValue)]) {
-        // We create a copy with all data from `self.data` but we sort it by the
-        // frequency value and not the frequency. This way, we can easily find the
-        // median.
+        assert_eq!(
+            self.data.len(),
+            working_buffer.len(),
+            "The working buffer must have the same length as `self.data`!"
+        );
 
-        let data_sorted_by_val = {
-            assert_eq!(
-                self.data.len(),
-                working_buffer.len(),
-                "The working buffer must have the same length as `self.data`!"
-            );
-
-            for (i, pair) in self.data.iter().enumerate() {
-                working_buffer[i] = *pair;
+        // Single pass over the data: min, max, and sum (for the average).
+        //
+        // On equal frequency values, min keeps the first and max the last
+        // occurrence, so results are deterministic.
+        let mut min = self.data[0];
+        let mut max = self.data[0];
+        let mut sum = 0.0;
+        for pair in &self.data {
+            if pair.1 < min.1 {
+                min = *pair;
             }
-            working_buffer.sort_unstable_by(|(_l_fr, l_fr_val), (_r_fr, r_fr_val)| {
-                // compare by frequency value, from min to max
-                l_fr_val.cmp(r_fr_val)
-            });
-
-            working_buffer
-        };
-
-        // sum of all frequency values
-        let sum: f32 = data_sorted_by_val
-            .iter()
-            .map(|fr_val| fr_val.1.val())
-            .fold(0.0, |a, b| a + b);
+            if pair.1 >= max.1 {
+                max = *pair;
+            }
+            sum += pair.1.val();
+        }
 
         // average of all frequency values
-        let avg = sum / data_sorted_by_val.len() as f32;
-        let average: FrequencyValue = avg.into();
+        let average: FrequencyValue = (sum / self.data.len() as f32).into();
 
-        // median of all frequency values
+        // Median of all frequency values.
         let median = {
-            let mid = data_sorted_by_val.len() / 2;
-            if data_sorted_by_val.len() % 2 == 0 {
-                let a = data_sorted_by_val[mid - 1].1;
-                let b = data_sorted_by_val[mid].1;
-                (a + b) / 2.0.into()
+            working_buffer.copy_from_slice(&self.data);
+            let mid = working_buffer.len() / 2;
+            let (left_of_mid, &mut (_, mid_val), _) = working_buffer.select_nth_unstable_by(
+                mid,
+                |(_l_fr, l_fr_val), (_r_fr, r_fr_val)| {
+                    // compare by frequency value, from min to max
+                    l_fr_val.cmp(r_fr_val)
+                },
+            );
+            if self.data.len() % 2 == 0 {
+                // The lower middle value is the maximum of the values left of mid.
+                let lower_mid_val = left_of_mid
+                    .iter()
+                    .map(|(_fr, fr_val)| *fr_val)
+                    .max()
+                    .expect("spectrum must contain at least two data points");
+                (lower_mid_val + mid_val) / 2.0.into()
             } else {
-                data_sorted_by_val[mid].1
+                mid_val
             }
         };
-
-        // Because we sorted the vector from lowest to highest value, the
-        // following lines are correct, i.e., we get min/max value with
-        // the corresponding frequency.
-        let min = data_sorted_by_val[0];
-        let max = data_sorted_by_val[data_sorted_by_val.len() - 1];
 
         // check that I get the comparison right (and not from max to min)
         debug_assert!(min.1 <= max.1, "min must be <= max");

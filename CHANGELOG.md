@@ -2,6 +2,9 @@
 
 ## Unreleased (yet)
 
+- perf: spectrum statistics (min/max/median/average) are computed in `O(n)`
+  instead of sorting the data (up to ~50% faster spectrum computation)
+
 ## 1.8.0 (2026-07-02)
 
 - **BREAKING** MSRV is now `1.85.1` and the crate uses the 2024 edition
