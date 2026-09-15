@@ -53,7 +53,7 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 /// to an array of samples.
 ///
 /// ## Return value
-/// New vector with Hann window applied to the values.
+/// New vector with Hamming window applied to the values.
 #[must_use]
 pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
