@@ -4,6 +4,8 @@
 
 - docs: fixed the frequency resolution formula; it is `sample_rate / N`, not
   `sample_rate / (N / 2)`
+- docs: explained what the frequency values are and how they relate to the
+  input signal
 
 ## 1.9.0 (2026-09-05)
 

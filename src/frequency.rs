@@ -30,8 +30,10 @@ use core::ops::{Add, Div, Mul, Sub};
 
 /// A frequency in Hertz. A convenient wrapper type around `f32`.
 pub type Frequency = OrderableF32;
-/// The value of a [`Frequency`] in a frequency spectrum. Also called the
-/// magnitude.
+/// The value of a [`Frequency`] in a frequency spectrum: the magnitude of the
+/// FFT result at that frequency, optionally scaled.
+///
+/// See [`crate::samples_fft_to_spectrum`] for what this means in practice.
 pub type FrequencyValue = OrderableF32;
 
 /// Wrapper around [`f32`] that guarantees a valid number, hence, the number is

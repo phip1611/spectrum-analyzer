@@ -33,6 +33,8 @@ use alloc::vec::Vec;
 /// Convenient wrapper around the processed FFT result which describes each
 /// frequency and its value (magnitude) from the analyzed samples.
 ///
+/// See [`crate::samples_fft_to_spectrum`] for the meaning of the values.
+///
 /// It only contains the frequencies that were desired, e.g., specified via
 /// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`]
 /// was called.

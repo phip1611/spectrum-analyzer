@@ -107,11 +107,40 @@ mod tests;
 /// e.g. 2048, applies an FFT (using the specified FFT implementation) on it
 /// and returns all frequencies with their magnitude.
 ///
-/// By default, no normalization/scaling is done at all and the results,
-/// i.e. the frequency magnitudes/amplitudes/values are the raw result from
-/// the FFT algorithm, except that complex numbers are transformed
-/// to their magnitude.
+/// ## Meaning of the frequency values
+/// Without a scaling function, each value is the plain magnitude of the FFT
+/// result. Think of it as "how much of this frequency is in the samples",
+/// but not in absolute units:
 ///
+/// * The values grow with the number of samples: twice the samples, twice
+///   the value.
+/// * A window function (e.g. Hann) shrinks all values by a constant factor,
+///   its coherent gain (see [`windows`]).
+/// * A frequency that falls between two bins reads a bit lower than one that
+///   sits exactly on a bin.
+///
+/// To compare spectra of different lengths, use [`scaling::divide_by_N`].
+/// For the actual amplitude of a sine wave, see the details below.
+///
+/// ### Details
+/// Each value is `sqrt(re*re + im*im)` of the corresponding FFT result and
+/// relates to the input as follows:
+///
+/// * A sine wave with amplitude `A` on a bin frequency shows up as
+///   `A * N / 2`, `N` being the number of samples. The DC (0 Hz) and Nyquist
+///   bins show `A * N` instead, because they have no mirror bin.
+/// * A window multiplies each sample by its coefficient before the FFT. The
+///   average coefficient is the coherent gain, e.g. `0.5` for Hann, and every
+///   value in the spectrum shrinks by that factor.
+/// * A frequency between two bins leaks into its neighbors, so its peak reads
+///   lower: up to `36%` lower without a window and `15%` with a Hann window.
+///
+/// So to get the amplitude of a sine wave: divide by `N`, multiply by `2`
+/// (not for the DC and Nyquist bins), and divide by the window's coherent
+/// gain. This works for tones. For noise-like signals, the power per bin
+/// depends on the window's equivalent noise bandwidth instead.
+///
+/// ## Parameters
 /// * `samples` raw audio, e.g. 16bit audio data but as f32.
 ///   You should apply a window function (like Hann) on the data first.
 ///   The final frequency resolution (spacing between two bins) is
