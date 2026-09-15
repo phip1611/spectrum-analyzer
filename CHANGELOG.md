@@ -39,6 +39,8 @@
 - docs: explained the periodic and the symmetric form of a window function
 - **BREAKING** `FrequencySpectrum::new` is no longer public; a spectrum comes
   from `samples_fft_to_spectrum`
+- **BREAKING** `FrequencySpectrum` no longer implements `Default`; the empty
+  spectrum it produced made every getter panic
 
 ## 1.9.0 (2026-09-05)
 
