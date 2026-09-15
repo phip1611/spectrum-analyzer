@@ -84,7 +84,7 @@ impl FrequencySpectrum {
     ///   if the spectrum is obtained with a frequency limit.
     #[inline]
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         data: Vec<(Frequency, FrequencyValue)>,
         frequency_resolution: f32,
         samples_len: u32,

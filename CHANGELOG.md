@@ -37,6 +37,8 @@
   right one for FFT analysis; the coefficients change marginally and the
   coherent gains are now exact
 - docs: explained the periodic and the symmetric form of a window function
+- **BREAKING** `FrequencySpectrum::new` is no longer public; a spectrum comes
+  from `samples_fft_to_spectrum`
 
 ## 1.9.0 (2026-09-05)
 
