@@ -64,7 +64,7 @@ impl FftImpl {
     /// The first index corresponds to the DC component and the last index to
     /// the Nyquist frequency.
     ///
-    /// # Parameters
+    /// ## Parameters
     /// - `samples`: Array with samples. Each value must be a regular floating
     ///   point number (no NaN or infinite) and the length must be a power of
     ///   two.
