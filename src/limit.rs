@@ -126,8 +126,9 @@ pub enum FrequencyLimitError {
     /// If the maximum value is above Nyquist frequency. Nyquist-Frequency is the maximum
     /// detectable frequency.
     ValueAboveNyquist(f32),
-    /// Either the corresponding value is below or above the minimum/maximum or the
-    /// first member of the tuple is bigger than the second.
+    /// The first member of the tuple is bigger than the second. A value that
+    /// is out of bounds is reported as [`Self::ValueBelowMinimum`] or
+    /// [`Self::ValueAboveNyquist`], even inside a range.
     InvalidRange(f32, f32),
 }
 
