@@ -1,22 +1,24 @@
 ## How to use FFT to get a frequency spectrum?
 
-This library is full of additional and useful links and comments about how an FFT result
-can be used to get a frequency spectrum. In this document I want to give a short introduction
-where inside the code you can find specific things.
+**This document does not explain how FFT works, but how its result is used.**
+It tells you where in the code to look.
 
-**TL;DR:** Although this crate has over 1000 lines of code, **the part which gets the frequency and
-their values from the FFT is small and simple**. Most of the code is related to my convenient
-abstraction over the FFT result including several getters, transform/scaling functions, and
-tests.
+**TL;DR:** Although this crate has over 1000 lines of code, **the part that
+turns the FFT result into frequencies and their values is small and simple**.
+The rest is the convenient abstraction around it: getters, scaling functions,
+and tests.
 
-**I don't explain how FFT works but how you use the result!**
-If you want to understand that too:
+Where to look:
 
-- check out all links provided [at the end of README.md](/README.md)
-- look into `lib.rs` (**probably gives you 90 percent of the things you want to know**)
-  and the comments over the FFT abstraction in `src/fft.rs`.
+- `src/lib.rs` (**probably gives you 90 percent of the things you want to
+  know**), especially `fft_result_to_spectrum`, which calculates the
+  frequency of each FFT result index and its magnitude
+- the comments over the FFT abstraction in `src/fft.rs`
+- the documentation of `samples_fft_to_spectrum` for what the resulting
+  values mean
 
+If you want to understand FFT itself, follow the links at the end of
+[README.md](/README.md).
 
-This is everything important you need. Everything inside
- `spectrum.rs` and the other files is just convenient stuff + tests for when you
-want to use this crate in your program.
+`src/spectrum.rs` and the other files are convenience and tests. You do not
+need them to understand the idea.

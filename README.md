@@ -2,21 +2,16 @@
 An easy to use and fast `no_std` library (with `alloc`) to get the frequency
 spectrum of a digital signal (e.g. audio) using FFT.
 
-The **MSRV** (minimum supported Rust version) is `1.95.0`.
-
 ## Supported Platforms
-
-The base library supports all standard and non-standard targets, such as
-machines running Linux, Ubuntu, Windows, but also embedded systems running
-custom software.
+The base library supports all standard and non-standard targets: Linux,
+macOS, and Windows, but also embedded systems running custom software.
 
 ## I want to understand how FFT can be used to get a spectrum
 Please see file [/EDUCATIONAL.md](/EDUCATIONAL.md).
 
 ## How to use (including `no_std`-contexts)
-Most tips and comments are located inside the code, so please check out the
-repository on GitHub! Anyway, the most basic usage looks like this:
-
+The crate is `no_std` and only needs `alloc`, so there is no feature to
+enable and nothing to turn off. The most basic usage looks like this:
 
 ### Cargo.toml
 ```toml
@@ -35,8 +30,8 @@ fn main() {
     // YOU need to implement the samples source; get microphone input for example
     let samples: &[f32] = &[0.0, 3.14, 2.718, -1.0, -2.0, -4.0, 7.0, 6.0];
     // apply hann window for smoothing; length must be a power of 2 for the FFT
-    // 2048 is a good starting point with 44100 kHz
-    let hann_window = hann_window(&samples[0..8]);
+    // 2048 is a good starting point with 44100 Hz
+    let hann_window = hann_window(samples);
     // calc spectrum
     let spectrum_hann_window = samples_fft_to_spectrum(
         // (windowed) samples
@@ -77,8 +72,6 @@ In the following examples you can see a basic visualization of the spectrum from
 a layered signal of sine waves of `50`, `1000`, and `3777Hz` @ `44100Hz` sampling rate. The peaks for the
 given frequencies are clearly visible. Each calculation was done with `2048` samples, i.e. ≈46ms of audio signal.
 
-**The noise (wrong peaks) also comes from clipping of the added sine waves!**
-
 ### Spectrum *without window function* on samples
 Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with no window function.](res/spectrum_sine_waves_50_1000_3777hz--no-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.")
@@ -95,17 +88,25 @@ show you how you can visualize audio data in realtime + the current spectrum.
 ![Example visualization of real-time audio + spectrum analysis](res/live_demo_spectrum_green_day_holiday.gif "Example visualization of real-time audio + spectrum analysis")
 
 ## Building and Executing Tests
-To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian).
-This is required because not all tests are "automatic unit tests" but also tests
-that you need to check visually, by looking at the generated diagram of the
-spectrum.
+Tests and examples pull in `audio-visualizer`, which needs native libraries
+for audio input and for the window of the live example. On Ubuntu/Debian
+these are `libasound2-dev`, `libgl1-mesa-dev`, `libx11-dev`,
+`libxcursor-dev`, `libxi-dev`, `libxkbcommon-dev`, `libxrandr-dev`, and
+`libwayland-dev`. The `flake.nix` in this repository provides the same set.
+
+Note that not all tests are "automatic unit tests" but also tests that you
+need to check visually, by looking at the generated diagram of the spectrum.
+
+## MSRV
+The **MSRV** (minimum supported Rust version) of the library is `1.85.1`. To
+run benchmarks, tests, and examples you may need a more recent version.
 
 ## Trivia / FAQ
-### Why f64 and no f32?
+### Why f32 and not f64?
 I tested f64 but the additional accuracy doesn't pay out the ~40% calculation
 overhead (on x86_64).
 ### What can I do against the noise?
-Apply a window function, like Hann window or Hamming window.
+Apply a window function. The `windows` module documents which one to pick.
 
 ## Good resources with more information
 - Interpreting FFT Results: <https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/>
@@ -114,3 +115,6 @@ Apply a window function, like Hann window or Hamming window.
 - Fast Fourier Transforms (FFTs) and Windowing: <https://www.youtube.com/watch?v=dCeHOf4cJE0>
 
 Also check out my [blog post](https://phip1611.de/2021/03/programmierung-und-skripte/frequency-spectrum-analysis-with-fft-in-rust/).
+
+## License
+MIT, see [LICENSE](/LICENSE).

@@ -125,10 +125,7 @@ impl Div for OrderableF32 {
 
     #[inline]
     fn div(self, other: Self) -> Self::Output {
-        let quotient = self.val() / other.val();
-        debug_assert!(!quotient.is_nan(), "NaN is not allowed");
-        debug_assert!(!quotient.is_infinite(), "INFINITY is not allowed");
-        quotient.into()
+        (self.val() / other.val()).into()
     }
 }
 

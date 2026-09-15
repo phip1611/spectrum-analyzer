@@ -45,7 +45,7 @@ use alloc::vec::Vec;
 /// function which creates objects of this struct!
 ///
 /// This struct can be shared across thread boundaries.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct FrequencySpectrum {
     /// All (Frequency, FrequencyValue) data pairs sorted by lowest frequency
     /// to the highest frequency.Vector is sorted from lowest
@@ -84,7 +84,7 @@ impl FrequencySpectrum {
     ///   if the spectrum is obtained with a frequency limit.
     #[inline]
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         data: Vec<(Frequency, FrequencyValue)>,
         frequency_resolution: f32,
         samples_len: u32,

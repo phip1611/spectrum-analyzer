@@ -66,10 +66,11 @@ impl FftImpl {
     ///
     /// # Parameters
     /// - `samples`: Array with samples. Each value must be a regular floating
-    ///   point number (no NaN or infinite) and the length must be
-    ///   a power of two. Otherwise, the function panics.
+    ///   point number (no NaN or infinite) and the length must be a power of
+    ///   two.
     #[inline]
     pub(crate) fn calc(samples: &[f32]) -> Vec<Complex32> {
+        debug_assert!(samples.iter().all(|&x| x.is_finite()));
         assert_eq!(
             samples.len() % 2,
             0,
