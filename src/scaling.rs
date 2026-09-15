@@ -121,9 +121,15 @@ pub fn scale_20_times_log10(fr_val: f32, _stats: &SpectrumDataStats) -> f32 {
     20.0 * libm::log10f(fr_val.max(DB_FLOOR))
 }
 
-/// Scales each frequency value in the spectrum to interval `[0.0; 1.0]`.
-/// Function is of type [`SpectrumScalingFunction`]. Expects that [`SpectrumDataStats::min`] is
-/// not negative.
+/// Divides each value by the maximum, so that the loudest frequency becomes
+/// `1.0` and every other keeps its ratio to it.
+///
+/// The smallest value only becomes `0.0` if it already was `0.0`; the values
+/// are not stretched over the whole interval. All of them must be positive or
+/// zero, which holds for magnitudes but not for the output of
+/// [`scale_20_times_log10`]. If the maximum is `0.0`, all values become `0.0`.
+///
+/// Function is of type [`SpectrumScalingFunction`].
 #[must_use]
 pub fn scale_to_zero_to_one(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
     debug_assert!(!fr_val.is_infinite());
