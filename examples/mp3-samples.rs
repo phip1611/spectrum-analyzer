@@ -343,6 +343,10 @@ fn read_mp3_to_mono<P: AsRef<Path>>(file: P) -> (Vec<i16>, u32) {
                 match audio_spec.channels().count() {
                     1 => audio_data_lrlr.extend(samples_interleaved),
                     2 => {
+                        #[allow(
+                            clippy::incompatible_msrv,
+                            reason = "the MSRV applies to the library, not the examples"
+                        )]
                         let iter = samples_interleaved
                             .as_chunks::<2>()
                             .0
