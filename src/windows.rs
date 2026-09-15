@@ -26,6 +26,24 @@ SOFTWARE.
 //! - <https://en.wikipedia.org/wiki/Window_function>
 //! - <https://www.youtube.com/watch?v=dCeHOf4cJE0> (FFT and windowing by Texas Instruments)
 //!
+//! A window reduces spectral leakage: without one, a frequency that does not
+//! fit a whole number of times into the block smears over the whole spectrum
+//! and can bury quieter frequencies. Applying one is almost always the right
+//! choice.
+//!
+//! ## Which window should I use?
+//! * [`hann_window`]: the default. A good compromise, use it unless you have
+//!   a reason not to.
+//! * [`hamming_window`]: close to Hann, with slightly different trade-offs
+//!   between near and distant leakage.
+//! * [`blackman_harris_4term`]: when a quiet frequency sits next to a loud
+//!   one. It suppresses distant leakage much more, at the price of lower and
+//!   wider peaks.
+//! * [`blackman_harris_7term`]: the same idea taken further. Rarely needed.
+//!
+//! Skipping the window only makes sense if every frequency fits a whole
+//! number of times into the block, which in practice means synthetic signals.
+//!
 //! Every window shrinks the values in the spectrum by a constant factor, its
 //! coherent gain (the average of its coefficients). Divide by it to undo the
 //! effect, see [`crate::samples_fft_to_spectrum`].
@@ -39,6 +57,8 @@ use libm::cosf;
 /// to an array of samples.
 ///
 /// Coherent gain: `0.5`, i.e., the values in the spectrum are halved.
+///
+/// See the [module docs](crate::windows) for picking a window function.
 ///
 /// ## Return value
 /// New vector with Hann window applied to the values.
@@ -59,6 +79,8 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 /// to an array of samples.
 ///
 /// Coherent gain: about `0.54`.
+///
+/// See the [module docs](crate::windows) for picking a window function.
 ///
 /// ## Return value
 /// New vector with Hamming window applied to the values.
@@ -83,6 +105,8 @@ pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
 ///
 /// Coherent gain: about `0.36`.
 ///
+/// See the [module docs](crate::windows) for picking a window function.
+///
 /// ## Return value
 /// New vector with Blackman-Harris 4-term window applied to the values.
 #[must_use]
@@ -97,6 +121,8 @@ pub fn blackman_harris_4term(samples: &[f32]) -> Vec<f32> {
 /// Applies a Blackman-Harris 7-term window to an array of samples.
 ///
 /// Coherent gain: about `0.27`.
+///
+/// See the [module docs](crate::windows) for picking a window function.
 ///
 /// ## More information
 /// * <https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window>

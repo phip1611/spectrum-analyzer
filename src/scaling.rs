@@ -25,6 +25,24 @@ SOFTWARE.
 //! as parameters in [`samples_fft_to_spectrum`] for scaling the frequency value
 //! (the FFT result).
 //!
+//! ## Which scaling should I use?
+//! * [`divide_by_N`]: the default. It makes the values independent of the
+//!   number of samples, so spectra of different lengths are comparable.
+//! * [`scale_20_times_log10`]: decibels, for a display that should match how
+//!   loudness is perceived.
+//! * [`scale_to_zero_to_one`]: for a single block where only the relative
+//!   height of the peaks matters, e.g. a plot or a test. Avoid it for a live
+//!   view: it normalises every block to its own loudest value, so silence
+//!   gets amplified to full scale.
+//! * [`divide_by_N_sqrt`]: preserves the energy of the signal, for a forward
+//!   and inverse transform pair.
+//! * None at all is fine if you only compare values within one spectrum, for
+//!   example to find the loudest frequency.
+//!
+//! To read the amplitude of a tone, use [`divide_by_N`], multiply by `2` and
+//! divide by the coherent gain of your window, see
+//! [`crate::samples_fft_to_spectrum`].
+//!
 //! They act as "idea/inspiration". Feel free to create your own derivation
 //! from them. To chain two of them, write a closure:
 //!
@@ -89,6 +107,8 @@ const DB_FLOOR: f32 = 1e-5;
 
 /// Converts each value to decibels: `20 * log10(value)`.
 ///
+/// See the [module docs](crate::scaling) for picking a scaling function.
+///
 /// A value of `1.0` becomes `0 dB`. Unscaled values grow with the number of
 /// samples (see [`crate::samples_fft_to_spectrum`]), so the absolute levels
 /// depend on `N` and on the input range. For levels relative to a full-scale
@@ -126,6 +146,8 @@ pub fn scale_20_times_log10(fr_val: f32, _stats: &SpectrumDataStats) -> f32 {
 /// Divides each value by the maximum, so that the loudest frequency becomes
 /// `1.0` and every other keeps its ratio to it.
 ///
+/// See the [module docs](crate::scaling) for picking a scaling function.
+///
 /// The smallest value only becomes `0.0` if it already was `0.0`; the values
 /// are not stretched over the whole interval. All of them must be positive or
 /// zero, which holds for magnitudes but not for the output of
@@ -146,6 +168,8 @@ pub fn scale_to_zero_to_one(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
 
 /// Divides each value by `N`, the number of samples.
 ///
+/// See the [module docs](crate::scaling) for picking a scaling function.
+///
 /// This makes spectra of different lengths comparable. A sine wave with
 /// amplitude `A` on a bin frequency then shows up as `A / 2` (times the
 /// window's coherent gain), see [`crate::samples_fft_to_spectrum`].
@@ -163,6 +187,8 @@ pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
 }
 
 /// Like [`divide_by_N`] but divides each value by `sqrt(N)`.
+///
+/// See the [module docs](crate::scaling) for picking a scaling function.
 ///
 /// This is the normalization that preserves the energy of the signal, which
 /// `rustfft` recommends for a forward and inverse transform pair. The values

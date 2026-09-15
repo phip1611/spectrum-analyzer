@@ -21,6 +21,7 @@
   `FrequencySpectrum::apply_scaling_fn` is gone
 - perf: spectrum creation no longer allocates and scans a working buffer for
   the median (~20-30% faster, depending on the number of samples)
+- docs: added guidance on which window and which scaling function to pick
 
 ## 1.9.0 (2026-09-05)
 
