@@ -29,7 +29,7 @@ spectrum-analyzer = "<latest version, see crates.io>"
 ```rust
 use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 use spectrum_analyzer::windows::hann_window;
-use spectrum_analyzer::scaling::divide_by_N_sqrt;
+use spectrum_analyzer::scaling::divide_by_N;
 
 /// Minimal example.
 fn main() {
@@ -46,10 +46,13 @@ fn main() {
         44100,
         // optional frequency limit: e.g. only interested in frequencies 50 <= f <= 150?
         FrequencyLimit::All,
-        // optional scale
-        Some(&divide_by_N_sqrt),
+        // optional scaling; divide_by_N makes the values independent of the
+        // number of samples
+        Some(&divide_by_N),
     ).unwrap();
 
+    // a sine wave with amplitude A shows up as A / 4 here: A / 2 from the
+    // FFT, halved by the Hann window (see the docs of samples_fft_to_spectrum)
     for (fr, fr_val) in spectrum_hann_window.data().iter() {
         println!("{}Hz => {}", fr, fr_val)
     }
@@ -84,13 +87,8 @@ Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.
 
 ### Spectrum with *Hann window function* on samples before FFT
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a
-little. Because this example has few noise, you don't see much difference.
+little. Because this example has little noise, you don't see much difference.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](res/spectrum_sine_waves_50_1000_3777hz--hann-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
-
-### Spectrum with *Hamming window function* on samples before FFT
-Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a
-little. Because this example has few noise, you don't see much difference.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](res/spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ## Live Audio + Spectrum Visualization
 Execute example `$ cargo run --release --example live-visualization`. It will

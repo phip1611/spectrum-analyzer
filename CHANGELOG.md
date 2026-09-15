@@ -2,6 +2,17 @@
 
 ## Unreleased (yet)
 
+- docs: fixed the frequency resolution formula; it is `sample_rate / N`, not
+  `sample_rate / (N / 2)`
+- docs: explained what the frequency values are and how they relate to the
+  input signal
+- docs: documented the coherent gain of each window function
+- docs: clarified `divide_by_N` and `divide_by_N_sqrt`
+- docs: documented what functions in `scaling::combined` see
+- fixed `scale_20_times_log10` mapping `0.0` to `0 dB`; values are now
+  clamped to `-100 dB` at minimum
+- docs: the examples recommend `divide_by_N` instead of `divide_by_N_sqrt`
+
 ## 1.9.0 (2026-09-05)
 
 Combined, `samples_fft_to_spectrum` got roughly 2-3x faster for 2048 samples

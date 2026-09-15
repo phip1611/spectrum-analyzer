@@ -39,7 +39,7 @@ SOFTWARE.
 #![deny(missing_debug_implementations)]
 #![deny(rustdoc::all)]
 
-use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
+use audio_visualizer::SpectrumVisualizer;
 use spectrum_analyzer::scaling::scale_to_zero_to_one;
 use spectrum_analyzer::windows::{
     blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window,
@@ -239,38 +239,61 @@ fn to_spectrum_and_plot(
         now.elapsed().as_micros()
     );
 
-    /*for (fr, fr_val) in spectrum_hamming_window.data().iter() {
-        println!("{}Hz => {}", fr, fr_val)
-    }*/
+    let visualize = |samples: Vec<(f32, f32)>, name, filename| {
+        SpectrumVisualizer::new(&samples)
+            .title(format!("sample_1.mp3 ({name} channel)"))
+            .write_png(format!("{}/{filename}", test_out_dir().display()))
+            .unwrap();
+    };
 
-    spectrum_static_plotters_png_visualize(
-        &spectrum_no_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        &format!("{filename}--no-window.png"),
+    visualize(
+        spectrum_no_window
+            .data()
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect::<Vec<_>>(),
+        "Spectrum (no window function)",
+        format!("{filename}--no-window.png"),
     );
 
-    spectrum_static_plotters_png_visualize(
-        &spectrum_hamming_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        &format!("{filename}--hamming-window.png"),
+    visualize(
+        spectrum_hamming_window
+            .data()
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect::<Vec<_>>(),
+        "Spectrum (hamming window function)",
+        format!("{filename}--hamming-window.png"),
     );
 
-    spectrum_static_plotters_png_visualize(
-        &spectrum_hann_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        &format!("{filename}--hann-window.png"),
+    visualize(
+        spectrum_hann_window
+            .data()
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect::<Vec<_>>(),
+        "Spectrum (hann window function)",
+        format!("{filename}--hann-window.png"),
     );
 
-    spectrum_static_plotters_png_visualize(
-        &spectrum_blackman_harris_4term_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        &format!("{filename}--blackman-harris-4-term-window.png"),
+    visualize(
+        spectrum_blackman_harris_4term_window
+            .data()
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect::<Vec<_>>(),
+        "Spectrum (blackman-harris-4-term window function)",
+        format!("{filename}--blackman-harris-4-term-window.png"),
     );
 
-    spectrum_static_plotters_png_visualize(
-        &spectrum_blackman_harris_7term_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        &format!("{filename}--blackman-harris-7-term-window.png"),
+    visualize(
+        spectrum_blackman_harris_7term_window
+            .data()
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect::<Vec<_>>(),
+        "Spectrum (blackman-harris-7-term window function)",
+        format!("{filename}--blackman-harris-7-term-window.png"),
     );
 }
 
@@ -319,7 +342,9 @@ fn read_mp3_to_mono<P: AsRef<Path>>(file: P) -> (Vec<i16>, u32) {
                     1 => audio_data_lrlr.extend(samples_interleaved),
                     2 => {
                         let iter = samples_interleaved
-                            .chunks_exact(2)
+                            .as_chunks::<2>()
+                            .0
+                            .iter()
                             // LRLR interleavment to mono
                             .map(|lr| ((lr[0] as i32 + lr[1] as i32) / 2) as i16);
                         audio_data_lrlr.extend(iter);

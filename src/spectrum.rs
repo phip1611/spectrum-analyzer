@@ -31,7 +31,9 @@ use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
 /// Convenient wrapper around the processed FFT result which describes each
-/// frequency and its value/amplitude from the analyzed samples.
+/// frequency and its value (magnitude) from the analyzed samples.
+///
+/// See [`crate::samples_fft_to_spectrum`] for the meaning of the values.
 ///
 /// It only contains the frequencies that were desired, e.g., specified via
 /// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`]
@@ -58,18 +60,18 @@ pub struct FrequencySpectrum {
     /// Number of samples that were analyzed. Might be bigger than the length
     /// of `data`, if the spectrum was created with a [`crate::limit::FrequencyLimit`] .
     samples_len: u32,
-    /// Average value of frequency value/magnitude/amplitude
-    /// corresponding to data in [`FrequencySpectrum::data`].
+    /// Average frequency value corresponding to data in
+    /// [`FrequencySpectrum::data`].
     average: FrequencyValue,
-    /// Median value of frequency value/magnitude/amplitude
-    /// corresponding to data in [`FrequencySpectrum::data`].
+    /// Median frequency value corresponding to data in
+    /// [`FrequencySpectrum::data`].
     median: FrequencyValue,
-    /// Pair of (frequency, frequency value/magnitude/amplitude) where
-    /// frequency value is **minimal** inside the spectrum.
+    /// Pair of (frequency, frequency value) where the frequency value is
+    /// **minimal** inside the spectrum.
     /// Corresponding to data in [`FrequencySpectrum::data`].
     min: (Frequency, FrequencyValue),
-    /// Pair of (frequency, frequency value/magnitude/amplitude) where
-    /// frequency value is **maximum** inside the spectrum.
+    /// Pair of (frequency, frequency value) where the frequency value is
+    /// **maximum** inside the spectrum.
     /// Corresponding to data in [`FrequencySpectrum::data`].
     max: (Frequency, FrequencyValue),
 }
@@ -199,8 +201,7 @@ impl FrequencySpectrum {
 
     /// Returns <code>[FrequencySpectrum::max()].1</code> subtracted by
     /// <code>[FrequencySpectrum::min()].1</code>, i.e. the range of the
-    /// frequency values (not the frequencies itself, but their
-    /// amplitudes/values).
+    /// frequency values (not the frequencies itself, but their values).
     #[inline]
     #[must_use]
     pub fn range(&self) -> FrequencyValue {
@@ -257,6 +258,9 @@ impl FrequencySpectrum {
     /// present if the frequencies were not limited to for example `100 <= f <= 10000`
     /// when the libraries main function was called.
     ///
+    /// Note that the unscaled value is `N` times the mean of the (windowed)
+    /// samples, not the mean itself. See [`crate::samples_fft_to_spectrum`].
+    ///
     /// More information:
     /// <https://dsp.stackexchange.com/questions/12972/discrete-fourier-transform-what-is-the-dc-term-really>
     ///
@@ -284,6 +288,10 @@ impl FrequencySpectrum {
     /// the point C in the middle. This is done by the private function
     /// `calculate_y_coord_between_points`.
     ///
+    /// The interpolated value only follows the shape of the spectrum. It is
+    /// not the value a sine wave of exactly `search_fr` would have, because
+    /// such a sine wave leaks into the neighboring bins.
+    ///
     /// ## Panics
     /// If parameter `search_fr` (frequency) is below the lowest or the maximum
     /// frequency, this function panics! This is because the user provide
@@ -291,7 +299,7 @@ impl FrequencySpectrum {
     /// This is similar to an intended "out of bounds"-access.
     ///
     /// ## Parameters
-    /// - `search_fr` The frequency of that you want the amplitude/value in the spectrum.
+    /// - `search_fr` The frequency of that you want the value in the spectrum.
     ///
     /// ## Return
     /// Either exact value of approximated value, determined by [`Self::frequency_resolution`].
@@ -371,7 +379,7 @@ impl FrequencySpectrum {
     /// frequency, this function panics!
     ///
     /// ## Parameters
-    /// - `search_fr` The frequency of that you want the amplitude/value in the spectrum.
+    /// - `search_fr` The frequency of that you want the value in the spectrum.
     ///
     /// ## Return
     /// Closest matching point in spectrum, determined by [`Self::frequency_resolution`].
@@ -458,6 +466,16 @@ impl FrequencySpectrum {
             .collect()
     }
 
+    /// Returns a [`Vec`] with all value pairs as `f32`.
+    #[inline]
+    #[must_use]
+    pub fn to_vec(&self) -> Vec<(f32, f32)> {
+        self.data
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect()
+    }
+
     /// Like [`Self::to_map`] but converts the frequency (x-axis) to [mels]. The
     /// resulting map contains more results in a higher density the higher the
     /// mel value gets. This comes from the logarithmic transformation from
@@ -473,8 +491,8 @@ impl FrequencySpectrum {
             .collect()
     }
 
-    /// Calculates the `min`, `max`, `median`, and `average` of the frequency values/magnitudes/
-    /// amplitudes.
+    /// Calculates the `min`, `max`, `median`, and `average` of the frequency
+    /// values.
     ///
     /// It needs a working buffer to find the median.
     #[inline]
@@ -516,7 +534,7 @@ impl FrequencySpectrum {
                     l_fr_val.cmp(r_fr_val)
                 },
             );
-            if self.data.len() % 2 == 0 {
+            if self.data.len().is_multiple_of(2) {
                 // The lower middle value is the maximum of the values left of mid.
                 let lower_mid_val = left_of_mid
                     .iter()

@@ -21,68 +21,56 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-use audio_visualizer::dynamic::live_input::AudioDevAndCfg;
-use audio_visualizer::dynamic::window_top_btm::{TransformFn, open_window_connect_audio};
+use audio_visualizer::live::{LiveVisualizer, Transform};
 use spectrum_analyzer::scaling::divide_by_N;
 use spectrum_analyzer::windows::hann_window;
-use spectrum_analyzer::{FrequencyLimit, FrequencyValue, samples_fft_to_spectrum};
-use std::cell::RefCell;
-use std::cmp::max;
+use spectrum_analyzer::{FrequencyLimit, samples_fft_to_spectrum};
 
-/// Example that creates a live visualization of the frequency spectrum of realtime audio data
-/// **Execute this with `--release`, otherwise it is very laggy!**.
+mod common;
+
+/// Example that creates a live visualization of the frequency spectrum of
+/// realtime audio data
+/// **Execute this with `--release` for better performance!**.
 fn main() {
-    // Contains the data for the spectrum to be visualized. It contains ordered pairs of
-    // `(frequency, frequency_value)`. During each iteration, the frequency value gets
-    // combined with `max(old_value * smoothing_factor, new_value)`.
-    let visualize_spectrum: RefCell<Vec<(f64, f64)>> = RefCell::new(vec![(0.0, 0.0); 1024]);
+    // Spectrum of the previous frame; used to smoothen the visualization:
+    // each frequency value decays over time and is replaced when the new
+    // value is higher.
+    let mut smoothed: Vec<(f64, f64)> = vec![];
 
-    // Closure that captures `visualize_spectrum`.
-    let to_spectrum_fn = move |audio: &[f32], sampling_rate| {
-        let skip_elements = audio.len() - 2048;
-        // spectrum analysis only of the latest 46ms
-        let relevant_samples = &audio[skip_elements..skip_elements + 2048];
-
-        // do FFT
-        let hann_window = hann_window(relevant_samples);
-        let latest_spectrum = samples_fft_to_spectrum(
+    let to_spectrum = move |samples: &[f32], sample_rate: f32| {
+        // spectrum analysis of the latest ~46ms (at 44.1kHz)
+        let latest = &samples[samples.len() - 2048..];
+        let hann_window = hann_window(latest);
+        let spectrum = samples_fft_to_spectrum(
             &hann_window,
-            sampling_rate as u32,
+            sample_rate as u32,
             FrequencyLimit::All,
             Some(&divide_by_N),
         )
         .unwrap();
 
-        // now smoothen the spectrum; old values are decreased a bit and replaced,
-        // if the new value is higher
-        latest_spectrum
+        let current = spectrum
             .data()
             .iter()
-            .zip(visualize_spectrum.borrow_mut().iter_mut())
-            .for_each(|((fr_new, fr_val_new), (fr_old, fr_val_old))| {
-                // actually only required in very first iteration
-                *fr_old = fr_new.val() as f64;
-                let old_val = *fr_val_old * 0.84;
-                let max = max(
-                    *fr_val_new * 5000.0_f32.into(),
-                    FrequencyValue::from(old_val as f32),
-                );
-                *fr_val_old = max.val() as f64;
-            });
-
-        visualize_spectrum.borrow().clone()
+            .map(|(f, v)| (f.val() as f64, (v.val() * 5000.0) as f64))
+            .collect::<Vec<_>>();
+        if smoothed.len() != current.len() {
+            smoothed = current;
+        } else {
+            for ((_, old), (_, new)) in smoothed.iter_mut().zip(&current) {
+                *old = (*old * 0.84).max(*new);
+            }
+        }
+        smoothed.clone()
     };
 
-    open_window_connect_audio(
-        "Live Spectrum View",
-        None,
-        None,
-        // 0.0..22050.0_f64.log(100.0),
-        Some(0.0..22050.0),
-        Some(0.0..500.0),
-        "x-axis",
-        "y-axis",
-        AudioDevAndCfg::new(None, None),
-        TransformFn::Complex(&to_spectrum_fn),
-    );
+    let input = common::select_input();
+    LiveVisualizer::new(Transform::points(to_spectrum))
+        .title("Live Spectrum View")
+        .axis_labels("frequency (Hz)", "magnitude")
+        .x_range(0.0..22050.0)
+        .y_range(0.0..500.0)
+        .input(input)
+        .open()
+        .unwrap();
 }

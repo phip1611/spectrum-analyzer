@@ -29,10 +29,10 @@ use crate::tests::sine::sine_wave_audio_data_multiple;
 use crate::windows::{blackman_harris_4term, blackman_harris_7term, hamming_window, hann_window};
 use crate::{FrequencyLimit, samples_fft_to_spectrum};
 use alloc::vec::Vec;
-use audio_visualizer::Channels;
-use audio_visualizer::spectrum::plotters_png_file::spectrum_static_plotters_png_visualize;
-use audio_visualizer::waveform::plotters_png_file::waveform_static_plotters_png_visualize;
+use audio_visualizer::SpectrumVisualizer;
+use audio_visualizer::WaveformVisualizer;
 use core::cmp::max;
+use core::f32::consts::PI;
 use std::path::PathBuf;
 
 /// Returns the location where tests should store files they produce.
@@ -59,27 +59,21 @@ mod sine;
 fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     let sine_audio = sine_wave_audio_data_multiple(&[50.0, 1000.0, 3777.0], 44100, 1000);
 
-    // visualize waveform
-    waveform_static_plotters_png_visualize(
-        &sine_audio,
-        Channels::Mono,
-        test_out_dir().to_str().unwrap(),
-        "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--WAVEFORM.png",
-    );
+    WaveformVisualizer::new(&sine_audio)
+        .title("Waveform of Sine Waves (50 Hz, 1000 Hz, 3777 Hz)")
+        .sample_rate(44100.0)
+        .write_png(format!(
+            "{}/test_spectrum_and_visualize_sine_waves_50_1000_3777hz--waveform.png",
+            test_out_dir().display()
+        ))
+        .unwrap();
 
-    let sine_audio = sine_audio
-        .into_iter()
-        .map(|x| x as f32)
-        .collect::<Vec<f32>>();
-
-    // FFT frequency accuracy is: sample_rate / (N / 2)
-    // 44100/(4096/2) = 21.5Hz
+    // FFT frequency resolution is: sample_rate / N
+    // 44100/4096 = 10.8Hz
 
     // get a window that we want to analyze
     // 1/44100 * 4096 => 0.0928s
     let window = &sine_audio[0..4096];
-    let out_dir = test_out_dir();
-    let out_dir = out_dir.to_str().unwrap();
 
     let spectra = [
         ("no-window", window.to_vec()),
@@ -96,7 +90,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     ]
     .into_iter()
     .map(|(filename_suffix, samples)| {
-        let spectrum = samples_fft_to_spectrum(
+        let frequency_spectrum = samples_fft_to_spectrum(
             &samples,
             44100,
             FrequencyLimit::Max(4000.0),
@@ -104,15 +98,26 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         )
         .unwrap();
 
-        spectrum_static_plotters_png_visualize(
-            &spectrum.to_map(),
-            out_dir,
-            &format!(
-                "test_spectrum_and_visualize_sine_waves_50_1000_3777hz--{filename_suffix}.png"
-            ),
-        );
+        let spectrum_data = frequency_spectrum
+            .data()
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect::<Vec<_>>();
 
-        (filename_suffix, spectrum)
+        // visualize waveform as png.
+        SpectrumVisualizer::new(&spectrum_data)
+            .title("Spectrum of Sine Waves (50 Hz, 1000 Hz, 3777 Hz)")
+            .size(700, 700)
+            .highlight(50.0)
+            .highlight(1000.0)
+            .highlight(3777.0)
+            .write_png(format!(
+                "{}/test_spectrum_and_visualize_sine_waves_50_1000_3777hz--{filename_suffix}.png",
+                test_out_dir().display()
+            ))
+            .unwrap();
+
+        (filename_suffix, frequency_spectrum)
     })
     .collect::<Vec<_>>();
 
@@ -131,16 +136,8 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     assert!(spectrum_hann_window.freq_val_closest(1000.0).1.val() > 0.85);
     assert!(spectrum_hann_window.freq_val_exact(3777.0).val() > 0.85);
     assert!(spectrum_hann_window.freq_val_closest(3777.0).1.val() > 0.85);
-    assert!(spectrum_hann_window.freq_val_exact(500.0).val() < 0.00001);
-    assert!(spectrum_hann_window.freq_val_closest(500.0).1.val() < 0.00001);
-
-    /*for (fr, vol) in spectrum.iter() {
-        // you will experience inaccuracies here
-        // TODO add further smoothing / noise reduction
-        if *fr > 45.0.into() && *fr < 55.0.into() {
-            println!("{}Hz => {}", fr, vol);
-        }
-    }*/
+    assert!(spectrum_hann_window.freq_val_exact(500.0).val() < 0.0001);
+    assert!(spectrum_hann_window.freq_val_closest(500.0).1.val() < 0.0001);
 }
 
 /// This test is primarily for my personal understanding. It analyzes a specific constant
@@ -153,13 +150,8 @@ fn test_spectrum_power() {
     let interesting_frequency = 2048.0;
     let sine_audio = sine_wave_audio_data_multiple(&[interesting_frequency], 44100, 1000);
 
-    let sine_audio = sine_audio
-        .into_iter()
-        .map(|x| x as f32)
-        .collect::<Vec<f32>>();
-
-    // FFT frequency accuracy is: sample_rate / (N / 2)
-    // 44100/(4096/2) = 21.5Hz
+    // FFT frequency resolution is: sample_rate / N
+    // 44100/4096 = 10.8Hz
 
     // get a window that we want to analyze
     // 1/44100 * 4096 => 0.0928s
@@ -183,42 +175,32 @@ fn test_spectrum_power() {
     )
     .unwrap();
 
-    /*let spectrum_very_long_window =
-    samples_fft_to_spectrum(very_long_window, 44100, FrequencyLimit::Max(4000.0), Some(&divide_by_N_sqrt))
-        .unwrap();*/
+    // visualize waveform as png.
+    let visualize_fn = |spectrum_data: &[(f32, f32)], filename_suffix: &str| {
+        // visualize waveform as png.
+        SpectrumVisualizer::new(spectrum_data)
+            .title("Spectrum of Sine Wave (2048 Hz)")
+            .size(700, 700)
+            .highlight(2048.0)
+            .write_png(format!(
+                "{}/test_spectrum_power__{filename_suffix}.png",
+                test_out_dir().display()
+            ))
+            .unwrap();
+    };
 
-    spectrum_static_plotters_png_visualize(
-        &spectrum_short_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        "test_spectrum_power__short_window.png",
-    );
-    spectrum_static_plotters_png_visualize(
-        &spectrum_long_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        "test_spectrum_power__long_window.png",
-    );
-    /*spectrum_static_plotters_png_visualize(
-        &spectrum_long_window.to_map(),
-        test_out_dir().to_str().unwrap(),
-        "test_spectrum_power__very_long_window.png",
-    );*/
+    visualize_fn(&spectrum_short_window.to_vec(), "short_window");
+    visualize_fn(&spectrum_long_window.to_vec(), "long_window");
 
     let a = spectrum_short_window.freq_val_exact(interesting_frequency);
     let b = spectrum_long_window.freq_val_exact(interesting_frequency);
-    //let c = spectrum_very_long_window.freq_val_exact(interesting_frequency);
-    //dbg!(a, b, c);
+
     let ab_abs_diff = (a - b).val().abs();
-    //let ac_abs_diff = (a - c).val().abs();
     let ab_deviation = ab_abs_diff / max(a, b).val();
-    //let ac_deviation = ac_abs_diff / max(a, c).val();
     assert!(
         ab_deviation < 0.122,
         "Values must more or less equal, because both were divided by their N. deviation={ab_deviation}"
     );
-    //assert!(
-    //    ac_deviation < 0.07,
-    //    "Values must more or less equal, because both were divided by their N. deviation={}", ac_deviation
-    //);
 }
 
 #[test]
@@ -226,10 +208,7 @@ fn test_spectrum_frequency_limit_inclusive() {
     let sampling_rate = 1024;
     let sine_audio = sine_wave_audio_data_multiple(&[512.0], sampling_rate, 1000);
 
-    let sine_audio = sine_audio
-        .into_iter()
-        .map(|x| x as f32)
-        .collect::<Vec<f32>>();
+    let sine_audio = sine_audio.into_iter().collect::<Vec<f32>>();
 
     // frequency resolution will be:
     // 1024 / 512 = 2 Hz
@@ -331,7 +310,6 @@ fn test_spectrum_nyquist_theorem2() {
         1000,
     )
     .into_iter()
-    .map(|x| x as f32)
     .collect::<Vec<f32>>();
     let spectrum = samples_fft_to_spectrum(
         &sine_audio[0..4096],
@@ -454,7 +432,7 @@ fn test_scaling_produces_error() {
 #[cfg_attr(miri, ignore)] // runs forever + no real value add
 fn test_divide_by_n_has_effect() {
     let audio_data = sine_wave_audio_data_multiple(&[100.0, 200.0, 400.0], 1000, 2000);
-    let audio_data = audio_data.into_iter().map(|x| x as f32).collect::<Vec<_>>();
+    let audio_data = audio_data.into_iter().collect::<Vec<_>>();
     let audio_data = hann_window(&audio_data[0..1024]);
     let normal_spectrum =
         samples_fft_to_spectrum(&audio_data, 1000, FrequencyLimit::All, None).unwrap();
@@ -487,4 +465,86 @@ fn test_divide_by_n_has_effect() {
             "having less frequencies in the spectrum due to a limit must not effect N!"
         );
     }
+}
+
+/// Checks the relation between input and spectrum values documented on
+/// [`samples_fft_to_spectrum`]: a sine wave with amplitude `A` on a bin
+/// frequency yields `A * N / 2`, a Hann window halves that, a constant offset
+/// yields `A * N` in the DC bin, and `divide_by_N` removes the `N`.
+#[test]
+#[cfg_attr(miri, ignore)] // runs forever + no real value add
+fn test_magnitude_of_on_bin_sine() {
+    const SAMPLING_RATE: u32 = 44100;
+    const AMPLITUDE: f32 = 0.8;
+    // relative tolerance; the FFT works with f32
+    const TOLERANCE: f32 = 1e-3;
+
+    let assert_close = |actual: f32, expected: f32, what: &str| {
+        assert!(
+            (actual - expected).abs() / expected < TOLERANCE,
+            "{what}: expected {expected}, got {actual}"
+        );
+    };
+
+    for n in [1024_usize, 4096, 16384] {
+        let resolution = SAMPLING_RATE as f32 / n as f32;
+        // a frequency that lies exactly on a bin, close to 1 kHz
+        let frequency = (1000.0 / resolution).round() * resolution;
+        let sine = (0..n)
+            .map(|i| {
+                let t = i as f32 / SAMPLING_RATE as f32;
+                AMPLITUDE * (2.0 * PI * frequency * t).sin()
+            })
+            .collect::<Vec<f32>>();
+
+        let spectrum =
+            samples_fft_to_spectrum(&sine, SAMPLING_RATE, FrequencyLimit::All, None).unwrap();
+        let (peak_fr, peak_val) = spectrum.max();
+        assert!(
+            (peak_fr.val() - frequency).abs() < resolution / 2.0,
+            "peak must be at {frequency} Hz, got {peak_fr} Hz"
+        );
+        assert_close(
+            peak_val.val(),
+            AMPLITUDE * n as f32 / 2.0,
+            "unscaled magnitude",
+        );
+
+        let spectrum = samples_fft_to_spectrum(
+            &hann_window(&sine),
+            SAMPLING_RATE,
+            FrequencyLimit::All,
+            None,
+        )
+        .unwrap();
+        assert_close(
+            spectrum.max().1.val(),
+            AMPLITUDE * n as f32 / 4.0,
+            "Hann-windowed magnitude",
+        );
+
+        let spectrum = samples_fft_to_spectrum(
+            &sine,
+            SAMPLING_RATE,
+            FrequencyLimit::All,
+            Some(&divide_by_N),
+        )
+        .unwrap();
+        assert_close(
+            spectrum.max().1.val(),
+            AMPLITUDE / 2.0,
+            "magnitude divided by N",
+        );
+    }
+
+    // The DC bin holds A * N for a constant offset A, not A * N / 2.
+    let n = 4096;
+    let constant = vec![AMPLITUDE; n];
+    let spectrum =
+        samples_fft_to_spectrum(&constant, SAMPLING_RATE, FrequencyLimit::All, None).unwrap();
+    assert_close(
+        spectrum.dc_component().unwrap().val(),
+        AMPLITUDE * n as f32,
+        "DC component",
+    );
 }

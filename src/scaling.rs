@@ -52,20 +52,21 @@ pub struct SpectrumDataStats {
     pub average: f32,
     /// Median frequency value in spectrum.
     pub median: f32,
-    /// Number of samples (`samples.len()`). Already casted to f32, to avoid
-    /// repeatedly casting in a loop for each value.
+    /// Number of samples (`samples.len()`), not the number of values in the
+    /// spectrum (which can be smaller due to a frequency limit).
     pub n: f32,
 }
 
 /// Describes the type for a function that scales/normalizes the data inside
 /// [`FrequencySpectrum`].
 ///
-/// The scaling only affects the value/amplitude of the frequency, but not the
+/// The scaling only affects the value of the frequency, but not the
 /// frequency itself. It is applied to every single element.
 ///
 /// A scaling function can be used for example to subtract the minimum (`min`)
 /// from each value. It is optional to use the second parameter
-/// [`SpectrumDataStats`].
+/// [`SpectrumDataStats`], which describes the spectrum before the function is
+/// applied to it.
 ///
 /// The type works with static functions as well as dynamically created
 /// closures.
@@ -81,8 +82,19 @@ pub struct SpectrumDataStats {
 /// [`FrequencyValue`]: crate::FrequencyValue
 pub type SpectrumScalingFunction = dyn Fn(f32, &SpectrumDataStats) -> f32;
 
-/// Calculates the base 10 logarithm of each frequency magnitude and
-/// multiplies it with 20.
+/// Lower bound for the input of [`scale_20_times_log10`], i.e., `-100 dB`.
+const DB_FLOOR: f32 = 1e-5;
+
+/// Converts each value to decibels: `20 * log10(value)`.
+///
+/// A value of `1.0` becomes `0 dB`. Unscaled values grow with the number of
+/// samples (see [`crate::samples_fft_to_spectrum`]), so the absolute levels
+/// depend on `N` and on the input range. For levels relative to a full-scale
+/// sine wave (dBFS), scale to amplitudes first, in a separate call to
+/// `apply_scaling_fn`.
+///
+/// Values below `1e-5` are clamped, so the result is never below `-100 dB`
+/// and silence stays at the bottom of the scale.
 ///
 /// This scaling is quite common, you can find more information for example
 /// here:
@@ -105,14 +117,11 @@ pub fn scale_20_times_log10(fr_val: f32, _stats: &SpectrumDataStats) -> f32 {
     debug_assert!(!fr_val.is_infinite());
     debug_assert!(!fr_val.is_nan());
     debug_assert!(fr_val >= 0.0);
-    if fr_val == 0.0 {
-        0.0
-    } else {
-        20.0 * libm::log10f(fr_val)
-    }
+    // Clamping keeps silence below every other value (0 dB would not).
+    20.0 * libm::log10f(fr_val.max(DB_FLOOR))
 }
 
-/// Scales each frequency value/amplitude in the spectrum to interval `[0.0; 1.0]`.
+/// Scales each frequency value in the spectrum to interval `[0.0; 1.0]`.
 /// Function is of type [`SpectrumScalingFunction`]. Expects that [`SpectrumDataStats::min`] is
 /// not negative.
 #[must_use]
@@ -127,8 +136,11 @@ pub fn scale_to_zero_to_one(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
     }
 }
 
-/// Divides each value by N. Several resources recommend that the FFT result should be divided
-/// by the length of samples, so that values of different samples lengths are comparable.
+/// Divides each value by `N`, the number of samples.
+///
+/// This makes spectra of different lengths comparable. A sine wave with
+/// amplitude `A` on a bin frequency then shows up as `A / 2` (times the
+/// window's coherent gain), see [`crate::samples_fft_to_spectrum`].
 #[allow(non_snake_case)]
 #[must_use]
 pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
@@ -144,8 +156,10 @@ pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
 
 /// Like [`divide_by_N`] but divides each value by `sqrt(N)`.
 ///
-/// This is the recommended scaling in the `rustfft` documentation (but is
-/// generally applicable).
+/// This is the normalization that preserves the energy of the signal, which
+/// `rustfft` recommends for a forward and inverse transform pair. The values
+/// still grow with `sqrt(N)`, so for comparing spectra of different lengths
+/// use [`divide_by_N`] instead.
 /// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
 #[must_use]
@@ -163,8 +177,17 @@ pub fn divide_by_N_sqrt(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
 
 /// Combines several scaling functions into a new single one.
 ///
+/// All functions get the same [`SpectrumDataStats`], computed before any of
+/// them runs. A function that needs the statistics of the intermediate
+/// result, e.g. [`scale_to_zero_to_one`] after [`divide_by_N`], gives wrong
+/// results here. Use separate calls to
+/// [`FrequencySpectrum::apply_scaling_fn`] instead, which recomputes the
+/// statistics in between.
+///
 /// Currently there is the limitation that the functions need to have
 /// a `'static` lifetime. This will be fixed if someone needs this.
+///
+/// [`FrequencySpectrum::apply_scaling_fn`]: crate::FrequencySpectrum::apply_scaling_fn
 ///
 /// # Example
 /// ```
@@ -206,6 +229,23 @@ mod tests {
         for (expected_val, actual_val) in expected.iter().zip(scaled_data.iter()) {
             float_cmp::approx_eq!(f32, *expected_val, *actual_val, ulps = 3);
         }
+    }
+
+    #[test]
+    fn test_scale_20_times_log10() {
+        let stats = SpectrumDataStats {
+            min: 0.0,
+            max: 10.0,
+            average: 0.0,
+            median: 0.0,
+            n: 4.0,
+        };
+        let db = |val: f32| scale_20_times_log10(val, &stats);
+        assert!(float_cmp::approx_eq!(f32, db(1.0), 0.0, epsilon = 1e-4));
+        assert!(float_cmp::approx_eq!(f32, db(10.0), 20.0, epsilon = 1e-4));
+        assert!(float_cmp::approx_eq!(f32, db(0.0), -100.0, epsilon = 1e-3));
+        // silence must stay below every other value
+        assert!(db(0.0) < db(0.5) && db(0.5) < db(1.0));
     }
 
     // make sure this compiles
