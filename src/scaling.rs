@@ -82,8 +82,13 @@ pub struct SpectrumDataStats {
 /// [`FrequencyValue`]: crate::FrequencyValue
 pub type SpectrumScalingFunction = dyn Fn(f32, &SpectrumDataStats) -> f32;
 
-/// Calculates the base 10 logarithm of each frequency magnitude and
-/// multiplies it with 20.
+/// Lower bound for the input of [`scale_20_times_log10`], i.e., `-100 dB`.
+const DB_FLOOR: f32 = 1e-5;
+
+/// Converts each value to decibels: `20 * log10(value)`.
+///
+/// Values below `1e-5` are clamped, so the result is never below `-100 dB`
+/// and silence stays at the bottom of the scale.
 ///
 /// This scaling is quite common, you can find more information for example
 /// here:
@@ -106,11 +111,8 @@ pub fn scale_20_times_log10(fr_val: f32, _stats: &SpectrumDataStats) -> f32 {
     debug_assert!(!fr_val.is_infinite());
     debug_assert!(!fr_val.is_nan());
     debug_assert!(fr_val >= 0.0);
-    if fr_val == 0.0 {
-        0.0
-    } else {
-        20.0 * libm::log10f(fr_val)
-    }
+    // Clamping keeps silence below every other value (0 dB would not).
+    20.0 * libm::log10f(fr_val.max(DB_FLOOR))
 }
 
 /// Scales each frequency value in the spectrum to interval `[0.0; 1.0]`.
@@ -221,6 +223,23 @@ mod tests {
         for (expected_val, actual_val) in expected.iter().zip(scaled_data.iter()) {
             float_cmp::approx_eq!(f32, *expected_val, *actual_val, ulps = 3);
         }
+    }
+
+    #[test]
+    fn test_scale_20_times_log10() {
+        let stats = SpectrumDataStats {
+            min: 0.0,
+            max: 10.0,
+            average: 0.0,
+            median: 0.0,
+            n: 4.0,
+        };
+        let db = |val: f32| scale_20_times_log10(val, &stats);
+        assert!(float_cmp::approx_eq!(f32, db(1.0), 0.0, epsilon = 1e-4));
+        assert!(float_cmp::approx_eq!(f32, db(10.0), 20.0, epsilon = 1e-4));
+        assert!(float_cmp::approx_eq!(f32, db(0.0), -100.0, epsilon = 1e-3));
+        // silence must stay below every other value
+        assert!(db(0.0) < db(0.5) && db(0.5) < db(1.0));
     }
 
     // make sure this compiles

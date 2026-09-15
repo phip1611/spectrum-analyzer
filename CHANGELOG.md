@@ -9,6 +9,8 @@
 - docs: documented the coherent gain of each window function
 - docs: clarified `divide_by_N` and `divide_by_N_sqrt`
 - docs: documented what functions in `scaling::combined` see
+- fixed `scale_20_times_log10` mapping `0.0` to `0 dB`; values are now
+  clamped to `-100 dB` at minimum
 
 ## 1.9.0 (2026-09-05)
 
