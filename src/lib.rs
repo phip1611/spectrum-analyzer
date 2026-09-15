@@ -40,15 +40,15 @@ SOFTWARE.
 //! ### Scaling via static function
 //! ```rust
 //! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
-//! use spectrum_analyzer::scaling::divide_by_N_sqrt;
+//! use spectrum_analyzer::scaling::divide_by_N;
 //! // get data from audio source
 //! let samples = vec![0.0, 1.1, 5.5, -5.5];
 //! let res = samples_fft_to_spectrum(
 //!         &samples,
 //!         44100,
 //!         FrequencyLimit::All,
-//!         // Recommended scaling/normalization by `rustfft`.
-//!         Some(&divide_by_N_sqrt),
+//!         // Makes the values independent of the number of samples.
+//!         Some(&divide_by_N),
 //! );
 //! ```
 
