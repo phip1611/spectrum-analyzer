@@ -46,6 +46,8 @@ jobs:
 
       - run: cargo build --all-targets
       - run: cargo test --all-targets
+      # --all-targets excludes doctests, so they need their own run
+      - run: cargo test --doc
 
       # run benchmark: right now, there is no reporting or so from the results
       - run: cargo bench

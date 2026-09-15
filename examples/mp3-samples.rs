@@ -157,12 +157,14 @@ fn to_spectrum_and_plot(
         samples.len(),
         now.elapsed().as_micros()
     );
+    let now = Instant::now();
     let blackman_harris_4term_window = blackman_harris_4term(no_window);
     println!(
         "[Measurement]: Blackmann-Harris-4-term-Window with {} samples took: {}µs",
         samples.len(),
         now.elapsed().as_micros()
     );
+    let now = Instant::now();
     let blackman_harris_7term_window = blackman_harris_7term(no_window);
     println!(
         "[Measurement]: Blackmann-Harris-7-term-Window with {} samples took: {}µs",

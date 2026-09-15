@@ -20,7 +20,6 @@ repository on GitHub! Anyway, the most basic usage looks like this:
 
 ### Cargo.toml
 ```toml
-# by default feature "microfft-real" is used
 [dependencies]
 spectrum-analyzer = "<latest version, see crates.io>"
 ```
@@ -67,19 +66,11 @@ many samples to use, and what the resulting values mean is documented in the
 `windows` and `scaling` modules.
 
 ## Performance
-*Measurements taken on i7-1165G7 @ 2.80GHz (Single-threaded) with optimized build*
-
-I've tested multiple FFT implementations. Below you can find out why I decided
-to use `microfft::real`. It is not only the fastest, but also works in `no_std`
+I've tested multiple FFT implementations and settled on `microfft::real`. It
+was not only the fastest, but is also the only one that works in `no_std`
 contexts.
 
-| Operation                                               | Time   |
-|---------------------------------------------------------| ------:|
-| Hann Window with 4096 samples                           | ≈68µs  |
-| Hamming Window with 4096 samples                        | ≈118µs |
-| FFT (`rustfft`) to spectrum with 4096 samples           | ≈170µs |
-| FFT (`microfft::real`) to spectrum with 4096 samples    | ≈90µs  |
-| FFT (`microfft::complex`) to spectrum with 4096 samples | ≈250µs |
+Run `cargo bench` for numbers on your machine.
 
 ## Example Visualizations
 In the following examples you can see a basic visualization of the spectrum from `0 to 4000Hz` for

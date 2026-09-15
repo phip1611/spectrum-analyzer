@@ -8,7 +8,7 @@
   input signal
 - docs: documented the coherent gain of each window function
 - docs: clarified `divide_by_N` and `divide_by_N_sqrt`
-- docs: documented what functions in `scaling::combined` see
+- docs: documented the statistics a scaling function receives
 - fixed `scale_20_times_log10` mapping `0.0` to `0 dB`; values are now
   clamped to `-100 dB` at minimum
 - docs: the examples recommend `divide_by_N` instead of `divide_by_N_sqrt`
@@ -31,6 +31,12 @@
 - **BREAKING** removed `FrequencySpectrum::mel_val`. These kind of calculations
   can be done easily outside the crate, for example when accessing the data
   via `.data()`. Let's keep the spectrum thin and unopioniated.
+- fixed the Hamming and Blackman-Harris windows using the symmetric form
+  (dividing by `N - 1`) while the Hann window uses the periodic one
+  (dividing by `N`). All of them now use the periodic form, which is the
+  right one for FFT analysis; the coefficients change marginally and the
+  coherent gains are now exact
+- docs: explained the periodic and the symmetric form of a window function
 
 ## 1.9.0 (2026-09-05)
 

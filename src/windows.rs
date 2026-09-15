@@ -44,9 +44,24 @@ SOFTWARE.
 //! Skipping the window only makes sense if every frequency fits a whole
 //! number of times into the block, which in practice means synthetic signals.
 //!
+//! ## Periodic and symmetric windows
+//! Every window comes in two variants that differ in a single value. NumPy
+//! and SciPy build the *symmetric* one by default, which is made for filter
+//! design. This crate uses the *periodic* one, the variant for FFT analysis,
+//! which also makes the coherent gain below exact.
+//!
+//! You only notice the difference when comparing coefficients with another
+//! library: for `N` values, the periodic variant is the symmetric one for
+//! `N + 1` values with the last value cut off. See [conventions] on
+//! Wikipedia and the `sym` parameter in [SciPy].
+//!
 //! Every window shrinks the values in the spectrum by a constant factor, its
-//! coherent gain (the average of its coefficients). Divide by it to undo the
+//! coherent gain (the average of its coefficients, i.e., the first
+//! coefficient of the cosine sum). Divide by it to undo the
 //! effect, see [`crate::samples_fft_to_spectrum`].
+//!
+//! [conventions]: https://en.wikipedia.org/wiki/Window_function#Conventions
+//! [SciPy]: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.windows.hann.html
 
 use alloc::vec::Vec;
 use core::f32::consts::PI;
@@ -78,7 +93,7 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 /// Applies a Hamming window (<https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows>)
 /// to an array of samples.
 ///
-/// Coherent gain: about `0.54`.
+/// Coherent gain: `0.54`.
 ///
 /// See the [module docs](crate::windows) for picking a window function.
 ///
@@ -87,14 +102,9 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 #[must_use]
 pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
-    if samples.len() <= 1 {
-        windowed_samples.extend_from_slice(samples);
-        return windowed_samples;
-    }
-
     let samples_len_f32 = samples.len() as f32;
     for (i, sample) in samples.iter().enumerate() {
-        let multiplier = 0.54 - (0.46 * cosf(2.0 * PI * i as f32 / (samples_len_f32 - 1.0)));
+        let multiplier = 0.54 - (0.46 * cosf(2.0 * PI * i as f32 / samples_len_f32));
         windowed_samples.push(multiplier * sample)
     }
     windowed_samples
@@ -103,7 +113,7 @@ pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
 /// Applies a Blackman-Harris 4-term window (<https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window>)
 /// to an array of samples.
 ///
-/// Coherent gain: about `0.36`.
+/// Coherent gain: `0.35875`.
 ///
 /// See the [module docs](crate::windows) for picking a window function.
 ///
@@ -120,7 +130,7 @@ pub fn blackman_harris_4term(samples: &[f32]) -> Vec<f32> {
 
 /// Applies a Blackman-Harris 7-term window to an array of samples.
 ///
-/// Coherent gain: about `0.27`.
+/// Coherent gain: `0.2710514`.
 ///
 /// See the [module docs](crate::windows) for picking a window function.
 ///
@@ -157,27 +167,21 @@ pub fn blackman_harris_7term(samples: &[f32]) -> Vec<f32> {
 #[must_use]
 fn blackman_harris_xterm(samples: &[f32], alphas: &[f32]) -> Vec<f32> {
     let mut windowed_samples = Vec::with_capacity(samples.len());
-
-    if samples.len() <= 1 {
-        windowed_samples.extend_from_slice(samples);
-        return windowed_samples;
-    }
-
     let samples_len_f32 = samples.len() as f32;
 
     for (i, sample) in samples.iter().enumerate() {
         // Will result in something like that:
         /* ALPHA0
-            + ALPHA1 * ((2.0 * PI * i)/(samples_len_f32 - 1.0)).cos()
-            + ALPHA2 * ((4.0 * PI * i)/(samples_len_f32 - 1.0)).cos()
-            + ALPHA3 * ((6.0 * PI * i)/(samples_len_f32 - 1.0)).cos()
+            + ALPHA1 * ((2.0 * PI * i)/samples_len_f32).cos()
+            + ALPHA2 * ((4.0 * PI * i)/samples_len_f32).cos()
+            + ALPHA3 * ((6.0 * PI * i)/samples_len_f32).cos()
         */
 
         let mut acc = 0.0;
         for (alpha_i, alpha) in alphas.iter().enumerate() {
             // in 1. iter. 0PI, then 2PI, then 4 PI, then 6 PI
             let two_pi_iteration = 2.0 * alpha_i as f32 * PI;
-            let cos = cosf((two_pi_iteration * i as f32) / (samples_len_f32 - 1.0));
+            let cos = cosf((two_pi_iteration * i as f32) / samples_len_f32);
             acc += alpha * cos;
         }
 
@@ -194,7 +198,7 @@ mod tests {
     #[test]
     fn test_hamming_window_coefficients() {
         let windowed = hamming_window(&[1.0; 4]);
-        let expected = [0.08, 0.77, 0.77, 0.08];
+        let expected = [0.08, 0.54, 1.0, 0.54];
 
         for (actual, expected) in windowed.iter().zip(expected) {
             float_cmp::assert_approx_eq!(f32, *actual, expected, epsilon = 0.00001);
@@ -204,7 +208,7 @@ mod tests {
     #[test]
     fn test_blackman_harris_4term_window_coefficients() {
         let windowed = blackman_harris_4term(&[2.0; 4]);
-        let expected = [0.00012, 1.04115, 1.04115, 0.00012];
+        let expected = [0.00012, 0.43494, 2.0, 0.43494];
 
         for (actual, expected) in windowed.iter().zip(expected) {
             float_cmp::assert_approx_eq!(f32, *actual, expected, epsilon = 0.00001);
