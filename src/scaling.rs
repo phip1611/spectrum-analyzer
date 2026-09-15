@@ -87,6 +87,12 @@ const DB_FLOOR: f32 = 1e-5;
 
 /// Converts each value to decibels: `20 * log10(value)`.
 ///
+/// A value of `1.0` becomes `0 dB`. Unscaled values grow with the number of
+/// samples (see [`crate::samples_fft_to_spectrum`]), so the absolute levels
+/// depend on `N` and on the input range. For levels relative to a full-scale
+/// sine wave (dBFS), scale to amplitudes first, in a separate call to
+/// `apply_scaling_fn`.
+///
 /// Values below `1e-5` are clamped, so the result is never below `-100 dB`
 /// and silence stays at the bottom of the scale.
 ///
