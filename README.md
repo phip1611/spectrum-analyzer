@@ -2,8 +2,6 @@
 An easy to use and fast `no_std` library (with `alloc`) to get the frequency
 spectrum of a digital signal (e.g. audio) using FFT.
 
-The **MSRV** (minimum supported Rust version) is `1.95.0`.
-
 ## Supported Platforms
 
 The base library supports all standard and non-standard targets, such as
@@ -99,6 +97,10 @@ To execute tests you need the package `libfreetype6-dev` (on Ubuntu/Debian).
 This is required because not all tests are "automatic unit tests" but also tests
 that you need to check visually, by looking at the generated diagram of the
 spectrum.
+
+## MSRV
+The **MSRV** (minimum supported Rust version) of the library is `1.85.1`. To
+run benchmarks, tests, and examples you may need a more recent version.
 
 ## Trivia / FAQ
 ### Why f64 and no f32?
