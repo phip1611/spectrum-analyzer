@@ -25,11 +25,15 @@ SOFTWARE.
 //! as parameters in [`samples_fft_to_spectrum`] for scaling the frequency value
 //! (the FFT result).
 //!
-//! They act as "idea/inspiration". Feel free to either compose them or create
-//! your own derivation from them.
+//! They act as "idea/inspiration". Feel free to create your own derivation
+//! from them. To chain two of them, write a closure:
+//!
+//! ```
+//! use spectrum_analyzer::scaling::{divide_by_N, scale_20_times_log10};
+//! let scaling_fn = |val, stats: &_| scale_20_times_log10(divide_by_N(val, stats), stats);
+//! ```
 //!
 //! [`samples_fft_to_spectrum`]: crate::samples_fft_to_spectrum
-use alloc::boxed::Box;
 
 /// Helper struct for [`SpectrumScalingFunction`] that is passed into the
 /// scaling function together with the current frequency value.
@@ -181,35 +185,6 @@ pub fn divide_by_N_sqrt(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
     }
 }
 
-/// Combines several scaling functions into a new single one.
-///
-/// All functions get the same [`SpectrumDataStats`], computed before any of
-/// them runs. A function that needs the statistics of the intermediate
-/// result, e.g. [`scale_to_zero_to_one`] after [`divide_by_N`], gives wrong
-/// results here. Use separate calls to
-/// [`FrequencySpectrum::apply_scaling_fn`] instead, which recomputes the
-/// statistics in between.
-///
-/// Currently there is the limitation that the functions need to have
-/// a `'static` lifetime. This will be fixed if someone needs this.
-///
-/// [`FrequencySpectrum::apply_scaling_fn`]: crate::FrequencySpectrum::apply_scaling_fn
-///
-/// # Example
-/// ```
-/// use spectrum_analyzer::scaling::{combined, divide_by_N, scale_20_times_log10};
-/// let fncs = combined(&[&divide_by_N, &scale_20_times_log10]);
-/// ```
-pub fn combined(fncs: &'static [&SpectrumScalingFunction]) -> Box<SpectrumScalingFunction> {
-    Box::new(move |val, stats| {
-        let mut val = val;
-        for fnc in fncs {
-            val = fnc(val, stats);
-        }
-        val
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -254,21 +229,25 @@ mod tests {
         assert!(db(0.0) < db(0.5) && db(0.5) < db(1.0));
     }
 
-    // make sure this compiles
+    /// A closure replaces the removed `combined()`: it can chain the
+    /// functions and, unlike `combined()`, capture its environment.
     #[test]
-    fn test_combined_compiles() {
-        let _combined_static = combined(&[&scale_20_times_log10, &divide_by_N, &divide_by_N_sqrt]);
-
-        // doesn't compile yet.. fix this once someone requests it
-        /*let closure_scaling_fnc = |fr_val: f32, _stats: &SpectrumDataStats| {
-           0.0
+    fn test_chaining_with_a_closure() {
+        let stats = SpectrumDataStats {
+            min: 0.0,
+            max: 10.0,
+            average: 5.0,
+            median: 5.0,
+            n: 4.0,
         };
-
-        let _combined_dynamic = combined(&[
-            &scale_20_times_log10,
-            &divide_by_N,
-            &divide_by_N_sqrt,
-            &closure_scaling_fnc,
-        ]);*/
+        let scaling_fn = |val, stats: &_| scale_20_times_log10(divide_by_N(val, stats), stats);
+        let _: &SpectrumScalingFunction = &scaling_fn;
+        // 10.0 / 4 = 2.5 -> 20 * log10(2.5)
+        assert!(float_cmp::approx_eq!(
+            f32,
+            scaling_fn(stats.max, &stats),
+            7.9588,
+            epsilon = 1e-3
+        ));
     }
 }

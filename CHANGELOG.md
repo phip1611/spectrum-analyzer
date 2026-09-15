@@ -12,6 +12,8 @@
 - fixed `scale_20_times_log10` mapping `0.0` to `0 dB`; values are now
   clamped to `-100 dB` at minimum
 - docs: the examples recommend `divide_by_N` instead of `divide_by_N_sqrt`
+- **BREAKING** removed `scaling::combined`; chain scaling functions in a
+  closure instead, which also works with closures and captured state
 
 ## 1.9.0 (2026-09-05)
 
