@@ -65,7 +65,8 @@ pub struct SpectrumDataStats {
 ///
 /// A scaling function can be used for example to subtract the minimum (`min`)
 /// from each value. It is optional to use the second parameter
-/// [`SpectrumDataStats`].
+/// [`SpectrumDataStats`], which describes the spectrum before the function is
+/// applied to it.
 ///
 /// The type works with static functions as well as dynamically created
 /// closures.
@@ -168,8 +169,17 @@ pub fn divide_by_N_sqrt(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
 
 /// Combines several scaling functions into a new single one.
 ///
+/// All functions get the same [`SpectrumDataStats`], computed before any of
+/// them runs. A function that needs the statistics of the intermediate
+/// result, e.g. [`scale_to_zero_to_one`] after [`divide_by_N`], gives wrong
+/// results here. Use separate calls to
+/// [`FrequencySpectrum::apply_scaling_fn`] instead, which recomputes the
+/// statistics in between.
+///
 /// Currently there is the limitation that the functions need to have
 /// a `'static` lifetime. This will be fixed if someone needs this.
+///
+/// [`FrequencySpectrum::apply_scaling_fn`]: crate::FrequencySpectrum::apply_scaling_fn
 ///
 /// # Example
 /// ```
