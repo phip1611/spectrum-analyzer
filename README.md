@@ -59,6 +59,13 @@ fn main() {
 }
 ```
 
+## Which settings should I use?
+The example above is a good default: a Hann window, `divide_by_N`, and a
+block of 2048 samples. Which window and which scaling function to pick, how
+many samples to use, and what the resulting values mean is documented in the
+[crate documentation](https://docs.rs/spectrum-analyzer), including the
+`windows` and `scaling` modules.
+
 ## Performance
 *Measurements taken on i7-1165G7 @ 2.80GHz (Single-threaded) with optimized build*
 
