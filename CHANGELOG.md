@@ -31,6 +31,12 @@
 - **BREAKING** removed `FrequencySpectrum::mel_val`. These kind of calculations
   can be done easily outside the crate, for example when accessing the data
   via `.data()`. Let's keep the spectrum thin and unopioniated.
+- fixed the Hamming and Blackman-Harris windows using the symmetric form
+  (dividing by `N - 1`) while the Hann window uses the periodic one
+  (dividing by `N`). All of them now use the periodic form, which is the
+  right one for FFT analysis; the coefficients change marginally and the
+  coherent gains are now exact
+- docs: explained the periodic and the symmetric form of a window function
 
 ## 1.9.0 (2026-09-05)
 
