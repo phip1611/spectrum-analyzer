@@ -83,7 +83,7 @@ impl FrequencyLimit {
         self.maybe_min().expect("Must contain a value!")
     }
 
-    /// Returns the minimum value, panics if it's none.
+    /// Returns the maximum value, panics if it's none.
     /// Unwrapped version of [`Self::maybe_max`].
     #[inline]
     #[must_use]
