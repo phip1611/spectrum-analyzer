@@ -41,8 +41,11 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
-        run: sudo apt update && sudo apt -y install libfontconfig-dev libasound2-dev libxkbcommon-dev
+      - name: Install required Linux packages for "audio-visualizer"/cpal/winit
+        run: |
+          sudo apt update && sudo apt -y install libasound2-dev libgl1-mesa-dev \
+            libx11-dev libxcursor-dev libxi-dev libxkbcommon-dev libxrandr-dev \
+            libwayland-dev
 
       - run: cargo build --all-targets
       - run: cargo test --all-targets
@@ -72,8 +75,11 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
-      - name: Install required Linux packages for "audio-visualizer"/cpal/minifb
-        run: sudo apt update && sudo apt -y install libfontconfig-dev libasound2-dev libxkbcommon-dev
+      - name: Install required Linux packages for "audio-visualizer"/cpal/winit
+        run: |
+          sudo apt update && sudo apt -y install libasound2-dev libgl1-mesa-dev \
+            libx11-dev libxcursor-dev libxi-dev libxkbcommon-dev libxrandr-dev \
+            libwayland-dev
       - name: Rustfmt
         run: cargo fmt -- --check
       - name: Clippy
