@@ -2,6 +2,9 @@
 
 ## Unreleased (yet)
 
+- docs: fixed the frequency resolution formula; it is `sample_rate / N`, not
+  `sample_rate / (N / 2)`
+
 ## 1.9.0 (2026-09-05)
 
 Combined, `samples_fft_to_spectrum` got roughly 2-3x faster for 2048 samples

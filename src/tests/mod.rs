@@ -67,8 +67,8 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         ))
         .unwrap();
 
-    // FFT frequency accuracy is: sample_rate / (N / 2)
-    // 44100/(4096/2) = 21.5Hz
+    // FFT frequency resolution is: sample_rate / N
+    // 44100/4096 = 10.8Hz
 
     // get a window that we want to analyze
     // 1/44100 * 4096 => 0.0928s
@@ -149,8 +149,8 @@ fn test_spectrum_power() {
     let interesting_frequency = 2048.0;
     let sine_audio = sine_wave_audio_data_multiple(&[interesting_frequency], 44100, 1000);
 
-    // FFT frequency accuracy is: sample_rate / (N / 2)
-    // 44100/(4096/2) = 21.5Hz
+    // FFT frequency resolution is: sample_rate / N
+    // 44100/4096 = 10.8Hz
 
     // get a window that we want to analyze
     // 1/44100 * 4096 => 0.0928s
