@@ -224,7 +224,8 @@ mod tests;
 /// ```
 ///
 /// ## Panics
-/// * When `samples.len()` isn't a power of two less than or equal to `16384` and `microfft` is used
+/// When `samples.len()` is bigger than `32768`, the largest transform the
+/// bundled FFT implementation provides.
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,

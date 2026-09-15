@@ -39,11 +39,11 @@ pub enum FrequencyLimit {
     /// Interested in all frequencies. [0, sampling_rate/2] (Nyquist theorem).
     /// Semantically equivalent to "None" limit at all).
     All,
-    /// Only interested in frequencies `Frequency <= x`. Limit is inclusive.
-    /// Supported values are `0 <= x <= Nyquist-Frequency`.
+    /// Lower bound: only interested in frequencies `>= x`. Limit is
+    /// inclusive. Supported values are `0 <= x <= Nyquist-Frequency`.
     Min(f32),
-    /// Only interested in frequencies `x <= Frequency`. Limit is inclusive.
-    /// Supported values are `0 <= x <= N`.
+    /// Upper bound: only interested in frequencies `<= x`. Limit is
+    /// inclusive. Supported values are `0 <= x <= Nyquist-Frequency`.
     Max(f32),
     /// Only interested in frequencies `1000 <= f <= 6777` for example. Both values are inclusive.
     /// The first value of the tuple is equivalent to [`FrequencyLimit::Min`] and the latter
@@ -83,7 +83,7 @@ impl FrequencyLimit {
         self.maybe_min().expect("Must contain a value!")
     }
 
-    /// Returns the minimum value, panics if it's none.
+    /// Returns the maximum value, panics if it's none.
     /// Unwrapped version of [`Self::maybe_max`].
     #[inline]
     #[must_use]
@@ -126,8 +126,9 @@ pub enum FrequencyLimitError {
     /// If the maximum value is above Nyquist frequency. Nyquist-Frequency is the maximum
     /// detectable frequency.
     ValueAboveNyquist(f32),
-    /// Either the corresponding value is below or above the minimum/maximum or the
-    /// first member of the tuple is bigger than the second.
+    /// The first member of the tuple is bigger than the second. A value that
+    /// is out of bounds is reported as [`Self::ValueBelowMinimum`] or
+    /// [`Self::ValueAboveNyquist`], even inside a range.
     InvalidRange(f32, f32),
 }
 

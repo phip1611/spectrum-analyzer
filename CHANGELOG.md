@@ -22,6 +22,15 @@
 - perf: spectrum creation no longer allocates and scans a working buffer for
   the median (~20-30% faster, depending on the number of samples)
 - docs: added guidance on which window and which scaling function to pick
+- docs: fixed the swapped descriptions of `FrequencyLimit::Min` and
+  `FrequencyLimit::Max`, and the outdated MSRV in the README
+- **BREAKING** removed `FrequencySpectrum::to_map` and
+  `FrequencySpectrum::to_mel_map`; both used `u32` keys, so bins that shared
+  a key silently overwrote each other. Use `FrequencySpectrum::to_vec` or
+  `FrequencySpectrum::data` instead
+- **BREAKING** removed `FrequencySpectrum::mel_val`. These kind of calculations
+  can be done easily outside the crate, for example when accessing the data
+  via `.data()`. Let's keep the spectrum thin and unopioniated.
 
 ## 1.9.0 (2026-09-05)
 
