@@ -12,6 +12,16 @@
 - fixed `scale_20_times_log10` mapping `0.0` to `0 dB`; values are now
   clamped to `-100 dB` at minimum
 - docs: the examples recommend `divide_by_N` instead of `divide_by_N_sqrt`
+- **BREAKING** removed `scaling::combined`; chain scaling functions in a
+  closure instead, which also works with closures and captured state
+- **BREAKING** removed `scaling::SpectrumDataStats::median`; no built-in
+  scaling function used it
+- **BREAKING** removed `FrequencySpectrum::median`; with it, the working
+  buffer parameter of `FrequencySpectrum::new` and
+  `FrequencySpectrum::apply_scaling_fn` is gone
+- perf: spectrum creation no longer allocates and scans a working buffer for
+  the median (~20-30% faster, depending on the number of samples)
+- docs: added guidance on which window and which scaling function to pick
 
 ## 1.9.0 (2026-09-05)
 

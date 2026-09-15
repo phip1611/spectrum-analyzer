@@ -24,6 +24,47 @@ SOFTWARE.
 //! An easy to use and fast `no_std` library (with `alloc`) to get the frequency
 //! spectrum of a digital signal (e.g. audio) using FFT.
 //!
+//! ## Getting started
+//! If you are unsure what to pick, start here. This works for most cases:
+//! take a block of samples, apply a Hann window, and divide the result by the
+//! number of samples.
+//!
+//! ```rust
+//! use spectrum_analyzer::scaling::divide_by_N;
+//! use spectrum_analyzer::windows::hann_window;
+//! use spectrum_analyzer::{FrequencyLimit, samples_fft_to_spectrum};
+//!
+//! // your samples; the length must be a power of two
+//! let samples = vec![0.0; 2048];
+//!
+//! let windowed = hann_window(&samples);
+//! let spectrum = samples_fft_to_spectrum(
+//!     &windowed,
+//!     44100,
+//!     FrequencyLimit::All,
+//!     Some(&divide_by_N),
+//! )
+//! .unwrap();
+//!
+//! // the loudest frequency in the block
+//! let (frequency, value) = spectrum.max();
+//! ```
+//!
+//! ### How many samples?
+//! More samples mean a finer frequency resolution (`sample_rate / N`), but
+//! they also cover a longer time span, so the spectrum reacts more slowly to
+//! changes. At 44100 Hz, 2048 samples (~46 ms, ~22 Hz per bin) are a good
+//! starting point, 4096 if you need to tell close frequencies apart.
+//!
+//! ### What next?
+//! * [`windows`]: which window function to apply
+//! * [`scaling`]: which scaling to apply
+//! * [`samples_fft_to_spectrum`]: what the resulting values mean
+//! * [`FrequencySpectrum`]: what you can read from the result, e.g.
+//!   [`FrequencySpectrum::max`] for the loudest frequency,
+//!   [`FrequencySpectrum::freq_val_closest`] for one specific frequency, or
+//!   [`FrequencySpectrum::data`] to iterate over all of them
+//!
 //! ## Examples
 //! ### Scaling via dynamic closure
 //! ```rust
@@ -78,7 +119,8 @@ SOFTWARE.
 #[cfg(test)]
 extern crate std;
 
-#[macro_use]
+// `vec!` is only used in tests; `alloc` itself is used throughout.
+#[cfg_attr(test, macro_use)]
 extern crate alloc;
 
 pub use crate::frequency::{Frequency, FrequencyValue};
@@ -366,19 +408,13 @@ fn fft_result_to_spectrum(
         return Err(SpectrumAnalyzerError::FrequencyLimitTooNarrow);
     }
 
-    let mut working_buffer = vec![(0.0.into(), 0.0.into()); frequency_vec.len()];
-
     // create spectrum object
-    let mut spectrum = FrequencySpectrum::new(
-        frequency_vec,
-        frequency_resolution,
-        samples_len as u32,
-        &mut working_buffer,
-    );
+    let mut spectrum =
+        FrequencySpectrum::new(frequency_vec, frequency_resolution, samples_len as u32);
 
     // optionally scale
     if let Some(scaling_fn) = scaling_fn {
-        spectrum.apply_scaling_fn(scaling_fn, &mut working_buffer)?
+        spectrum.apply_scaling_fn(scaling_fn)?
     }
 
     Ok(spectrum)
