@@ -88,10 +88,14 @@ show you how you can visualize audio data in realtime + the current spectrum.
 ![Example visualization of real-time audio + spectrum analysis](res/live_demo_spectrum_green_day_holiday.gif "Example visualization of real-time audio + spectrum analysis")
 
 ## Building and Executing Tests
-To execute tests you need the packages `libfontconfig-dev`, `libasound2-dev`,
-and `libxkbcommon-dev` (on Ubuntu/Debian). This is required because not all
-tests are "automatic unit tests" but also tests that you need to check
-visually, by looking at the generated diagram of the spectrum.
+Tests and examples pull in `audio-visualizer`, which needs native libraries
+for audio input and for the window of the live example. On Ubuntu/Debian
+these are `libasound2-dev`, `libgl1-mesa-dev`, `libx11-dev`,
+`libxcursor-dev`, `libxi-dev`, `libxkbcommon-dev`, `libxrandr-dev`, and
+`libwayland-dev`. The `flake.nix` in this repository provides the same set.
+
+Note that not all tests are "automatic unit tests" but also tests that you
+need to check visually, by looking at the generated diagram of the spectrum.
 
 ## MSRV
 The **MSRV** (minimum supported Rust version) of the library is `1.85.1`. To
