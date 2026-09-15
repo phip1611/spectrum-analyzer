@@ -25,6 +25,10 @@ SOFTWARE.
 //! For more information:
 //! - <https://en.wikipedia.org/wiki/Window_function>
 //! - <https://www.youtube.com/watch?v=dCeHOf4cJE0> (FFT and windowing by Texas Instruments)
+//!
+//! Every window shrinks the values in the spectrum by a constant factor, its
+//! coherent gain (the average of its coefficients). Divide by it to undo the
+//! effect, see [`crate::samples_fft_to_spectrum`].
 
 use alloc::vec::Vec;
 use core::f32::consts::PI;
@@ -33,6 +37,8 @@ use libm::cosf;
 
 /// Applies a Hann window (<https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows>)
 /// to an array of samples.
+///
+/// Coherent gain: `0.5`, i.e., the values in the spectrum are halved.
 ///
 /// ## Return value
 /// New vector with Hann window applied to the values.
@@ -51,6 +57,8 @@ pub fn hann_window(samples: &[f32]) -> Vec<f32> {
 
 /// Applies a Hamming window (<https://en.wikipedia.org/wiki/Window_function#Hann_and_Hamming_windows>)
 /// to an array of samples.
+///
+/// Coherent gain: about `0.54`.
 ///
 /// ## Return value
 /// New vector with Hamming window applied to the values.
@@ -73,6 +81,8 @@ pub fn hamming_window(samples: &[f32]) -> Vec<f32> {
 /// Applies a Blackman-Harris 4-term window (<https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window>)
 /// to an array of samples.
 ///
+/// Coherent gain: about `0.36`.
+///
 /// ## Return value
 /// New vector with Blackman-Harris 4-term window applied to the values.
 #[must_use]
@@ -85,6 +95,8 @@ pub fn blackman_harris_4term(samples: &[f32]) -> Vec<f32> {
 }
 
 /// Applies a Blackman-Harris 7-term window to an array of samples.
+///
+/// Coherent gain: about `0.27`.
 ///
 /// ## More information
 /// * <https://en.wikipedia.org/wiki/Window_function#Blackman%E2%80%93Harris_window>

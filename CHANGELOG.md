@@ -6,6 +6,7 @@
   `sample_rate / (N / 2)`
 - docs: explained what the frequency values are and how they relate to the
   input signal
+- docs: documented the coherent gain of each window function
 
 ## 1.9.0 (2026-09-05)
 
