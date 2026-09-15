@@ -51,6 +51,8 @@ fn main() {
         Some(&divide_by_N),
     ).unwrap();
 
+    // a sine wave with amplitude A shows up as A / 4 here: A / 2 from the
+    // FFT, halved by the Hann window (see the docs of samples_fft_to_spectrum)
     for (fr, fr_val) in spectrum_hann_window.data().iter() {
         println!("{}Hz => {}", fr, fr_val)
     }
