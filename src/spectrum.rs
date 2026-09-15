@@ -141,7 +141,6 @@ impl FrequencySpectrum {
             min: self.min.1.val(),
             max: self.max.1.val(),
             average: self.average.val(),
-            median: self.median.val(),
             // attention! not necessarily `data.len()`!
             n: self.samples_len as f32,
         };

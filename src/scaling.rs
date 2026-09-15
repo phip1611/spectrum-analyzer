@@ -54,8 +54,6 @@ pub struct SpectrumDataStats {
     pub max: f32,
     /// Average frequency value in spectrum.
     pub average: f32,
-    /// Median frequency value in spectrum.
-    pub median: f32,
     /// Number of samples (`samples.len()`), not the number of values in the
     /// spectrum (which can be smaller due to a frequency limit).
     pub n: f32,
@@ -197,7 +195,6 @@ mod tests {
             min: data[0],
             max: data[data.len() - 1],
             average: data.iter().sum::<f32>() / data.len() as f32,
-            median: (2.2 + 3.3) / 2.0,
             n: data.len() as f32,
         };
         // check that type matches
@@ -218,7 +215,6 @@ mod tests {
             min: 0.0,
             max: 10.0,
             average: 0.0,
-            median: 0.0,
             n: 4.0,
         };
         let db = |val: f32| scale_20_times_log10(val, &stats);
@@ -237,7 +233,6 @@ mod tests {
             min: 0.0,
             max: 10.0,
             average: 5.0,
-            median: 5.0,
             n: 4.0,
         };
         let scaling_fn = |val, stats: &_| scale_20_times_log10(divide_by_N(val, stats), stats);

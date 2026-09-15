@@ -14,6 +14,8 @@
 - docs: the examples recommend `divide_by_N` instead of `divide_by_N_sqrt`
 - **BREAKING** removed `scaling::combined`; chain scaling functions in a
   closure instead, which also works with closures and captured state
+- **BREAKING** removed `scaling::SpectrumDataStats::median`; no built-in
+  scaling function used it
 
 ## 1.9.0 (2026-09-05)
 
