@@ -78,7 +78,8 @@ SOFTWARE.
 #[cfg(test)]
 extern crate std;
 
-#[macro_use]
+// `vec!` is only used in tests; `alloc` itself is used throughout.
+#[cfg_attr(test, macro_use)]
 extern crate alloc;
 
 pub use crate::frequency::{Frequency, FrequencyValue};
@@ -366,19 +367,13 @@ fn fft_result_to_spectrum(
         return Err(SpectrumAnalyzerError::FrequencyLimitTooNarrow);
     }
 
-    let mut working_buffer = vec![(0.0.into(), 0.0.into()); frequency_vec.len()];
-
     // create spectrum object
-    let mut spectrum = FrequencySpectrum::new(
-        frequency_vec,
-        frequency_resolution,
-        samples_len as u32,
-        &mut working_buffer,
-    );
+    let mut spectrum =
+        FrequencySpectrum::new(frequency_vec, frequency_resolution, samples_len as u32);
 
     // optionally scale
     if let Some(scaling_fn) = scaling_fn {
-        spectrum.apply_scaling_fn(scaling_fn, &mut working_buffer)?
+        spectrum.apply_scaling_fn(scaling_fn)?
     }
 
     Ok(spectrum)

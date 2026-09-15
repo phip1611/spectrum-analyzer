@@ -16,6 +16,11 @@
   closure instead, which also works with closures and captured state
 - **BREAKING** removed `scaling::SpectrumDataStats::median`; no built-in
   scaling function used it
+- **BREAKING** removed `FrequencySpectrum::median`; with it, the working
+  buffer parameter of `FrequencySpectrum::new` and
+  `FrequencySpectrum::apply_scaling_fn` is gone
+- perf: spectrum creation no longer allocates and scans a working buffer for
+  the median (~20-30% faster, depending on the number of samples)
 
 ## 1.9.0 (2026-09-05)
 
