@@ -32,6 +32,7 @@ use alloc::vec::Vec;
 use audio_visualizer::SpectrumVisualizer;
 use audio_visualizer::WaveformVisualizer;
 use core::cmp::max;
+use core::f32::consts::PI;
 use std::path::PathBuf;
 
 /// Returns the location where tests should store files they produce.
@@ -464,4 +465,86 @@ fn test_divide_by_n_has_effect() {
             "having less frequencies in the spectrum due to a limit must not effect N!"
         );
     }
+}
+
+/// Checks the relation between input and spectrum values documented on
+/// [`samples_fft_to_spectrum`]: a sine wave with amplitude `A` on a bin
+/// frequency yields `A * N / 2`, a Hann window halves that, a constant offset
+/// yields `A * N` in the DC bin, and `divide_by_N` removes the `N`.
+#[test]
+#[cfg_attr(miri, ignore)] // runs forever + no real value add
+fn test_magnitude_of_on_bin_sine() {
+    const SAMPLING_RATE: u32 = 44100;
+    const AMPLITUDE: f32 = 0.8;
+    // relative tolerance; the FFT works with f32
+    const TOLERANCE: f32 = 1e-3;
+
+    let assert_close = |actual: f32, expected: f32, what: &str| {
+        assert!(
+            (actual - expected).abs() / expected < TOLERANCE,
+            "{what}: expected {expected}, got {actual}"
+        );
+    };
+
+    for n in [1024_usize, 4096, 16384] {
+        let resolution = SAMPLING_RATE as f32 / n as f32;
+        // a frequency that lies exactly on a bin, close to 1 kHz
+        let frequency = (1000.0 / resolution).round() * resolution;
+        let sine = (0..n)
+            .map(|i| {
+                let t = i as f32 / SAMPLING_RATE as f32;
+                AMPLITUDE * (2.0 * PI * frequency * t).sin()
+            })
+            .collect::<Vec<f32>>();
+
+        let spectrum =
+            samples_fft_to_spectrum(&sine, SAMPLING_RATE, FrequencyLimit::All, None).unwrap();
+        let (peak_fr, peak_val) = spectrum.max();
+        assert!(
+            (peak_fr.val() - frequency).abs() < resolution / 2.0,
+            "peak must be at {frequency} Hz, got {peak_fr} Hz"
+        );
+        assert_close(
+            peak_val.val(),
+            AMPLITUDE * n as f32 / 2.0,
+            "unscaled magnitude",
+        );
+
+        let spectrum = samples_fft_to_spectrum(
+            &hann_window(&sine),
+            SAMPLING_RATE,
+            FrequencyLimit::All,
+            None,
+        )
+        .unwrap();
+        assert_close(
+            spectrum.max().1.val(),
+            AMPLITUDE * n as f32 / 4.0,
+            "Hann-windowed magnitude",
+        );
+
+        let spectrum = samples_fft_to_spectrum(
+            &sine,
+            SAMPLING_RATE,
+            FrequencyLimit::All,
+            Some(&divide_by_N),
+        )
+        .unwrap();
+        assert_close(
+            spectrum.max().1.val(),
+            AMPLITUDE / 2.0,
+            "magnitude divided by N",
+        );
+    }
+
+    // The DC bin holds A * N for a constant offset A, not A * N / 2.
+    let n = 4096;
+    let constant = vec![AMPLITUDE; n];
+    let spectrum =
+        samples_fft_to_spectrum(&constant, SAMPLING_RATE, FrequencyLimit::All, None).unwrap();
+    assert_close(
+        spectrum.dc_component().unwrap().val(),
+        AMPLITUDE * n as f32,
+        "DC component",
+    );
 }
