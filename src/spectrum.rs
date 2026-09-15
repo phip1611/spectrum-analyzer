@@ -258,6 +258,9 @@ impl FrequencySpectrum {
     /// present if the frequencies were not limited to for example `100 <= f <= 10000`
     /// when the libraries main function was called.
     ///
+    /// Note that the unscaled value is `N` times the mean of the (windowed)
+    /// samples, not the mean itself. See [`crate::samples_fft_to_spectrum`].
+    ///
     /// More information:
     /// <https://dsp.stackexchange.com/questions/12972/discrete-fourier-transform-what-is-the-dc-term-really>
     ///
@@ -284,6 +287,10 @@ impl FrequencySpectrum {
     /// neighbors/points (A, B), put a linear function through them and calculates
     /// the point C in the middle. This is done by the private function
     /// `calculate_y_coord_between_points`.
+    ///
+    /// The interpolated value only follows the shape of the spectrum. It is
+    /// not the value a sine wave of exactly `search_fr` would have, because
+    /// such a sine wave leaks into the neighboring bins.
     ///
     /// ## Panics
     /// If parameter `search_fr` (frequency) is below the lowest or the maximum
