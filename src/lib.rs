@@ -105,7 +105,7 @@ mod tests;
 
 /// Takes an array of samples (length must be a power of 2),
 /// e.g. 2048, applies an FFT (using the specified FFT implementation) on it
-/// and returns all frequencies with their volume/magnitude.
+/// and returns all frequencies with their magnitude.
 ///
 /// By default, no normalization/scaling is done at all and the results,
 /// i.e. the frequency magnitudes/amplitudes/values are the raw result from

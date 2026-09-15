@@ -60,7 +60,7 @@ pub struct SpectrumDataStats {
 /// Describes the type for a function that scales/normalizes the data inside
 /// [`FrequencySpectrum`].
 ///
-/// The scaling only affects the value/amplitude of the frequency, but not the
+/// The scaling only affects the value of the frequency, but not the
 /// frequency itself. It is applied to every single element.
 ///
 /// A scaling function can be used for example to subtract the minimum (`min`)
@@ -112,7 +112,7 @@ pub fn scale_20_times_log10(fr_val: f32, _stats: &SpectrumDataStats) -> f32 {
     }
 }
 
-/// Scales each frequency value/amplitude in the spectrum to interval `[0.0; 1.0]`.
+/// Scales each frequency value in the spectrum to interval `[0.0; 1.0]`.
 /// Function is of type [`SpectrumScalingFunction`]. Expects that [`SpectrumDataStats::min`] is
 /// not negative.
 #[must_use]
