@@ -458,6 +458,16 @@ impl FrequencySpectrum {
             .collect()
     }
 
+    /// Returns a [`Vec`] with all value pairs as `f32`.
+    #[inline]
+    #[must_use]
+    pub fn to_vec(&self) -> Vec<(f32, f32)> {
+        self.data
+            .iter()
+            .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
+            .collect()
+    }
+
     /// Like [`Self::to_map`] but converts the frequency (x-axis) to [mels]. The
     /// resulting map contains more results in a higher density the higher the
     /// mel value gets. This comes from the logarithmic transformation from
@@ -516,7 +526,7 @@ impl FrequencySpectrum {
                     l_fr_val.cmp(r_fr_val)
                 },
             );
-            if self.data.len() % 2 == 0 {
+            if self.data.len().is_multiple_of(2) {
                 // The lower middle value is the maximum of the values left of mid.
                 let lower_mid_val = left_of_mid
                     .iter()

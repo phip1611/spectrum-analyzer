@@ -9,7 +9,7 @@ authors = ["Philipp Schuster <phip1611@gmail.com>"]
 edition = "2024"
 keywords = ["fft", "spectrum", "frequencies", "audio", "dsp"]
 categories = ["multimedia", "no-std"]
-rust-version = "1.85.1" # MSRV of base library, not examples and benchmarks
+rust-version = "1.95.0" # MSRV of base library, not examples and benchmarks
 license = "MIT"
 repository = "https://github.com/phip1611/spectrum-analyzer"
 documentation = "https://docs.rs/spectrum-analyzer"
@@ -30,7 +30,7 @@ microfft = { version = "~0.6", features = ["size-32768"] }
 paste = "~1.0"
 
 [dev-dependencies]
-audio-visualizer = "~0.5"
+audio-visualizer = "~0.7"
 symphonia = { version = "0.6", default-features = false, features = ["mp3"] }
 
 # Additional dependencies for: benchmarks

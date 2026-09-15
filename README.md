@@ -84,13 +84,8 @@ Peaks (50, 1000, 3777 Hz) are clearly visible but also some noise.
 
 ### Spectrum with *Hann window function* on samples before FFT
 Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a
-little. Because this example has few noise, you don't see much difference.
+little. Because this example has little noise, you don't see much difference.
 ![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hann window function.](res/spectrum_sine_waves_50_1000_3777hz--hann-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hann window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
-
-### Spectrum with *Hamming window function* on samples before FFT
-Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a
-little. Because this example has few noise, you don't see much difference.
-![Visualization of spectrum 0-4000Hz of layered sine signal (50, 1000, 3777 Hz)) with Hamming window function.](res/spectrum_sine_waves_50_1000_3777hz--hamming-window.png "Peaks (50, 1000, 3777 Hz) are clearly visible and Hamming window reduces noise a little bit. Because this example has few noise, you don't see much difference.")
 
 ## Live Audio + Spectrum Visualization
 Execute example `$ cargo run --release --example live-visualization`. It will

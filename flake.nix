@@ -12,13 +12,16 @@
         let
           pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
 
-          # Mainly runtime deps of the examples, not the base lib.
-          runtimeDeps = with pkgs; [
+          # Dependencies needed for audio-visualizer (test and examples)
+          libs = with pkgs; [
             alsa-lib
-            fontconfig
-            libxcursor
-            libxkbcommon
+            libGL
             libx11
+            libxcursor
+            libxi
+            libxkbcommon
+            libxrandr
+            wayland
           ];
         in
         pkgs.mkShell {
@@ -27,8 +30,8 @@
             [
               pkg-config
             ]
-            ++ runtimeDeps;
-          LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath runtimeDeps}";
+            ++ libs;
+          LD_LIBRARY_PATH = "${pkgs.lib.makeLibraryPath libs}";
         };
     };
 }
