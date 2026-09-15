@@ -52,8 +52,8 @@ pub struct SpectrumDataStats {
     pub average: f32,
     /// Median frequency value in spectrum.
     pub median: f32,
-    /// Number of samples (`samples.len()`). Already casted to f32, to avoid
-    /// repeatedly casting in a loop for each value.
+    /// Number of samples (`samples.len()`), not the number of values in the
+    /// spectrum (which can be smaller due to a frequency limit).
     pub n: f32,
 }
 
@@ -127,8 +127,11 @@ pub fn scale_to_zero_to_one(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
     }
 }
 
-/// Divides each value by N. Several resources recommend that the FFT result should be divided
-/// by the length of samples, so that values of different samples lengths are comparable.
+/// Divides each value by `N`, the number of samples.
+///
+/// This makes spectra of different lengths comparable. A sine wave with
+/// amplitude `A` on a bin frequency then shows up as `A / 2` (times the
+/// window's coherent gain), see [`crate::samples_fft_to_spectrum`].
 #[allow(non_snake_case)]
 #[must_use]
 pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
@@ -144,8 +147,10 @@ pub fn divide_by_N(fr_val: f32, stats: &SpectrumDataStats) -> f32 {
 
 /// Like [`divide_by_N`] but divides each value by `sqrt(N)`.
 ///
-/// This is the recommended scaling in the `rustfft` documentation (but is
-/// generally applicable).
+/// This is the normalization that preserves the energy of the signal, which
+/// `rustfft` recommends for a forward and inverse transform pair. The values
+/// still grow with `sqrt(N)`, so for comparing spectra of different lengths
+/// use [`divide_by_N`] instead.
 /// See <https://docs.rs/rustfft/latest/rustfft/#normalization>
 #[allow(non_snake_case)]
 #[must_use]
