@@ -39,11 +39,11 @@ pub enum FrequencyLimit {
     /// Interested in all frequencies. [0, sampling_rate/2] (Nyquist theorem).
     /// Semantically equivalent to "None" limit at all).
     All,
-    /// Only interested in frequencies `Frequency <= x`. Limit is inclusive.
-    /// Supported values are `0 <= x <= Nyquist-Frequency`.
+    /// Lower bound: only interested in frequencies `>= x`. Limit is
+    /// inclusive. Supported values are `0 <= x <= Nyquist-Frequency`.
     Min(f32),
-    /// Only interested in frequencies `x <= Frequency`. Limit is inclusive.
-    /// Supported values are `0 <= x <= N`.
+    /// Upper bound: only interested in frequencies `<= x`. Limit is
+    /// inclusive. Supported values are `0 <= x <= Nyquist-Frequency`.
     Max(f32),
     /// Only interested in frequencies `1000 <= f <= 6777` for example. Both values are inclusive.
     /// The first value of the tuple is equivalent to [`FrequencyLimit::Min`] and the latter
