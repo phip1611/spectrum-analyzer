@@ -27,7 +27,6 @@ use self::math::*;
 use crate::error::SpectrumAnalyzerError;
 use crate::frequency::{Frequency, FrequencyValue};
 use crate::scaling::{SpectrumDataStats, SpectrumScalingFunction};
-use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
 /// Convenient wrapper around the processed FFT result which describes each
@@ -192,11 +191,12 @@ impl FrequencySpectrum {
         self.max().1 - self.min().1
     }
 
-    /// Returns the underlying data.
+    /// Returns the underlying sorted data.
     #[inline]
     #[must_use]
     #[allow(clippy::missing_const_for_fn)] // false positive
     pub fn data(&self) -> &[(Frequency, FrequencyValue)] {
+        debug_assert!(self.data.is_sorted());
         &self.data
     }
 
@@ -429,49 +429,14 @@ impl FrequencySpectrum {
         panic!("Here be dragons");
     }
 
-    /// Wrapper around [`Self::freq_val_exact`] that consumes [mel].
-    ///
-    /// [mel]: https://en.wikipedia.org/wiki/Mel_scale
-    #[inline]
-    #[must_use]
-    pub fn mel_val(&self, mel_val: f32) -> FrequencyValue {
-        let hz = mel_to_hertz(mel_val);
-        self.freq_val_exact(hz)
-    }
-
-    /// Returns a [`BTreeMap`] with all value pairs. The key is of type [`u32`]
-    /// because [`f32`] is not [`Ord`].
-    #[inline]
-    #[must_use]
-    pub fn to_map(&self) -> BTreeMap<u32, f32> {
-        self.data
-            .iter()
-            .map(|(fr, fr_val)| (fr.val() as u32, fr_val.val()))
-            .collect()
-    }
-
-    /// Returns a [`Vec`] with all value pairs as `f32`.
+    /// Returns a sorted [`Vec`] with all value pairs as `f32`.
     #[inline]
     #[must_use]
     pub fn to_vec(&self) -> Vec<(f32, f32)> {
+        debug_assert!(self.data.is_sorted());
         self.data
             .iter()
             .map(|(fr, fr_val)| (fr.val(), fr_val.val()))
-            .collect()
-    }
-
-    /// Like [`Self::to_map`] but converts the frequency (x-axis) to [mels]. The
-    /// resulting map contains more results in a higher density the higher the
-    /// mel value gets. This comes from the logarithmic transformation from
-    /// hertz to mels.
-    ///
-    /// [mels]: https://en.wikipedia.org/wiki/Mel_scale
-    #[inline]
-    #[must_use]
-    pub fn to_mel_map(&self) -> BTreeMap<u32, f32> {
-        self.data
-            .iter()
-            .map(|(fr, fr_val)| (hertz_to_mel(fr.val()) as u32, fr_val.val()))
             .collect()
     }
 
@@ -556,18 +521,6 @@ mod math {
         slope * x_coord + c
     }
 
-    /// Converts hertz to [mel](https://en.wikipedia.org/wiki/Mel_scale).
-    pub fn hertz_to_mel(hz: f32) -> f32 {
-        assert!(hz >= 0.0);
-        2595.0 * libm::log10f(1.0 + (hz / 700.0))
-    }
-
-    /// Converts [mel](https://en.wikipedia.org/wiki/Mel_scale) to hertz.
-    pub fn mel_to_hertz(mel: f32) -> f32 {
-        assert!(mel >= 0.0);
-        700.0 * (libm::powf(10.0, mel / 2595.0) - 1.0)
-    }
-
     #[cfg(test)]
     mod tests {
         use super::*;
@@ -588,19 +541,6 @@ mod math {
                 calculate_y_coord_between_points((100.0, 1.0), (200.0, 0.0), 180.0,),
                 ulps = 3
             );
-        }
-
-        #[test]
-        fn test_mel() {
-            float_cmp::assert_approx_eq!(f32, hertz_to_mel(0.0), 0.0, epsilon = 0.1);
-            float_cmp::assert_approx_eq!(f32, hertz_to_mel(500.0), 607.4, epsilon = 0.1);
-            float_cmp::assert_approx_eq!(f32, hertz_to_mel(5000.0), 2363.5, epsilon = 0.1);
-
-            let conv = |hz: f32| mel_to_hertz(hertz_to_mel(hz));
-
-            float_cmp::assert_approx_eq!(f32, conv(0.0), 0.0, epsilon = 0.1);
-            float_cmp::assert_approx_eq!(f32, conv(1000.0), 1000.0, epsilon = 0.1);
-            float_cmp::assert_approx_eq!(f32, conv(10000.0), 10000.0, epsilon = 0.1);
         }
     }
 }
@@ -905,17 +845,5 @@ mod tests {
             maximum,
             "Should return the maximum frequency value!"
         )
-    }
-
-    #[test]
-    fn test_mel_getter() {
-        let spectrum_vector = vec![
-            (0.0_f32.into(), 5.0_f32.into()),
-            (450.0.into(), 200.0.into()),
-        ];
-
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
-        let _ = spectrum.mel_val(450.0);
     }
 }
