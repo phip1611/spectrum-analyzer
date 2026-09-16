@@ -372,9 +372,12 @@ fn fft_result_to_spectrum(
         })
         // FFT result is always complex: calc magnitude of complex number to get
         // the frequency value: sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr_bin, fr, fr_val)| (fr_bin, fr, complex_to_magnitude(fr_val)))
-        // Wrap f32 values in convenient thin f32 wrappers.
-        .map(|(_fr_bin, fr, val)| (Frequency::from(fr), FrequencyValue::from(val)));
+        .map(|(_fr_bin, fr, fr_val)| {
+            (
+                Frequency::from(fr),
+                FrequencyValue::from(complex_to_magnitude(fr_val)),
+            )
+        });
 
     // Collect all into a sorted vector (from lowest frequency to highest)
     frequency_vec.extend(bin_iter);
@@ -427,10 +430,8 @@ fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> Freque
 /// ## Parameters
 /// * `val` A single value from the FFT output buffer of type [`Complex32`].
 #[inline]
-fn complex_to_magnitude(val: &Complex32) -> f32 {
+fn complex_to_magnitude(val: &Complex32) -> NonNegF32 {
     // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
     let sum = val.re * val.re + val.im * val.im;
-    let sqrt = libm::sqrtf(sum);
-    debug_assert!(!sqrt.is_nan(), "sqrt is NaN!");
-    sqrt
+    NonNegF32::from(libm::sqrtf(sum))
 }
