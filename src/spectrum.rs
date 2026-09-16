@@ -29,22 +29,18 @@ use crate::frequency::{Frequency, FrequencyValue};
 use crate::scaling::{SpectrumDataStats, SpectrumScalingFunction};
 use alloc::vec::Vec;
 
-/// Convenient wrapper around the processed FFT result which describes each
-/// frequency and its value (magnitude) from the analyzed samples.
+/// Convenient wrapper around the processed FFT result.
 ///
-/// See [`crate::samples_fft_to_spectrum`] for the meaning of the values.
+/// This is the result produced by [`samples_fft_to_spectrum`]. It describes
+/// each frequency and its corresponding value (magnitude) from the analyzed
+/// samples, according to the provided input parameters. The data is
+/// scaled/normalized according to the optionally applied scaling function.
 ///
-/// It only contains the frequencies that were desired, e.g., specified via
-/// [`crate::limit::FrequencyLimit`] when [`crate::samples_fft_to_spectrum`]
-/// was called.
+/// Unless frequencies were explicitly excluded, the spectrum covers the full
+/// range from the DC component (0 Hz) up to the Nyquist frequency with the
+/// frequency resolution derived from the input data.
 ///
-/// This means, the spectrum can cover all data from the DC component (0Hz) to
-/// the Nyquist frequency.
-///
-/// All results are related to the sampling rate provided to the library
-/// function which creates objects of this struct!
-///
-/// This struct can be shared across thread boundaries.
+/// [`samples_fft_to_spectrum`]: crate::samples_fft_to_spectrum
 #[derive(Debug)]
 pub struct FrequencySpectrum {
     /// All (Frequency, FrequencyValue) data pairs sorted by lowest frequency

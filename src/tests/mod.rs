@@ -374,7 +374,17 @@ fn test_invalid_input() {
     // needs at least two samples
     let samples = vec![0.0];
     let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
-    assert!(matches!(err, SpectrumAnalyzerError::TooFewSamples));
+    assert!(matches!(err, SpectrumAnalyzerError::InvalidLengthOfSamples));
+
+    // max 32768 (microfft limitation)
+    let samples = vec![0.0; 32768];
+    let res = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None);
+    assert!(res.is_ok());
+
+    // no more than 32768
+    let samples = vec![0.0; 32769];
+    let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
+    assert!(matches!(err, SpectrumAnalyzerError::InvalidLengthOfSamples));
 
     // test frequency limit gets verified
     let samples = vec![0.0; 4];
@@ -403,10 +413,7 @@ fn test_invalid_input() {
     // samples length not a power of two
     let samples = vec![0.0; 3];
     let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
-    assert!(matches!(
-        err,
-        SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo
-    ));
+    assert!(matches!(err, SpectrumAnalyzerError::InvalidLengthOfSamples));
 }
 
 #[test]

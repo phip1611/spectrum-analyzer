@@ -35,8 +35,9 @@ use core::fmt::{Display, Formatter};
 /// are caused by wrong input.
 #[derive(Debug)]
 pub enum SpectrumAnalyzerError {
-    /// There must be at least two samples.
-    TooFewSamples,
+    /// The amount of samples must be a power of 2, at least 2, and no more
+    /// than 32768.
+    InvalidLengthOfSamples,
     /// NaN values in samples are not supported!
     NaNValuesNotSupported,
     /// Infinity-values (regarding floating point representation) in samples are not supported!
@@ -45,8 +46,6 @@ pub enum SpectrumAnalyzerError {
     InvalidFrequencyLimit(FrequencyLimitError),
     /// The frequency limit is valid in isolation but leaves too few frequency bins for a spectrum.
     FrequencyLimitTooNarrow,
-    /// The number of samples must be a power of two in order for the FFT.
-    SamplesLengthNotAPowerOfTwo,
     /// After applying the scaling function on a specific item, the returned value is either
     /// infinity or NaN, according to IEEE-754. This is invalid. Check
     /// your scaling function!
@@ -56,7 +55,10 @@ pub enum SpectrumAnalyzerError {
 impl Display for SpectrumAnalyzerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::TooFewSamples => write!(f, "Too few samples!"),
+            Self::InvalidLengthOfSamples => write!(
+                f,
+                "The amount of samples must be a power of 2, at least 2, and no more than 32768!"
+            ),
             Self::NaNValuesNotSupported => {
                 write!(f, "NaN values are not supported!")
             }
@@ -68,9 +70,6 @@ impl Display for SpectrumAnalyzerError {
             }
             Self::FrequencyLimitTooNarrow => {
                 write!(f, "Frequency limit leaves too few frequency bins!")
-            }
-            Self::SamplesLengthNotAPowerOfTwo => {
-                write!(f, "Samples length must be a power of two!")
             }
             Self::ScalingError(a, b) => write!(f, "Scaling error: {a} -> {b}"),
         }

@@ -36,8 +36,8 @@ use core::fmt::{Display, Formatter};
 /// a value for `1000Hz` but for `998.76Hz`!
 #[derive(Debug, Copy, Clone)]
 pub enum FrequencyLimit {
-    /// Interested in all frequencies. [0, sampling_rate/2] (Nyquist theorem).
-    /// Semantically equivalent to "None" limit at all).
+    /// Interested in all frequencies, including the DC component up to the
+    /// Nyquist frequency. In other words, no limit at all.
     All,
     /// Lower bound: only interested in frequencies `>= x`. Limit is
     /// inclusive. Supported values are `0 <= x <= Nyquist-Frequency`.

@@ -145,9 +145,11 @@ pub mod windows;
 #[cfg(test)]
 mod tests;
 
-/// Takes an array of samples (length must be a power of 2),
-/// e.g. 2048, applies an FFT (using the specified FFT implementation) on it
-/// and returns all frequencies with their magnitude.
+/// Takes an array of samples (length must be a power of 2, such as 2048),
+/// applies an FFT, and returns all frequencies with their magnitude.
+///
+/// If a scaling function was used, the magnitude is scaled/normalized
+/// accordingly.
 ///
 /// ## Meaning of the frequency values
 /// Without a scaling function, each value is the plain magnitude of the FFT
@@ -165,8 +167,8 @@ mod tests;
 /// For the actual amplitude of a sine wave, see the details below.
 ///
 /// ### Details
-/// Each value is `sqrt(re*re + im*im)` of the corresponding FFT result and
-/// relates to the input as follows:
+/// Each value is `sqrt(re*re + im*im)` of the corresponding FFT result,
+/// optionally scaled, and relates to the input as follows:
 ///
 /// * A sine wave with amplitude `A` on a bin frequency shows up as
 ///   `A * N / 2`, `N` being the number of samples. The DC (0 Hz) and Nyquist
@@ -177,10 +179,12 @@ mod tests;
 /// * A frequency between two bins leaks into its neighbors, so its peak reads
 ///   lower: up to `36%` lower without a window and `15%` with a Hann window.
 ///
-/// So to get the amplitude of a sine wave: divide by `N`, multiply by `2`
-/// (not for the DC and Nyquist bins), and divide by the window's coherent
-/// gain. This works for tones. For noise-like signals, the power per bin
-/// depends on the window's equivalent noise bandwidth instead.
+/// So to get the amplitude of a sine wave from a one-sided spectrum: divide by
+/// N and multiply by 2, because the FFT splits the sine wave's amplitude
+/// between its positive- and negative-frequency bins. Do not multiply by 2 for
+/// the DC and Nyquist bins, which have no separate mirror bin. Finally, divide
+/// by the window's coherent gain. This gives the amplitude of the individual
+/// sine wave components that make up the input signal.
 ///
 /// ## Parameters
 /// * `samples` raw audio, e.g. 16bit audio data but as f32.
@@ -192,9 +196,6 @@ mod tests;
 /// * `sampling_rate` The used sampling_rate, e.g. `44100 [Hz]`.
 /// * `frequency_limit` The [`FrequencyLimit`].
 /// * `scaling_fn` See [`SpectrumScalingFunction`] for details.
-///
-/// ## Returns value
-/// New object of type [`FrequencySpectrum`].
 ///
 /// ## Examples
 /// ### Scaling via dynamic closure
@@ -222,59 +223,44 @@ mod tests;
 ///         Some(&scale_to_zero_to_one),
 ///  );
 /// ```
-///
-/// ## Panics
-/// When `samples.len()` is bigger than `32768`, the largest transform the
-/// bundled FFT implementation provides.
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
     frequency_limit: FrequencyLimit,
     scaling_fn: Option<&SpectrumScalingFunction>,
 ) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
-    // everything below two samples is unreasonable
-    if samples.len() < 2 {
-        return Err(SpectrumAnalyzerError::TooFewSamples);
-    }
     // do several checks on input data
-    if !samples.len().is_power_of_two() {
-        return Err(SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo);
-    }
-    let max_detectable_frequency = sampling_rate as f32 / 2.0;
-    // verify frequency limit: unwrap error or else ok
-    frequency_limit
-        .verify(max_detectable_frequency)
-        .map_err(SpectrumAnalyzerError::InvalidFrequencyLimit)?;
-
-    // Check all samples in a single pass.
-    for sample in samples {
-        if sample.is_nan() {
-            return Err(SpectrumAnalyzerError::NaNValuesNotSupported);
+    {
+        if samples.len() < 2 || !samples.len().is_power_of_two() || samples.len() > 32768 {
+            return Err(SpectrumAnalyzerError::InvalidLengthOfSamples);
         }
-        if sample.is_infinite() {
-            return Err(SpectrumAnalyzerError::InfinityValuesNotSupported);
+        let max_detectable_frequency = sampling_rate as f32 / 2.0;
+
+        frequency_limit
+            .verify(max_detectable_frequency)
+            .map_err(SpectrumAnalyzerError::InvalidFrequencyLimit)?;
+
+        for sample in samples {
+            if sample.is_nan() {
+                return Err(SpectrumAnalyzerError::NaNValuesNotSupported);
+            }
+            if sample.is_infinite() {
+                return Err(SpectrumAnalyzerError::InfinityValuesNotSupported);
+            }
         }
     }
 
-    // With FFT we transform an array of time-domain waveform samples
-    // into an array of frequency-domain spectrum samples
+    // With FFT we transform an array of time-domain waveform samples into an
+    // array of frequency-domain spectrum samples:
     // https://www.youtube.com/watch?v=z7X6jgFnB6Y
 
-    // FFT result has same length as input
-    // (but when we interpret the result, we don't need all indices)
+    // The FFT result has same length as input, but when we interpret the
+    // result, we don't need all indices (frequency bins).
 
-    // applies the f32 samples onto the FFT algorithm implementation
-    // chosen at compile time (via Cargo feature).
-    // If a complex FFT implementation was chosen, this will internally
-    // transform all data to Complex numbers.
+    // Applies the FFT on the samples.
     let fft_res = FftImpl::calc(samples);
 
-    // This function:
-    // 1) calculates the corresponding frequency of each index in the FFT result
-    // 2) filters out unwanted frequencies
-    // 3) calculates the magnitude (absolute value) at each frequency index for each complex value
-    // 4) optionally scales the magnitudes
-    // 5) collects everything into the struct "FrequencySpectrum"
+    // Process FFT result into a meaningful spectrum.
     fft_result_to_spectrum(
         samples.len(),
         &fft_res,
@@ -284,21 +270,18 @@ pub fn samples_fft_to_spectrum(
     )
 }
 
-/// Transforms the FFT result into the spectrum by calculating the corresponding frequency of each
-/// FFT result index and optionally calculating the magnitudes of the complex numbers if a complex
-/// FFT implementation is chosen.
+/// Transforms the FFT result into a [`FrequencySpectrum`] by calculating the
+/// corresponding frequency of each FFT result (frequency bin) and optionally
+/// scales each value.
 ///
 /// ## Parameters
-/// * `samples_len` Length of samples. This is a dedicated field because it can't always be
-///   derived from `fft_result.len()`. There are for example differences for
-///   `fft_result.len()` in real and complex FFT algorithms.
-/// * `fft_result` Result buffer from FFT. Has the same length as the samples array.
-/// * `sampling_rate` The used sampling_rate, e.g. `44100 [Hz]`.
-/// * `frequency_limit` The [`FrequencyLimit`].
-/// * `scaling_fn` See [`SpectrumScalingFunction`] for details.
-///
-/// ## Return value
-/// New object of type [`FrequencySpectrum`].
+/// * `samples_len` Number of input samples.
+/// * `fft_result` FFT result, i.e. frequency bins.
+/// * `sampling_rate` Sampling rate of the input samples, e.g. `44100 [Hz]`.
+/// * `frequency_limit` Possibly the bounds of [`FrequencyLimit`] the caller is
+///   interested in.
+/// * `scaling_fn` Optional scaling function to modify each frequency value
+///   (FFT result). See [`SpectrumScalingFunction`] for details.
 #[inline]
 fn fft_result_to_spectrum(
     samples_len: usize,
@@ -312,93 +295,84 @@ fn fft_result_to_spectrum(
 
     let frequency_resolution = fft_calc_frequency_resolution(sampling_rate, samples_len as u32);
 
+    // Number of frequency bins from DC through the Nyquist frequency.
+    let bin_count = samples_len / 2 + 1;
+    debug_assert_eq!(fft_result.len(), bin_count);
+
     // Preallocate space for the maximum possible number of bins (DC component
     // up to and including the Nyquist frequency): the filtered iterator below
     // has no precise size hint, so collecting it directly would grow the
     // vector with several re-allocations.
-    let mut frequency_vec = Vec::with_capacity(samples_len / 2 + 1);
+    let mut frequency_vec = Vec::with_capacity(bin_count);
 
     // frequency => frequency value pairs
     let bin_iter = fft_result
         .iter()
-        // See https://stackoverflow.com/a/4371627/2891595 for more information as well as
-        // https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
-        //
-        // The indices 0 to N/2 (inclusive) are usually the most relevant. Although, index
-        // N/2-1 is declared as the last useful one on stackoverflow (because in typical applications
-        // Nyquist-frequency + above are filtered out), we include everything here.
-        // with 0..=(samples_len / 2) (inclusive) we get all frequencies from 0 to Nyquist theorem.
-        //
-        // Indices (samples_len / 2)..len() are mirrored/negative. You can also see this here:
-        // https://www.gaussianwaves.com/gaussianwaves/wp-content/uploads/2015/11/realDFT_complexDFT.png
-        .take(samples_len / 2 + 1)
-        // to (index, fft-result)-pairs
         .enumerate()
-        // calc index => corresponding frequency
-        .map(|(fft_index, fft_result)| {
-            (
-                // Calculate corresponding frequency of each index of FFT result.
-                //
-                // Explanation for the algorithm:
-                // https://stackoverflow.com/questions/4364823/
-                //
-                // N complex samples          : [0], [1], [2], [3], ... , ..., [2047] => 2048 samples for example
-                //   (Or N real samples packed
-                //   into N/2 complex samples
-                //   (real FFT algorithm))
-                // Complex FFT Result         : [0], [1], [2], [3], ... , ..., [2047]
-                // Relevant part of FFT Result: [0], [1], [2], [3], ... , [1024]      => indices 0 to N/2 (inclusive) are important
-                //                               ^                         ^
-                // Frequency                  : 0Hz, .................... Sampling Rate/2 => "Nyquist frequency"
-                //                              0Hz is also called        (e.g. 22050Hz for 44100Hz sampling rate)
-                //                              "DC Component"
-                //
-                // frequency step/resolution is for example: 1/2048 * 44100 = 21.53 Hz
-                //                                             2048 samples, 44100 sample rate
-                //
-                // equal to: 1.0 / samples_len as f32 * sampling_rate as f32
-                fft_index as f32 * frequency_resolution,
-                // in this .map() step we do nothing with this yet
-                fft_result,
-            )
+        // Map frequency bin to corresponding frequency (Hz).
+        .map(|(fr_bin, fr_val /* result of the FFT at that index */)| {
+            // Let's assume we have 2048 input samples. A complex FFT produces 2048
+            // complex values. For a real FFT, however, only 1024 complex values are
+            // needed because the negative-frequency half is redundant.
+            //
+            // With a complex FFT, the relevant part of the result would be:
+            //
+            // N real audio samples    : [0], [1], [2], [3], ... , [2047] (N = 2048)
+            // ... mapped to ...
+            // N complex audio samples : [0], [1], [2], [3], ... , [2047]
+            // ... put into an FFT ...
+            // Relevant FFT result     : [0], [1], [2], [3], ... , [1024]
+            //                            ^                            ^
+            // Frequency                : 0 Hz, ..................... Sampling Rate/2
+            //                            DC component                Nyquist frequency
+            //                                                        (22050 Hz @ 44100 Hz)
+            //
+            // We use a performance-optimized real FFT with `microfft`. It performs the
+            // calculation in-place: N f32 input values are transformed into N/2 complex
+            // values. The first complex value is special: its real part contains the DC
+            // component, while its imaginary part contains the Nyquist component.
+            //
+            // Thus, the 1024 complex output values contain 1025 frequency values: DC,
+            // bins 1..=1023, and Nyquist. Before we called this, the FFT function
+            // already unpacked the Nyquist component into an additional element of
+            // the FFT result vector that we process here.
+
+            // More information:
+            // - https://stackoverflow.com/questions/4364823/ (explanation of the algorithm)
+            // - https://stackoverflow.com/a/4371627/2891595
+            // - https://www.gaussianwaves.com/2015/11/interpreting-fft-results-complex-dft-frequency-bins-and-fftshift/
+            // - https://www.gaussianwaves.com/gaussianwaves/wp-content/uploads/2015/11/realDFT_complexDFT.png
+            let fr = fr_bin as f32 * frequency_resolution;
+
+            (fr_bin, fr, fr_val)
         })
-        // #######################
-        // ### BEGIN filtering: results in lower calculation and memory overhead!
-        // The frequency grows monotonically with the index, so the limit
-        // bounds correspond to a contiguous range of bins: `skip_while` stops
-        // testing once the lower bound is reached and `take_while` stops the
-        // iteration entirely at the upper bound (a `filter` would keep testing
-        // every bin up to the Nyquist frequency).
-        //
-        // check lower bound frequency (inclusive)
-        .skip_while(|(fr, _fft_result)| {
+        // Filter out frequencies we are not interested (lower threshold).
+        .skip_while(|(_fr_bin, fr, _fr_val)| {
             maybe_min.is_some_and(|min_fr| {
-                // inclusive!
-                // attention: due to the frequency resolution, we do not necessarily hit
-                //            exactly the frequency, that a user requested
-                //            e.g. 1416.8 < limit < 1425.15
+                // Inclusive!
+                // Attention: due to the frequency resolution, we do not
+                // necessarily hit exactly the frequency, that a user requested
+                // (e.g. 1500 Hz is requested but next matching bin is 1510 Hz).
                 *fr < min_fr
             })
         })
-        // check upper bound frequency (inclusive)
-        .take_while(|(fr, _fft_result)| {
+        // Filter out frequencies we are not interested (upper threshold).
+        .take_while(|(_fr_bin, fr, _fr_val)| {
             maybe_max.is_none_or(|max_fr| {
-                // inclusive!
-                // attention: due to the frequency resolution, we do not necessarily hit
-                //            exactly the frequency, that a user requested
-                //            e.g. 1416.8 < limit < 1425.15
+                // Inclusive!
+                // Attention: due to the frequency resolution, we do not
+                // necessarily hit exactly the frequency, that a user requested
+                // (e.g. 1500 Hz is requested but next matching bin is 1490 Hz).
                 *fr <= max_fr
             })
         })
-        // ### END filtering
-        // #######################
-        // FFT result is always complex: calc magnitude
-        //   sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr, complex_res)| (fr, complex_to_magnitude(complex_res)))
-        // transform to my thin convenient orderable f32 wrappers
-        .map(|(fr, val)| (Frequency::from(fr), FrequencyValue::from(val)));
+        // FFT result is always complex: calc magnitude of complex number to get
+        // the frequency value: sqrt(re*re + im*im) (re: real part, im: imaginary part)
+        .map(|(fr_bin, fr, fr_val)| (fr_bin, fr, complex_to_magnitude(fr_val)))
+        // Wrap f32 values in convenient thin f32 wrappers.
+        .map(|(_fr_bin, fr, val)| (Frequency::from(fr), FrequencyValue::from(val)));
 
-    // collect all into a sorted vector (from lowest frequency to highest)
+    // Collect all into a sorted vector (from lowest frequency to highest)
     frequency_vec.extend(bin_iter);
     // Give excess memory back if a frequency limit excluded many bins.
     frequency_vec.shrink_to_fit();
@@ -409,11 +383,11 @@ fn fft_result_to_spectrum(
         return Err(SpectrumAnalyzerError::FrequencyLimitTooNarrow);
     }
 
-    // create spectrum object
+    // Create the spectrum wrapper.
     let mut spectrum =
         FrequencySpectrum::new(frequency_vec, frequency_resolution, samples_len as u32);
 
-    // optionally scale
+    // Apply the scaling function.
     if let Some(scaling_fn) = scaling_fn {
         spectrum.apply_scaling_fn(scaling_fn)?
     }
@@ -421,11 +395,11 @@ fn fft_result_to_spectrum(
     Ok(spectrum)
 }
 
-/// Calculate the frequency resolution of the FFT. It is determined by the sampling rate
-/// in Hertz and N, the number of samples given into the FFT. With the frequency resolution,
-/// we can determine the corresponding frequency of each index in the FFT result buffer.
+/// Calculate the frequency resolution of the FFT. It is determined by the
+/// sampling rate in Hertz and N, the number of samples given into the FFT.
 ///
-/// For "real FFT" implementations
+/// With the frequency resolution, we can determine the corresponding frequency
+/// of each index (frequency bin) in the FFT result buffer.
 ///
 /// ## Parameters
 /// * `samples_len` Number of samples put into the FFT
@@ -448,6 +422,7 @@ fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
 ///
 /// ## Parameters
 /// * `val` A single value from the FFT output buffer of type [`Complex32`].
+#[inline]
 fn complex_to_magnitude(val: &Complex32) -> f32 {
     // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
     let sum = val.re * val.re + val.im * val.im;
