@@ -215,6 +215,222 @@ impl_op!(Sub, sub);
 impl_op!(Mul, mul);
 impl_op!(Div, div);
 
+/// Wrapper around [`FiniteF32`] that additionally guarantees a number that is
+/// not negative, so `0.0` or higher.
+///
+/// Like [`FiniteF32`], it compares and calculates with [`f32`] directly.
+/// Operations that can leave the range, such as a subtraction or a negation,
+/// return a [`FiniteF32`].
+///
+/// ```
+/// use spectrum_analyzer::NonNegF32;
+///
+/// let value = NonNegF32::from(0.5);
+/// assert_eq!(value, 0.5);
+/// assert!(value > 0.25);
+/// assert_eq!(NonNegF32::from(0.25) - value, -0.25);
+/// ```
+///
+/// # Panics
+/// Creating a value from a number that is negative or not finite panics, and
+/// so does an operation whose result leaves the range.
+/// [`Self::try_new`] checks instead.
+#[derive(Copy, Clone, Default)]
+#[repr(transparent)]
+pub struct NonNegF32(FiniteF32);
+
+impl NonNegF32 {
+    /// Creates a new value, or `None` if `val` is negative or not finite.
+    #[inline]
+    #[must_use]
+    pub const fn try_new(val: f32) -> Option<Self> {
+        match FiniteF32::try_new(val) {
+            Some(val) if val.val() >= 0.0 => Some(Self(val)),
+            _ => None,
+        }
+    }
+
+    /// Returns the underlying [`f32`].
+    #[inline]
+    #[must_use]
+    pub const fn val(self) -> f32 {
+        self.0.val()
+    }
+}
+
+impl From<f32> for NonNegF32 {
+    /// # Panics
+    /// If `val` is negative, `NaN` or infinite.
+    #[inline]
+    fn from(val: f32) -> Self {
+        Self::try_new(val).expect("value should be finite and not negative")
+    }
+}
+
+impl From<FiniteF32> for NonNegF32 {
+    /// # Panics
+    /// If `val` is negative.
+    #[inline]
+    fn from(val: FiniteF32) -> Self {
+        Self::try_new(val.val()).expect("value should not be negative")
+    }
+}
+
+impl From<NonNegF32> for FiniteF32 {
+    #[inline]
+    fn from(val: NonNegF32) -> Self {
+        val.0
+    }
+}
+
+impl From<NonNegF32> for f32 {
+    #[inline]
+    fn from(val: NonNegF32) -> Self {
+        val.val()
+    }
+}
+
+impl Display for NonNegF32 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        Display::fmt(&self.0, f)
+    }
+}
+
+impl Debug for NonNegF32 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        Debug::fmt(&self.0, f)
+    }
+}
+
+impl Ord for NonNegF32 {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
+impl Eq for NonNegF32 {}
+
+impl PartialEq for NonNegF32 {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl PartialOrd for NonNegF32 {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq<f32> for NonNegF32 {
+    #[inline]
+    fn eq(&self, other: &f32) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<NonNegF32> for f32 {
+    #[inline]
+    fn eq(&self, other: &NonNegF32) -> bool {
+        *self == other.0
+    }
+}
+
+impl PartialOrd<f32> for NonNegF32 {
+    #[inline]
+    fn partial_cmp(&self, other: &f32) -> Option<Ordering> {
+        self.0.partial_cmp(other)
+    }
+}
+
+impl PartialOrd<NonNegF32> for f32 {
+    #[inline]
+    fn partial_cmp(&self, other: &NonNegF32) -> Option<Ordering> {
+        self.partial_cmp(&other.0)
+    }
+}
+
+impl Neg for NonNegF32 {
+    type Output = FiniteF32;
+
+    /// Negating leaves the range, so the result is a [`FiniteF32`].
+    #[inline]
+    fn neg(self) -> Self::Output {
+        -self.0
+    }
+}
+
+impl Sub for NonNegF32 {
+    type Output = FiniteF32;
+
+    /// A subtraction can leave the range, so the result is a [`FiniteF32`].
+    /// The difference of two finite numbers of the same sign is finite, so
+    /// this cannot panic.
+    #[inline]
+    fn sub(self, rhs: Self) -> Self::Output {
+        FiniteF32::from(self.val() - rhs.val())
+    }
+}
+
+/// Implements an operator that cannot leave the range of [`NonNegF32`].
+macro_rules! impl_non_neg_op {
+    ($trait:ident, $method:ident) => {
+        impl $trait for NonNegF32 {
+            type Output = Self;
+
+            /// # Panics
+            /// If the result is not finite.
+            #[inline]
+            fn $method(self, rhs: Self) -> Self::Output {
+                Self::from($trait::$method(self.val(), rhs.val()))
+            }
+        }
+
+        impl $trait<f32> for NonNegF32 {
+            type Output = f32;
+
+            #[inline]
+            fn $method(self, rhs: f32) -> Self::Output {
+                $trait::$method(self.val(), rhs)
+            }
+        }
+
+        impl $trait<NonNegF32> for f32 {
+            type Output = Self;
+
+            #[inline]
+            fn $method(self, rhs: NonNegF32) -> Self::Output {
+                $trait::$method(self, rhs.val())
+            }
+        }
+    };
+}
+
+impl_non_neg_op!(Add, add);
+impl_non_neg_op!(Mul, mul);
+impl_non_neg_op!(Div, div);
+
+impl Sub<f32> for NonNegF32 {
+    type Output = f32;
+
+    #[inline]
+    fn sub(self, rhs: f32) -> Self::Output {
+        self.val() - rhs
+    }
+}
+
+impl Sub<NonNegF32> for f32 {
+    type Output = Self;
+
+    #[inline]
+    fn sub(self, rhs: NonNegF32) -> Self::Output {
+        self - rhs.val()
+    }
+}
+
 /// Wrapper around [`f32`] that guarantees a valid number, hence, the number is
 /// neither `NaN` or `infinite`. This makes the number orderable and sortable.
 #[derive(Debug, Copy, Clone, Default)]
@@ -357,6 +573,40 @@ mod tests {
         // ... which means these cannot panic
         assert!((f32::MAX + FiniteF32::from(f32::MAX)).is_infinite());
         assert!((FiniteF32::from(0.0) / 0.0).is_nan());
+    }
+
+    #[test]
+    fn test_non_neg_f32_construction() {
+        assert_eq!(Some(NonNegF32::from(0.0)), NonNegF32::try_new(0.0));
+        assert_eq!(None, NonNegF32::try_new(-0.5));
+        assert_eq!(None, NonNegF32::try_new(f32::NAN));
+        assert_eq!(0.5, f32::from(NonNegF32::from(0.5)));
+        assert_eq!(FiniteF32::from(0.5), FiniteF32::from(NonNegF32::from(0.5)));
+    }
+
+    #[test]
+    #[should_panic(expected = "value should be finite and not negative")]
+    fn test_non_neg_f32_rejects_negative() {
+        let _ = NonNegF32::from(-0.5);
+    }
+
+    #[test]
+    fn test_non_neg_f32_arithmetic() {
+        let a = NonNegF32::from(3.0);
+        let b = NonNegF32::from(2.0);
+
+        // operations that stay in the range keep the type
+        assert_eq!(NonNegF32::from(5.0), a + b);
+        assert_eq!(NonNegF32::from(6.0), a * b);
+        assert_eq!(NonNegF32::from(1.5), a / b);
+
+        // ... the others fall back to the wider type
+        assert_eq!(FiniteF32::from(-1.0), b - a);
+        assert_eq!(FiniteF32::from(-3.0), -a);
+
+        // ... and a plain f32 drops the guarantee entirely
+        assert_eq!(1.0_f32, a - 2.0);
+        assert_eq!(2.0_f32, 5.0 - a);
     }
 
     #[test]

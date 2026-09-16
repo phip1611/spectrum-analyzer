@@ -123,7 +123,7 @@ extern crate std;
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
-pub use crate::frequency::{FiniteF32, Frequency, FrequencyValue};
+pub use crate::frequency::{FiniteF32, Frequency, FrequencyValue, NonNegF32};
 pub use crate::limit::FrequencyLimit;
 pub use crate::limit::FrequencyLimitError;
 pub use crate::spectrum::FrequencySpectrum;
