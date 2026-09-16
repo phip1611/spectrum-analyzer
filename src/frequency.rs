@@ -21,20 +21,23 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-//! Module for the struct [`OrderableF32`] and the two
-//! convenient type definitions [`Frequency`] and [`FrequencyValue`].
+//! Module for [`FiniteF32`] and [`NonNegF32`], and the two convenient type
+//! definitions [`Frequency`] and [`FrequencyValue`] built on them.
 
 use core::cmp::Ordering;
 use core::fmt::{Debug, Display, Formatter, Result};
 use core::ops::{Add, Div, Mul, Neg, Sub};
 
-/// A frequency in Hertz. A convenient wrapper type around `f32`.
-pub type Frequency = OrderableF32;
-/// The value of a [`Frequency`] in a frequency spectrum: the magnitude of the
-/// FFT result at that frequency, optionally scaled.
+/// A frequency in Hertz, which is never negative.
+pub type Frequency = NonNegF32;
+/// The value of a [`Frequency`] in a frequency spectrum.
+///
+/// It is the magnitude of the FFT result at that frequency, optionally
+/// scaled. A scaling function can make it negative, for example
+/// [`crate::scaling::scale_20_times_log10`].
 ///
 /// See [`crate::samples_fft_to_spectrum`] for what this means in practice.
-pub type FrequencyValue = OrderableF32;
+pub type FrequencyValue = FiniteF32;
 
 /// Wrapper around [`f32`] that guarantees a finite number, i.e., neither `NaN`
 /// nor infinite. This makes the number orderable and sortable.
@@ -431,99 +434,6 @@ impl Sub<NonNegF32> for f32 {
     }
 }
 
-/// Wrapper around [`f32`] that guarantees a valid number, hence, the number is
-/// neither `NaN` or `infinite`. This makes the number orderable and sortable.
-#[derive(Debug, Copy, Clone, Default)]
-pub struct OrderableF32(f32);
-
-impl OrderableF32 {
-    #[inline]
-    pub const fn val(&self) -> f32 {
-        self.0
-    }
-}
-
-impl From<f32> for OrderableF32 {
-    #[inline]
-    fn from(val: f32) -> Self {
-        assert!(!val.is_nan(), "NaN-values are not supported!");
-        assert!(!val.is_infinite(), "Infinite-values are not supported!");
-        Self(val)
-    }
-}
-
-impl Display for OrderableF32 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl Ord for OrderableF32 {
-    #[inline]
-    fn cmp(&self, other: &Self) -> Ordering {
-        if self.val() < other.val() {
-            Ordering::Less
-        } else if self.val() == other.val() {
-            Ordering::Equal
-        } else {
-            Ordering::Greater
-        }
-    }
-}
-
-impl Eq for OrderableF32 {}
-
-impl PartialEq for OrderableF32 {
-    #[inline]
-    fn eq(&self, other: &Self) -> bool {
-        matches!(self.cmp(other), Ordering::Equal)
-    }
-}
-
-impl PartialOrd for OrderableF32 {
-    #[allow(clippy::float_cmp)]
-    #[inline]
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Add for OrderableF32 {
-    type Output = Self;
-
-    #[inline]
-    fn add(self, other: Self) -> Self::Output {
-        (self.val() + other.val()).into()
-    }
-}
-
-impl Sub for OrderableF32 {
-    type Output = Self;
-
-    #[inline]
-    fn sub(self, other: Self) -> Self::Output {
-        (self.val() - other.val()).into()
-    }
-}
-
-impl Mul for OrderableF32 {
-    type Output = Self;
-
-    #[inline]
-    fn mul(self, other: Self) -> Self::Output {
-        (self.val() * other.val()).into()
-    }
-}
-
-impl Div for OrderableF32 {
-    type Output = Self;
-
-    #[inline]
-    fn div(self, other: Self) -> Self::Output {
-        (self.val() / other.val()).into()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -614,35 +524,5 @@ mod tests {
     fn test_finite_f32_arithmetic_overflow_panics() {
         let max = FiniteF32::from(f32::MAX);
         let _ = max + max;
-    }
-
-    #[test]
-    fn test_orderablef32() {
-        let f1: OrderableF32 = (2.0_f32).into();
-        let f2: OrderableF32 = (-7.0_f32).into();
-
-        let f3 = f1 + f2;
-        let f4 = f1 - f2;
-
-        assert_eq!(-5.0, f3.val(), "add must work");
-        assert_eq!(9.0, f4.val(), "add must work");
-        assert!(f2 < f1, "Compare must work");
-        assert!(f1 > f2, "Compare must work");
-        #[allow(clippy::eq_op)]
-        {
-            assert_eq!(f1, f1, "Equal must work");
-        }
-    }
-
-    #[test]
-    #[should_panic(expected = "NaN-values are not supported!")]
-    fn test_orderablef32_rejects_nan() {
-        let _ = OrderableF32::from(f32::NAN);
-    }
-
-    #[test]
-    #[should_panic(expected = "Infinite-values are not supported!")]
-    fn test_orderablef32_rejects_infinity() {
-        let _ = OrderableF32::from(f32::INFINITY);
     }
 }

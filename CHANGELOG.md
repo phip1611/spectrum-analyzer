@@ -54,6 +54,10 @@
   limit as too narrow
 - **BREAKING** removed `FrequencyLimit::{min,max}`, which panicked for
   variants without that bound; use `FrequencyLimit::{maybe_min,maybe_max}`
+- **BREAKING** `Frequency` and `FrequencyValue` are no longer the same type:
+  a frequency is a `NonNegF32` and a value a `FiniteF32`, so the two can no
+  longer be mixed up. Both compare and calculate with `f32` directly, which
+  makes `val()` unnecessary in most places
 
 ## 1.9.0 (2026-09-05)
 

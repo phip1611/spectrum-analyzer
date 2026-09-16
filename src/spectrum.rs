@@ -101,10 +101,10 @@ impl FrequencySpectrum {
             data,
             frequency_resolution,
             samples_len,
-            // default/placeholder values
-            average: FrequencyValue::from(-1.0),
-            min: (Frequency::from(-1.0), FrequencyValue::from(-1.0)),
-            max: (Frequency::from(-1.0), FrequencyValue::from(-1.0)),
+            // placeholders; calc_statistics() below fills them in
+            average: FrequencyValue::default(),
+            min: (Frequency::default(), FrequencyValue::default()),
+            max: (Frequency::default(), FrequencyValue::default()),
         };
 
         // Important to call this once initially.
