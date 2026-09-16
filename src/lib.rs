@@ -187,7 +187,11 @@ mod tests;
 /// sine wave components that make up the input signal.
 ///
 /// ## Parameters
-/// * `samples` raw audio, e.g. 16bit audio data but as f32.
+/// * `samples` Raw audio samples, normalized to `[-1.0; 1.0]`, which is what
+///   audio APIs typically deliver. Other scales work too, as the FFT is
+///   linear and the values simply scale with the input, but the normalized
+///   range keeps the magnitudes small: very large samples can push a
+///   magnitude out of the range of [`f32`].
 ///   You should apply a window function (like Hann) on the data first.
 ///   The final frequency resolution (spacing between two bins) is
 ///   `sample_rate / N`, e.g. `44100/16384 == 2.69Hz`, i.e. more samples =>
