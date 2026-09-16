@@ -2,6 +2,8 @@
 
 ## Unreleased (yet)
 
+## 2.0.0 (2026-09-16)
+
 A major release with some breaking changes: the library no longer panics on
 input it can check, and the types say more about the values they carry. Nothing
 about the analysis itself changed, so the numbers you get out stay the same.
