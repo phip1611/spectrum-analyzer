@@ -300,8 +300,10 @@ impl FrequencySpectrum {
         if equals_max_fr {
             return Some(max_fr_val);
         }
-        // bounds check
-        if search_fr < min_fr.val() || search_fr > max_fr.val() {
+        // bounds check; a NaN search frequency fails every comparison and
+        // therefore lands here as well
+        let in_bounds = search_fr >= min_fr.val() && search_fr <= max_fr.val();
+        if !in_bounds {
             return None;
         }
 
@@ -373,8 +375,10 @@ impl FrequencySpectrum {
             return Some((max_fr, max_fr_val));
         }
 
-        // bounds check
-        if search_fr < min_fr.val() || search_fr > max_fr.val() {
+        // bounds check; a NaN search frequency fails every comparison and
+        // therefore lands here as well
+        let in_bounds = search_fr >= min_fr.val() && search_fr <= max_fr.val();
+        if !in_bounds {
             return None;
         }
 
@@ -537,6 +541,21 @@ mod tests {
         // test if this compiles
         fn consume(s: FrequencySpectrum) {
             let _: &dyn Send = &s;
+        }
+    }
+
+    #[test]
+    fn test_freq_val_invalid_search_frequency() {
+        let spectrum_vector = vec![
+            (0.0_f32.into(), 5.0_f32.into()),
+            (450.0.into(), 200.0.into()),
+        ];
+        let spectrum =
+            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+
+        for search_fr in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, 451.0] {
+            assert_eq!(None, spectrum.freq_val_exact(search_fr));
+            assert_eq!(None, spectrum.freq_val_closest(search_fr));
         }
     }
 
