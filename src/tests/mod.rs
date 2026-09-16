@@ -130,14 +130,17 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     // test getters match spectrum
     // we use Hann windowed spectrum because the accuracy is much better than
     // with no window!
-    assert!(spectrum_hann_window.freq_val_exact(50.0).val() > 0.85);
-    assert!(spectrum_hann_window.freq_val_closest(50.0).1.val() > 0.85);
-    assert!(spectrum_hann_window.freq_val_exact(1000.0).val() > 0.85);
-    assert!(spectrum_hann_window.freq_val_closest(1000.0).1.val() > 0.85);
-    assert!(spectrum_hann_window.freq_val_exact(3777.0).val() > 0.85);
-    assert!(spectrum_hann_window.freq_val_closest(3777.0).1.val() > 0.85);
-    assert!(spectrum_hann_window.freq_val_exact(500.0).val() < 0.0001);
-    assert!(spectrum_hann_window.freq_val_closest(500.0).1.val() < 0.0001);
+    let exact = |fr| spectrum_hann_window.freq_val_exact(fr).unwrap().val();
+    let closest = |fr| spectrum_hann_window.freq_val_closest(fr).unwrap().1.val();
+
+    assert!(exact(50.0) > 0.85);
+    assert!(closest(50.0) > 0.85);
+    assert!(exact(1000.0) > 0.85);
+    assert!(closest(1000.0) > 0.85);
+    assert!(exact(3777.0) > 0.85);
+    assert!(closest(3777.0) > 0.85);
+    assert!(exact(500.0) < 0.0001);
+    assert!(closest(500.0) < 0.0001);
 }
 
 /// This test is primarily for my personal understanding. It analyzes a specific constant
@@ -192,8 +195,12 @@ fn test_spectrum_power() {
     visualize_fn(&spectrum_short_window.to_vec(), "short_window");
     visualize_fn(&spectrum_long_window.to_vec(), "long_window");
 
-    let a = spectrum_short_window.freq_val_exact(interesting_frequency);
-    let b = spectrum_long_window.freq_val_exact(interesting_frequency);
+    let a = spectrum_short_window
+        .freq_val_exact(interesting_frequency)
+        .unwrap();
+    let b = spectrum_long_window
+        .freq_val_exact(interesting_frequency)
+        .unwrap();
 
     let ab_abs_diff = (a - b).val().abs();
     let ab_deviation = ab_abs_diff / max(a, b).val();
@@ -335,23 +342,23 @@ fn test_spectrum_nyquist_theorem2() {
 
     // frequency resolution is: 44100/4096 = ~ 11hz
     assert!(
-        spectrum.freq_val_exact(22049.9).val() >= 0.94,
+        spectrum.freq_val_exact(22049.9).unwrap().val() >= 0.94,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(22049.0).val() >= 0.49,
+        spectrum.freq_val_exact(22049.0).unwrap().val() >= 0.49,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(22035.0).val() <= 0.26,
+        spectrum.freq_val_exact(22035.0).unwrap().val() <= 0.26,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(22000.0).val() <= 0.07,
+        spectrum.freq_val_exact(22000.0).unwrap().val() <= 0.07,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(21500.0).val() <= 0.01,
+        spectrum.freq_val_exact(21500.0).unwrap().val() <= 0.01,
         "Other frequencies must not be part of the spectrum!"
     );
 }

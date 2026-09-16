@@ -45,6 +45,9 @@
   `SpectrumAnalyzerError::{TooFewSamples,SamplesLengthNotAPowerOfTwo}` in favor
   of `SpectrumAnalyzerError::InvalidLengthOfSamples`. Samples lengths of more
   than 32768 do not panic anymore but return an error.
+- **BREAKING**: `FrequencySpectrum::{freq_val_closest,freq_val_exact}` now return
+  `None` if the value is out of bounds instead of panicking, and `Some` for
+  valid results.
 
 ## 1.9.0 (2026-09-05)
 
