@@ -202,6 +202,12 @@ mod tests;
 /// * `frequency_limit` The [`FrequencyLimit`].
 /// * `scaling_fn` See [`SpectrumScalingFunction`] for details.
 ///
+/// ## Panics
+/// Everything this function can check about its input is reported as an
+/// error. What is left is the magnitude of a frequency leaving the range of
+/// [`f32`], which needs samples far outside the range described above: with
+/// normalized samples, a magnitude never exceeds the number of samples.
+///
 /// ## Examples
 /// ### Scaling via dynamic closure
 /// ```rust
@@ -433,9 +439,14 @@ fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> Freque
 ///
 /// ## Parameters
 /// * `val` A single value from the FFT output buffer of type [`Complex32`].
+///
+/// ## Panics
+/// If the magnitude leaves the range of [`f32`], which needs samples far
+/// outside the range this library expects.
 #[inline]
 fn complex_to_magnitude(val: &Complex32) -> NonNegF32 {
     // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
     let sum = val.re * val.re + val.im * val.im;
-    NonNegF32::from(libm::sqrtf(sum))
+    NonNegF32::try_new(libm::sqrtf(sum))
+        .expect("magnitude should be within the range of f32; samples are too large")
 }
