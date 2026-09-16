@@ -23,6 +23,7 @@ SOFTWARE.
 */
 //! Module for the struct [`FrequencyLimit`].
 
+use crate::NonNegF32;
 use core::error::Error;
 use core::fmt::{Display, Formatter};
 
@@ -41,22 +42,55 @@ pub enum FrequencyLimit {
     All,
     /// Lower bound: only interested in frequencies `>= x`. Limit is
     /// inclusive. Supported values are `0 <= x <= Nyquist-Frequency`.
-    Min(f32),
+    Min(NonNegF32),
     /// Upper bound: only interested in frequencies `<= x`. Limit is
     /// inclusive. Supported values are `0 <= x <= Nyquist-Frequency`.
-    Max(f32),
+    Max(NonNegF32),
     /// Only interested in frequencies `1000 <= f <= 6777` for example. Both values are inclusive.
     /// The first value of the tuple is equivalent to [`FrequencyLimit::Min`] and the latter
     /// equivalent to [`FrequencyLimit::Max`]. Furthermore, the first value must not be
     /// bigger than the second value.
-    Range(f32, f32),
+    Range(NonNegF32, NonNegF32),
 }
 
 impl FrequencyLimit {
+    /// Creates a [`Self::Min`] limit.
+    ///
+    /// # Panics
+    /// If `min` is negative or not finite.
+    #[inline]
+    #[must_use]
+    pub fn min(min: impl Into<NonNegF32>) -> Self {
+        Self::Min(min.into())
+    }
+
+    /// Creates a [`Self::Max`] limit.
+    ///
+    /// # Panics
+    /// If `max` is negative or not finite.
+    #[inline]
+    #[must_use]
+    pub fn max(max: impl Into<NonNegF32>) -> Self {
+        Self::Max(max.into())
+    }
+
+    /// Creates a [`Self::Range`] limit.
+    ///
+    /// # Panics
+    /// If one of the values is negative or not finite or if `min > max`.
+    #[inline]
+    #[must_use]
+    pub fn range(min: impl Into<NonNegF32>, max: impl Into<NonNegF32>) -> Self {
+        let min = min.into();
+        let max = max.into();
+        assert!(min <= max, "min should not be bigger than max");
+        Self::Range(min, max)
+    }
+
     /// Returns the minimum value, if any.
     #[inline]
     #[must_use]
-    pub const fn maybe_min(&self) -> Option<f32> {
+    pub const fn maybe_min(&self) -> Option<NonNegF32> {
         match self {
             Self::Min(min) => Some(*min),
             Self::Range(min, _) => Some(*min),
@@ -67,7 +101,7 @@ impl FrequencyLimit {
     /// Returns the maximum value, if any.
     #[inline]
     #[must_use]
-    pub const fn maybe_max(&self) -> Option<f32> {
+    pub const fn maybe_max(&self) -> Option<NonNegF32> {
         match self {
             Self::Max(max) => Some(*max),
             Self::Range(_, max) => Some(*max),
@@ -81,11 +115,7 @@ impl FrequencyLimit {
         match self {
             Self::All => Ok(()),
             Self::Min(x) | Self::Max(x) => {
-                if !x.is_finite() {
-                    Err(FrequencyLimitError::NotARegularNumber(*x))
-                } else if *x < 0.0 {
-                    Err(FrequencyLimitError::ValueBelowMinimum(*x))
-                } else if *x > max_detectable_frequency {
+                if *x > max_detectable_frequency {
                     Err(FrequencyLimitError::ValueAboveNyquist(*x))
                 } else {
                     Ok(())
@@ -107,24 +137,18 @@ impl FrequencyLimit {
 /// Possible errors when creating a [`FrequencyLimit`]-object.
 #[derive(Debug)]
 pub enum FrequencyLimitError {
-    /// The value is `NaN` or infinite.
-    NotARegularNumber(f32),
-    /// If the minimum value is below 0. Negative frequencies are not supported.
-    ValueBelowMinimum(f32),
     /// If the maximum value is above Nyquist frequency. Nyquist-Frequency is the maximum
     /// detectable frequency.
-    ValueAboveNyquist(f32),
-    /// The first member of the tuple is bigger than the second. A value that
-    /// is out of bounds is reported as [`Self::ValueBelowMinimum`] or
-    /// [`Self::ValueAboveNyquist`], even inside a range.
-    InvalidRange(f32, f32),
+    ValueAboveNyquist(NonNegF32),
+    /// The first member of the tuple is bigger than the second. A value above
+    /// the Nyquist frequency is reported as [`Self::ValueAboveNyquist`], even
+    /// inside a range.
+    InvalidRange(NonNegF32, NonNegF32),
 }
 
 impl Display for FrequencyLimitError {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
-            Self::NotARegularNumber(x) => write!(f, "Not a regular number: {x}"),
-            Self::ValueBelowMinimum(x) => write!(f, "Value below minimum: {x}"),
             Self::ValueAboveNyquist(x) => write!(f, "Value above Nyquist: {x}"),
             Self::InvalidRange(min, max) => write!(f, "Invalid range: {min} <= x <= {max}"),
         }
@@ -135,69 +159,86 @@ impl Error for FrequencyLimitError {}
 
 #[cfg(test)]
 mod tests {
-    use crate::FrequencyLimit;
     use crate::limit::FrequencyLimitError;
+    use crate::{FrequencyLimit, NonNegF32};
 
     #[test]
-    fn test_reject_not_a_number() {
-        for x in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
-            for limit in [
-                FrequencyLimit::Min(x),
-                FrequencyLimit::Max(x),
-                FrequencyLimit::Range(x, x),
-            ] {
-                assert!(
-                    matches!(
-                        limit.verify(22050.0),
-                        Err(FrequencyLimitError::NotARegularNumber(_))
-                    ),
-                    "{limit:?} must be rejected"
-                );
-            }
-        }
+    #[should_panic(expected = "value should be finite and not negative")]
+    fn test_construction_rejects_not_a_number() {
+        let _ = FrequencyLimit::min(f32::NAN);
     }
 
     #[test]
-    fn test_panic_min_below_minimum() {
-        let _ = FrequencyLimit::Min(-1.0).verify(0.0).unwrap_err();
+    #[should_panic(expected = "value should be finite and not negative")]
+    fn test_construction_rejects_negative() {
+        let _ = FrequencyLimit::max(-1.0);
     }
 
     #[test]
-    fn test_panic_min_above_nyquist() {
-        let _ = FrequencyLimit::Min(1.0).verify(0.0).unwrap_err();
+    fn test_min_above_nyquist() {
+        let _ = FrequencyLimit::min(1.0).verify(0.0).unwrap_err();
     }
 
     #[test]
-    fn test_panic_max_below_minimum() {
-        let _ = FrequencyLimit::Max(-1.0).verify(0.0).unwrap_err();
+    fn test_max_above_nyquist() {
+        let _ = FrequencyLimit::max(1.0).verify(0.0).unwrap_err();
     }
 
     #[test]
-    fn test_panic_max_above_nyquist() {
-        let _ = FrequencyLimit::Max(1.0).verify(0.0).unwrap_err();
+    fn test_range_above_nyquist() {
+        let _ = FrequencyLimit::range(0.0, 1.0).verify(0.0).unwrap_err();
     }
 
     #[test]
-    fn test_panic_range_min() {
-        let _ = FrequencyLimit::Range(-1.0, 0.0).verify(0.0).unwrap_err();
+    #[should_panic(expected = "min should not be bigger than max")]
+    fn test_range_rejects_wrong_order() {
+        let _ = FrequencyLimit::range(1.0, 0.0);
     }
 
     #[test]
-    fn test_panic_range_max() {
-        let _ = FrequencyLimit::Range(0.0, 1.0).verify(0.0).unwrap_err();
+    fn test_range_allows_equal_bounds() {
+        let limit = FrequencyLimit::range(50.0, 50.0);
+
+        assert_eq!(50.0, limit.maybe_min().unwrap());
+        assert_eq!(50.0, limit.maybe_max().unwrap());
+    }
+
+    /// The constructor rejects a wrong order, but the variant itself is
+    /// public, so `verify()` still has to.
+    #[test]
+    fn test_verify_catches_a_wrong_range() {
+        let limit = FrequencyLimit::Range(NonNegF32::from(1.0), NonNegF32::from(0.0));
+
+        assert!(matches!(
+            limit.verify(1.0),
+            Err(FrequencyLimitError::InvalidRange(_, _))
+        ));
     }
 
     #[test]
-    fn test_panic_range_order() {
-        let _ = FrequencyLimit::Range(0.0, -1.0).verify(0.0).unwrap_err();
+    fn test_constructors_fill_the_right_bound() {
+        let min = FrequencyLimit::min(50.0);
+        assert_eq!(50.0, min.maybe_min().unwrap());
+        assert_eq!(None, min.maybe_max());
+
+        let max = FrequencyLimit::max(70.0);
+        assert_eq!(None, max.maybe_min());
+        assert_eq!(70.0, max.maybe_max().unwrap());
+
+        let range = FrequencyLimit::range(50.0, 70.0);
+        assert_eq!(50.0, range.maybe_min().unwrap());
+        assert_eq!(70.0, range.maybe_max().unwrap());
+
+        assert_eq!(None, FrequencyLimit::All.maybe_min());
+        assert_eq!(None, FrequencyLimit::All.maybe_max());
     }
 
     #[test]
     fn test_ok() {
-        FrequencyLimit::Min(50.0).verify(100.0).unwrap();
-        FrequencyLimit::Max(50.0).verify(100.0).unwrap();
+        FrequencyLimit::min(50.0).verify(100.0).unwrap();
+        FrequencyLimit::max(50.0).verify(100.0).unwrap();
         // useless, but not an hard error
-        FrequencyLimit::Range(50.0, 50.0).verify(100.0).unwrap();
-        FrequencyLimit::Range(50.0, 70.0).verify(100.0).unwrap();
+        FrequencyLimit::range(50.0, 50.0).verify(100.0).unwrap();
+        FrequencyLimit::range(50.0, 70.0).verify(100.0).unwrap();
     }
 }

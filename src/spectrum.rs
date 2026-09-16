@@ -57,7 +57,7 @@ pub struct FrequencySpectrum {
     data: Vec<(Frequency, FrequencyValue)>,
     /// Frequency resolution of the examined samples in Hertz, i.e. the
     /// frequency steps between elements in [`Self::data()`].
-    frequency_resolution: f32,
+    frequency_resolution: Frequency,
     /// Number of samples that were analyzed. Might be higher than the length
     /// of `data`, if the spectrum was created with a [`FrequencyLimit`].
     ///
@@ -88,7 +88,7 @@ impl FrequencySpectrum {
     #[must_use]
     pub(crate) fn new(
         data: Vec<(Frequency, FrequencyValue)>,
-        frequency_resolution: f32,
+        frequency_resolution: Frequency,
         samples_len: u32,
     ) -> Self {
         debug_assert!(
@@ -101,10 +101,10 @@ impl FrequencySpectrum {
             data,
             frequency_resolution,
             samples_len,
-            // default/placeholder values
-            average: FrequencyValue::from(-1.0),
-            min: (Frequency::from(-1.0), FrequencyValue::from(-1.0)),
-            max: (Frequency::from(-1.0), FrequencyValue::from(-1.0)),
+            // placeholders; calc_statistics() below fills them in
+            average: FrequencyValue::default(),
+            min: (Frequency::default(), FrequencyValue::default()),
+            max: (Frequency::default(), FrequencyValue::default()),
         };
 
         // Important to call this once initially.
@@ -131,9 +131,9 @@ impl FrequencySpectrum {
         // On the first invocation of this function, these values represent the
         // statistics for the unscaled, hence initial, spectrum.
         let stats = SpectrumDataStats {
-            min: self.min.1.val(),
-            max: self.max.1.val(),
-            average: self.average.val(),
+            min: self.min.1,
+            max: self.max.1,
+            average: self.average,
             // attention! not necessarily `data.len()`!
             n: self.samples_len as f32,
         };
@@ -202,7 +202,7 @@ impl FrequencySpectrum {
     /// Returns the frequency resolution of this spectrum.
     #[inline]
     #[must_use]
-    pub const fn frequency_resolution(&self) -> f32 {
+    pub const fn frequency_resolution(&self) -> Frequency {
         self.frequency_resolution
     }
 
@@ -257,7 +257,7 @@ impl FrequencySpectrum {
     #[must_use]
     pub fn dc_component(&self) -> Option<FrequencyValue> {
         let (maybe_dc_component, dc_value) = &self.data[0];
-        if maybe_dc_component.val() == 0.0 {
+        if *maybe_dc_component == 0.0 {
             Some(*dc_value)
         } else {
             None
@@ -302,7 +302,7 @@ impl FrequencySpectrum {
         }
         // bounds check; a NaN search frequency fails every comparison and
         // therefore lands here as well
-        let in_bounds = search_fr >= min_fr.val() && search_fr <= max_fr.val();
+        let in_bounds = search_fr >= min_fr && search_fr <= max_fr;
         if !in_bounds {
             return None;
         }
@@ -377,7 +377,7 @@ impl FrequencySpectrum {
 
         // bounds check; a NaN search frequency fails every comparison and
         // therefore lands here as well
-        let in_bounds = search_fr >= min_fr.val() && search_fr <= max_fr.val();
+        let in_bounds = search_fr >= min_fr && search_fr <= max_fr;
         if !in_bounds {
             return None;
         }
@@ -392,7 +392,7 @@ impl FrequencySpectrum {
 
             // check if we are in the correct window; we are in the correct window
             // iff point_a_x <= search_fr <= point_b_x
-            if search_fr > point_b_x.val() {
+            if search_fr > point_b_x {
                 continue;
             }
 
@@ -401,7 +401,7 @@ impl FrequencySpectrum {
                 (point_a_x, point_a_y)
             } else {
                 // absolute difference
-                let delta_to_a = search_fr - point_a_x.val();
+                let delta_to_a = search_fr - point_a_x;
                 if delta_to_a / self.frequency_resolution < 0.5 {
                     (point_a_x, point_a_y)
                 } else {
@@ -550,8 +550,11 @@ mod tests {
             (0.0_f32.into(), 5.0_f32.into()),
             (450.0.into(), 200.0.into()),
         ];
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         for search_fr in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, 451.0] {
             assert_eq!(None, spectrum.freq_val_exact(search_fr));
@@ -579,8 +582,11 @@ mod tests {
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         // test inner vector is ordered
         {
@@ -640,8 +646,8 @@ mod tests {
 
         // test getters
         {
-            assert_eq!(0.0, spectrum.min_fr().val(), "min_fr() must work");
-            assert_eq!(500.0, spectrum.max_fr().val(), "max_fr() must work");
+            assert_eq!(0.0, spectrum.min_fr(), "min_fr() must work");
+            assert_eq!(500.0, spectrum.max_fr(), "max_fr() must work");
             assert_eq!(
                 (300.0.into(), 0.0.into()),
                 spectrum.min(),
@@ -652,8 +658,8 @@ mod tests {
                 spectrum.max(),
                 "max() must work"
             );
-            assert_eq!(200.0 - 0.0, spectrum.range().val(), "range() must work");
-            assert_eq!(80.55556, spectrum.average().val(), "average() must work");
+            assert_eq!(200.0 - 0.0, spectrum.range(), "range() must work");
+            assert_eq!(80.55556, spectrum.average(), "average() must work");
             assert_eq!(
                 50.0,
                 spectrum.frequency_resolution(),
@@ -663,14 +669,14 @@ mod tests {
 
         // test get frequency exact
         {
-            assert_eq!(5.0, spectrum.freq_val_exact(0.0).unwrap().val(),);
-            assert_eq!(50.0, spectrum.freq_val_exact(50.0).unwrap().val(),);
-            assert_eq!(150.0, spectrum.freq_val_exact(150.0).unwrap().val(),);
-            assert_eq!(100.0, spectrum.freq_val_exact(200.0).unwrap().val(),);
-            assert_eq!(20.0, spectrum.freq_val_exact(250.0).unwrap().val(),);
-            assert_eq!(0.0, spectrum.freq_val_exact(300.0).unwrap().val(),);
-            assert_eq!(100.0, spectrum.freq_val_exact(375.0).unwrap().val(),);
-            assert_eq!(200.0, spectrum.freq_val_exact(450.0).unwrap().val(),);
+            assert_eq!(5.0, spectrum.freq_val_exact(0.0).unwrap(),);
+            assert_eq!(50.0, spectrum.freq_val_exact(50.0).unwrap(),);
+            assert_eq!(150.0, spectrum.freq_val_exact(150.0).unwrap(),);
+            assert_eq!(100.0, spectrum.freq_val_exact(200.0).unwrap(),);
+            assert_eq!(20.0, spectrum.freq_val_exact(250.0).unwrap(),);
+            assert_eq!(0.0, spectrum.freq_val_exact(300.0).unwrap(),);
+            assert_eq!(100.0, spectrum.freq_val_exact(375.0).unwrap(),);
+            assert_eq!(200.0, spectrum.freq_val_exact(450.0).unwrap(),);
             assert_eq!(None, spectrum.freq_val_exact(2000.0));
         }
 
@@ -714,8 +720,11 @@ mod tests {
             (450.0.into(), 200.0.into()),
         ];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         // -1 not included
         assert!(spectrum.freq_val_exact(-1.0).is_none());
@@ -728,8 +737,11 @@ mod tests {
             (450.0.into(), 200.0.into()),
         ];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         // 451 not included
         assert!(spectrum.freq_val_exact(451.0).is_none());
@@ -742,39 +754,31 @@ mod tests {
         let spectrum = FrequencySpectrum::new(
             spectrum_vector.clone(),
             // not important here, any value
-            50.0,
+            50.0.into(),
             spectrum_vector.len() as _,
         );
 
+        assert_ne!(f32::NAN, spectrum.min().1, "NaN is not valid, must be 0.0!");
+        assert_ne!(f32::NAN, spectrum.max().1, "NaN is not valid, must be 0.0!");
         assert_ne!(
             f32::NAN,
-            spectrum.min().1.val(),
-            "NaN is not valid, must be 0.0!"
-        );
-        assert_ne!(
-            f32::NAN,
-            spectrum.max().1.val(),
-            "NaN is not valid, must be 0.0!"
-        );
-        assert_ne!(
-            f32::NAN,
-            spectrum.average().val(),
+            spectrum.average(),
             "NaN is not valid, must be 0.0!"
         );
 
         assert_ne!(
             f32::INFINITY,
-            spectrum.min().1.val(),
+            spectrum.min().1,
             "INFINITY is not valid, must be 0.0!"
         );
         assert_ne!(
             f32::INFINITY,
-            spectrum.max().1.val(),
+            spectrum.max().1,
             "INFINITY is not valid, must be 0.0!"
         );
         assert_ne!(
             f32::INFINITY,
-            spectrum.average().val(),
+            spectrum.average(),
             "INFINITY is not valid, must be 0.0!"
         );
     }
@@ -784,8 +788,11 @@ mod tests {
         let spectrum_vector: Vec<(Frequency, FrequencyValue)> =
             vec![(150.0.into(), 150.0.into()), (200.0.into(), 100.0.into())];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         assert!(
             spectrum.dc_component().is_none(),
@@ -819,8 +826,11 @@ mod tests {
             (53.833008.into(), 8.93011.into()),
         ];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 44100.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            44100.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         assert_eq!(
             spectrum.max(),

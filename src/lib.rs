@@ -123,7 +123,7 @@ extern crate std;
 #[cfg_attr(test, macro_use)]
 extern crate alloc;
 
-pub use crate::frequency::{Frequency, FrequencyValue};
+pub use crate::frequency::{FiniteF32, Frequency, FrequencyValue, NonNegF32};
 pub use crate::limit::FrequencyLimit;
 pub use crate::limit::FrequencyLimitError;
 pub use crate::spectrum::FrequencySpectrum;
@@ -187,13 +187,18 @@ mod tests;
 /// sine wave components that make up the input signal.
 ///
 /// ## Parameters
-/// * `samples` raw audio, e.g. 16bit audio data but as f32.
+/// * `samples` Raw audio samples, normalized to `[-1.0; 1.0]`, which is what
+///   audio APIs typically deliver. Other scales work too, as the FFT is
+///   linear and the values simply scale with the input, but the normalized
+///   range keeps the magnitudes small: very large samples can push a
+///   magnitude out of the range of [`f32`].
 ///   You should apply a window function (like Hann) on the data first.
 ///   The final frequency resolution (spacing between two bins) is
 ///   `sample_rate / N`, e.g. `44100/16384 == 2.69Hz`, i.e. more samples =>
 ///   better accuracy/frequency resolution. The amount of samples must
 ///   be a power of 2. If you don't have enough data, provide zeroes.
-/// * `sampling_rate` The used sampling_rate, e.g. `44100 [Hz]`.
+/// * `sampling_rate` The used sampling_rate in Hertz, e.g. `44100`. It must
+///   not be zero, as every frequency of the spectrum derives from it.
 /// * `frequency_limit` The [`FrequencyLimit`].
 /// * `scaling_fn` See [`SpectrumScalingFunction`] for details.
 ///
@@ -233,6 +238,9 @@ pub fn samples_fft_to_spectrum(
     {
         if samples.len() < 2 || !samples.len().is_power_of_two() || samples.len() > 32768 {
             return Err(SpectrumAnalyzerError::InvalidLengthOfSamples);
+        }
+        if sampling_rate == 0 {
+            return Err(SpectrumAnalyzerError::InvalidSamplingRate);
         }
         let max_detectable_frequency = sampling_rate as f32 / 2.0;
 
@@ -368,9 +376,12 @@ fn fft_result_to_spectrum(
         })
         // FFT result is always complex: calc magnitude of complex number to get
         // the frequency value: sqrt(re*re + im*im) (re: real part, im: imaginary part)
-        .map(|(fr_bin, fr, fr_val)| (fr_bin, fr, complex_to_magnitude(fr_val)))
-        // Wrap f32 values in convenient thin f32 wrappers.
-        .map(|(_fr_bin, fr, val)| (Frequency::from(fr), FrequencyValue::from(val)));
+        .map(|(_fr_bin, fr, fr_val)| {
+            (
+                Frequency::from(fr),
+                FrequencyValue::from(complex_to_magnitude(fr_val)),
+            )
+        });
 
     // Collect all into a sorted vector (from lowest frequency to highest)
     frequency_vec.extend(bin_iter);
@@ -412,8 +423,8 @@ fn fft_result_to_spectrum(
 /// * <https://www.researchgate.net/post/How-can-I-define-the-frequency-resolution-in-FFT-And-what-is-the-difference-on-interpreting-the-results-between-high-and-low-frequency-resolution>
 /// * <https://stackoverflow.com/questions/4364823/>
 #[inline]
-fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
-    sampling_rate as f32 / samples_len as f32
+fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> Frequency {
+    Frequency::from(sampling_rate as f32 / samples_len as f32)
 }
 
 /// Maps a [`Complex32`] to its magnitude as `f32`. This is done by calculating
@@ -423,10 +434,8 @@ fn fft_calc_frequency_resolution(sampling_rate: u32, samples_len: u32) -> f32 {
 /// ## Parameters
 /// * `val` A single value from the FFT output buffer of type [`Complex32`].
 #[inline]
-fn complex_to_magnitude(val: &Complex32) -> f32 {
+fn complex_to_magnitude(val: &Complex32) -> NonNegF32 {
     // calculates sqrt(re*re + im*im), i.e. magnitude of complex number
     let sum = val.re * val.re + val.im * val.im;
-    let sqrt = libm::sqrtf(sum);
-    debug_assert!(!sqrt.is_nan(), "sqrt is NaN!");
-    sqrt
+    NonNegF32::from(libm::sqrtf(sum))
 }

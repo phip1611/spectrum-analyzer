@@ -91,13 +91,16 @@ fn example__bass_drum_sample() {
     // next smaller power of two is: 2^14 == 16384 => FFT needs power of 2
     let (samples, sampling_rate) =
         read_mp3_to_mono("test/samples/bass_drum_with_high-hat_at_end-sample.mp3");
-    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
+    let samples = samples
+        .into_iter()
+        .map(|x| f32::from(x) / f32::from(i16::MAX))
+        .collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
         &samples[0..4096],
         sampling_rate,
         "example__mp3-samples__bass_drum__spectrum",
-        FrequencyLimit::Max(5000.0),
+        FrequencyLimit::max(5000.0),
     )
 }
 
@@ -107,13 +110,16 @@ fn example__clap_beat_sample() {
     // we have 44100samples/s*0,379s == 16714 samples
     // next smaller power of two is: 2^14 == 16384 => FFT needs power of 2
     let (samples, sampling_rate) = read_mp3_to_mono("test/samples/clap-beat-sample.mp3");
-    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
+    let samples = samples
+        .into_iter()
+        .map(|x| f32::from(x) / f32::from(i16::MAX))
+        .collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
         &samples[0..4096],
         sampling_rate,
         "example__mp3-samples__clap_beat__spectrum",
-        FrequencyLimit::Max(5000.0),
+        FrequencyLimit::max(5000.0),
     )
 }
 
@@ -123,7 +129,10 @@ fn example__high_hat_sample() {
     // we have 44100samples/s*0,149s == 6571 samples
     // next smaller power of two is: 2^12 == 4096 => FFT needs power of 2
     let (samples, sampling_rate) = read_mp3_to_mono("test/samples/high-hat-sample.mp3");
-    let samples = samples.into_iter().map(|x| x as f32).collect::<Vec<f32>>();
+    let samples = samples
+        .into_iter()
+        .map(|x| f32::from(x) / f32::from(i16::MAX))
+        .collect::<Vec<f32>>();
 
     to_spectrum_and_plot(
         &samples[0..4096],

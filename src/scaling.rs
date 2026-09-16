@@ -53,25 +53,24 @@ SOFTWARE.
 //!
 //! [`samples_fft_to_spectrum`]: crate::samples_fft_to_spectrum
 
+use crate::FrequencyValue;
+
 /// Helper struct for [`SpectrumScalingFunction`] that is passed into the
 /// scaling function together with the current frequency value.
 ///
 /// This structure can be used to scale each value. All properties reference the
 /// current data of a [`FrequencySpectrum`].
 ///
-/// This uses `f32` in favor of [`FrequencyValue`] because the latter led to
-/// some implementation problems.
-///
 /// [`FrequencySpectrum`]: crate::FrequencySpectrum
 /// [`FrequencyValue`]: crate::FrequencyValue
 #[derive(Debug)]
 pub struct SpectrumDataStats {
     /// Minimal frequency value in spectrum.
-    pub min: f32,
+    pub min: FrequencyValue,
     /// Maximum frequency value in spectrum.
-    pub max: f32,
+    pub max: FrequencyValue,
     /// Average frequency value in spectrum.
-    pub average: f32,
+    pub average: FrequencyValue,
     /// Number of samples (`samples.len()`), not the number of values in the
     /// spectrum (which can be smaller due to a frequency limit).
     pub n: f32,
@@ -94,9 +93,6 @@ pub struct SpectrumDataStats {
 /// You must take care of, that you don't have division by zero in your function
 /// or that the result is NaN or Infinity (regarding IEEE-754). If the result
 /// is NaN or Infinity, the library will return `Err`.
-///
-/// This uses `f32` in favor of [`FrequencyValue`] because the latter led to
-/// some implementation problems.
 ///
 /// [`FrequencySpectrum`]: crate::FrequencySpectrum
 /// [`FrequencyValue`]: crate::FrequencyValue
@@ -218,9 +214,9 @@ mod tests {
     fn test_scale_to_zero_to_one() {
         let data = vec![0.0_f32, 1.1, 2.2, 3.3, 4.4, 5.5];
         let stats = SpectrumDataStats {
-            min: data[0],
-            max: data[data.len() - 1],
-            average: data.iter().sum::<f32>() / data.len() as f32,
+            min: data[0].into(),
+            max: data[data.len() - 1].into(),
+            average: (data.iter().sum::<f32>() / data.len() as f32).into(),
             n: data.len() as f32,
         };
         // check that type matches
@@ -238,9 +234,9 @@ mod tests {
     #[test]
     fn test_scale_20_times_log10() {
         let stats = SpectrumDataStats {
-            min: 0.0,
-            max: 10.0,
-            average: 0.0,
+            min: 0.0.into(),
+            max: 10.0.into(),
+            average: 0.0.into(),
             n: 4.0,
         };
         let db = |val: f32| scale_20_times_log10(val, &stats);
@@ -256,9 +252,9 @@ mod tests {
     #[test]
     fn test_chaining_with_a_closure() {
         let stats = SpectrumDataStats {
-            min: 0.0,
-            max: 10.0,
-            average: 5.0,
+            min: 0.0.into(),
+            max: 10.0.into(),
+            average: 5.0.into(),
             n: 4.0,
         };
         let scaling_fn = |val, stats: &_| scale_20_times_log10(divide_by_N(val, stats), stats);
@@ -266,7 +262,7 @@ mod tests {
         // 10.0 / 4 = 2.5 -> 20 * log10(2.5)
         assert!(float_cmp::approx_eq!(
             f32,
-            scaling_fn(stats.max, &stats),
+            scaling_fn(stats.max.val(), &stats),
             7.9588,
             epsilon = 1e-3
         ));
