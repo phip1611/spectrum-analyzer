@@ -28,7 +28,8 @@ use spectrum_analyzer::scaling::divide_by_N;
 /// Minimal example.
 fn main() {
     // YOU need to implement the samples source; get microphone input for example
-    let samples: &[f32] = &[0.0, 3.14, 2.718, -1.0, -2.0, -4.0, 7.0, 6.0];
+    // samples are expected to be normalized to [-1.0; 1.0]
+    let samples: &[f32] = &[0.0, 0.31, 0.27, -0.1, -0.2, -0.4, 0.7, 0.6];
     // apply hann window for smoothing; length must be a power of 2 for the FFT
     // 2048 is a good starting point with 44100 Hz
     let hann_window = hann_window(samples);
