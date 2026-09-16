@@ -58,6 +58,8 @@
   of an `f32`, so a negative or non-regular limit cannot be built any more.
   `FrequencyLimitError::{NotARegularNumber,ValueBelowMinimum}` are gone with
   it, and `FrequencyLimit::{min,max,range}` construct a limit from an `f32`
+- **BREAKING** `FrequencySpectrum::frequency_resolution` returns a
+  `Frequency` instead of an `f32`
 
 ## 1.9.0 (2026-09-05)
 

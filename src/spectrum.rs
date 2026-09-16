@@ -57,7 +57,7 @@ pub struct FrequencySpectrum {
     data: Vec<(Frequency, FrequencyValue)>,
     /// Frequency resolution of the examined samples in Hertz, i.e. the
     /// frequency steps between elements in [`Self::data()`].
-    frequency_resolution: f32,
+    frequency_resolution: Frequency,
     /// Number of samples that were analyzed. Might be higher than the length
     /// of `data`, if the spectrum was created with a [`FrequencyLimit`].
     ///
@@ -88,7 +88,7 @@ impl FrequencySpectrum {
     #[must_use]
     pub(crate) fn new(
         data: Vec<(Frequency, FrequencyValue)>,
-        frequency_resolution: f32,
+        frequency_resolution: Frequency,
         samples_len: u32,
     ) -> Self {
         debug_assert!(
@@ -202,7 +202,7 @@ impl FrequencySpectrum {
     /// Returns the frequency resolution of this spectrum.
     #[inline]
     #[must_use]
-    pub const fn frequency_resolution(&self) -> f32 {
+    pub const fn frequency_resolution(&self) -> Frequency {
         self.frequency_resolution
     }
 
@@ -550,8 +550,11 @@ mod tests {
             (0.0_f32.into(), 5.0_f32.into()),
             (450.0.into(), 200.0.into()),
         ];
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         for search_fr in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, 451.0] {
             assert_eq!(None, spectrum.freq_val_exact(search_fr));
@@ -579,8 +582,11 @@ mod tests {
             .map(|(fr, val)| (fr.into(), val.into()))
             .collect::<Vec<(Frequency, FrequencyValue)>>();
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         // test inner vector is ordered
         {
@@ -714,8 +720,11 @@ mod tests {
             (450.0.into(), 200.0.into()),
         ];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         // -1 not included
         assert!(spectrum.freq_val_exact(-1.0).is_none());
@@ -728,8 +737,11 @@ mod tests {
             (450.0.into(), 200.0.into()),
         ];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         // 451 not included
         assert!(spectrum.freq_val_exact(451.0).is_none());
@@ -742,7 +754,7 @@ mod tests {
         let spectrum = FrequencySpectrum::new(
             spectrum_vector.clone(),
             // not important here, any value
-            50.0,
+            50.0.into(),
             spectrum_vector.len() as _,
         );
 
@@ -776,8 +788,11 @@ mod tests {
         let spectrum_vector: Vec<(Frequency, FrequencyValue)> =
             vec![(150.0.into(), 150.0.into()), (200.0.into(), 100.0.into())];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            50.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         assert!(
             spectrum.dc_component().is_none(),
@@ -811,8 +826,11 @@ mod tests {
             (53.833008.into(), 8.93011.into()),
         ];
 
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 44100.0, spectrum_vector.len() as _);
+        let spectrum = FrequencySpectrum::new(
+            spectrum_vector.clone(),
+            44100.0.into(),
+            spectrum_vector.len() as _,
+        );
 
         assert_eq!(
             spectrum.max(),
