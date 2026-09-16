@@ -63,6 +63,8 @@
 - **BREAKING** `scaling::SpectrumDataStats::{min,max,average}` are a
   `FrequencyValue` instead of an `f32`; `n` stays an `f32`, since it is there
   to divide by
+- **BREAKING** `FrequencyLimitError::{ValueAboveNyquist,InvalidRange}` carry
+  a `NonNegF32` instead of an `f32`, like the limit they come from
 
 ## 1.9.0 (2026-09-05)
 

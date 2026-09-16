@@ -116,7 +116,7 @@ impl FrequencyLimit {
             Self::All => Ok(()),
             Self::Min(x) | Self::Max(x) => {
                 if *x > max_detectable_frequency {
-                    Err(FrequencyLimitError::ValueAboveNyquist(x.val()))
+                    Err(FrequencyLimitError::ValueAboveNyquist(*x))
                 } else {
                     Ok(())
                 }
@@ -125,7 +125,7 @@ impl FrequencyLimit {
                 Self::Min(*min).verify(max_detectable_frequency)?;
                 Self::Max(*max).verify(max_detectable_frequency)?;
                 if min > max {
-                    Err(FrequencyLimitError::InvalidRange(min.val(), max.val()))
+                    Err(FrequencyLimitError::InvalidRange(*min, *max))
                 } else {
                     Ok(())
                 }
@@ -139,11 +139,11 @@ impl FrequencyLimit {
 pub enum FrequencyLimitError {
     /// If the maximum value is above Nyquist frequency. Nyquist-Frequency is the maximum
     /// detectable frequency.
-    ValueAboveNyquist(f32),
+    ValueAboveNyquist(NonNegF32),
     /// The first member of the tuple is bigger than the second. A value above
     /// the Nyquist frequency is reported as [`Self::ValueAboveNyquist`], even
     /// inside a range.
-    InvalidRange(f32, f32),
+    InvalidRange(NonNegF32, NonNegF32),
 }
 
 impl Display for FrequencyLimitError {
