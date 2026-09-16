@@ -75,22 +75,6 @@ impl FrequencyLimit {
         }
     }
 
-    /// Returns the minimum value, panics if it's none.
-    /// Unwrapped version of [`Self::maybe_min`].
-    #[inline]
-    #[must_use]
-    pub const fn min(&self) -> f32 {
-        self.maybe_min().expect("Must contain a value!")
-    }
-
-    /// Returns the maximum value, panics if it's none.
-    /// Unwrapped version of [`Self::maybe_max`].
-    #[inline]
-    #[must_use]
-    pub const fn max(&self) -> f32 {
-        self.maybe_max().expect("Must contain a value!")
-    }
-
     /// Verifies that the frequency limit has sane values and takes the maximum possible
     /// frequency into account.
     pub fn verify(&self, max_detectable_frequency: f32) -> Result<(), FrequencyLimitError> {

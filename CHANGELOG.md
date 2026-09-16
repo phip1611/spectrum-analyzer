@@ -52,6 +52,8 @@
   with the new `FrequencyLimitError::NotARegularNumber`. Before, a `NaN`
   minimum silently behaved like no limit and a `NaN` maximum reported the
   limit as too narrow
+- **BREAKING** removed `FrequencyLimit::{min,max}`, which panicked for
+  variants without that bound; use `FrequencyLimit::{maybe_min,maybe_max}`
 
 ## 1.9.0 (2026-09-05)
 
