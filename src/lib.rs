@@ -197,7 +197,8 @@ mod tests;
 ///   `sample_rate / N`, e.g. `44100/16384 == 2.69Hz`, i.e. more samples =>
 ///   better accuracy/frequency resolution. The amount of samples must
 ///   be a power of 2. If you don't have enough data, provide zeroes.
-/// * `sampling_rate` The used sampling_rate, e.g. `44100 [Hz]`.
+/// * `sampling_rate` The used sampling_rate in Hertz, e.g. `44100`. It must
+///   not be zero, as every frequency of the spectrum derives from it.
 /// * `frequency_limit` The [`FrequencyLimit`].
 /// * `scaling_fn` See [`SpectrumScalingFunction`] for details.
 ///
@@ -237,6 +238,9 @@ pub fn samples_fft_to_spectrum(
     {
         if samples.len() < 2 || !samples.len().is_power_of_two() || samples.len() > 32768 {
             return Err(SpectrumAnalyzerError::InvalidLengthOfSamples);
+        }
+        if sampling_rate == 0 {
+            return Err(SpectrumAnalyzerError::InvalidSamplingRate);
         }
         let max_detectable_frequency = sampling_rate as f32 / 2.0;
 

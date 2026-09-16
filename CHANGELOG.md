@@ -65,6 +65,9 @@
   to divide by
 - **BREAKING** `FrequencyLimitError::{ValueAboveNyquist,InvalidRange}` carry
   a `NonNegF32` instead of an `f32`, like the limit they come from
+- **BREAKING** a sampling rate of zero is rejected with the new
+  `SpectrumAnalyzerError::InvalidSamplingRate`. It used to produce a spectrum
+  in which every frequency was `0 Hz`
 
 ## 1.9.0 (2026-09-05)
 

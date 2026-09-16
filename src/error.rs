@@ -38,6 +38,8 @@ pub enum SpectrumAnalyzerError {
     /// The amount of samples must be a power of 2, at least 2, and no more
     /// than 32768.
     InvalidLengthOfSamples,
+    /// The sampling rate must not be zero.
+    InvalidSamplingRate,
     /// NaN values in samples are not supported!
     NaNValuesNotSupported,
     /// Infinity-values (regarding floating point representation) in samples are not supported!
@@ -59,6 +61,9 @@ impl Display for SpectrumAnalyzerError {
                 f,
                 "The amount of samples must be a power of 2, at least 2, and no more than 32768!"
             ),
+            Self::InvalidSamplingRate => {
+                write!(f, "The sampling rate must not be zero!")
+            }
             Self::NaNValuesNotSupported => {
                 write!(f, "NaN values are not supported!")
             }

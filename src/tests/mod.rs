@@ -393,6 +393,11 @@ fn test_invalid_input() {
     let err = samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::All, None).unwrap_err();
     assert!(matches!(err, SpectrumAnalyzerError::InvalidLengthOfSamples));
 
+    // the sampling rate must not be zero
+    let samples = vec![0.0; 8];
+    let err = samples_fft_to_spectrum(&samples, 0, FrequencyLimit::All, None).unwrap_err();
+    assert!(matches!(err, SpectrumAnalyzerError::InvalidSamplingRate));
+
     // test frequency limit gets verified
     let samples = vec![0.0; 4];
     let err =
