@@ -43,28 +43,34 @@ use alloc::vec::Vec;
 /// [`samples_fft_to_spectrum`]: crate::samples_fft_to_spectrum
 #[derive(Debug)]
 pub struct FrequencySpectrum {
-    /// All (Frequency, FrequencyValue) data pairs sorted by lowest frequency
-    /// to the highest frequency.Vector is sorted from lowest
-    /// frequency to highest and data is normalized/scaled
-    /// according to all applied scaling functions.
+    /// All (Frequency, FrequencyValue) data pairs sorted from lowest to highest
+    /// frequency (in Hz).
+    ///
+    /// The frequency bin refers to the original frequency bin and not
+    /// necessarily to the element in the vector, if there was a
+    /// [`FrequencyLimit`].
+    ///
+    /// The data is normalized/scaled according to all applied scaling
+    /// functions.
+    ///
+    /// [`FrequencyLimit`]: crate::limit::FrequencyLimit
     data: Vec<(Frequency, FrequencyValue)>,
-    /// Frequency resolution of the examined samples in Hertz,
-    /// i.e the frequency steps between elements in the vector
-    /// inside field [`Self::data`].
+    /// Frequency resolution of the examined samples in Hertz, i.e. the
+    /// frequency steps between elements in [`Self::data()`].
     frequency_resolution: f32,
-    /// Number of samples that were analyzed. Might be bigger than the length
-    /// of `data`, if the spectrum was created with a [`crate::limit::FrequencyLimit`] .
+    /// Number of samples that were analyzed. Might be higher than the length
+    /// of `data`, if the spectrum was created with a [`FrequencyLimit`].
+    ///
+    /// [`FrequencyLimit`]: crate::limit::FrequencyLimit
     samples_len: u32,
     /// Average frequency value corresponding to data in
-    /// [`FrequencySpectrum::data`].
+    /// [`FrequencySpectrum::data()`].
     average: FrequencyValue,
-    /// Pair of (frequency, frequency value) where the frequency value is
-    /// **minimal** inside the spectrum.
-    /// Corresponding to data in [`FrequencySpectrum::data`].
+    /// Minimal element in [`FrequencySpectrum::data()`] regarding the
+    /// frequency value.
     min: (Frequency, FrequencyValue),
-    /// Pair of (frequency, frequency value) where the frequency value is
-    /// **maximum** inside the spectrum.
-    /// Corresponding to data in [`FrequencySpectrum::data`].
+    /// Maximal element in [`FrequencySpectrum::data()`] regarding the
+    /// frequency value.
     max: (Frequency, FrequencyValue),
 }
 
@@ -113,7 +119,7 @@ impl FrequencySpectrum {
     /// `SpectrumAnalyzerError::ScalingError` is returned.
     ///
     /// ## Parameters
-    /// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`].
+    /// * `scaling_fn` See [`SpectrumScalingFunction`].
     #[inline]
     pub fn apply_scaling_fn(
         &mut self,
@@ -132,9 +138,6 @@ impl FrequencySpectrum {
             n: self.samples_len as f32,
         };
 
-        // Iterate over the whole spectrum and scale each frequency value.
-        // I use a regular for loop instead of for_each(), so that I can
-        // early return a result here
         for (_fr, fr_val) in &mut self.data {
             // scale value
             let scaled_val: f32 = scaling_fn(fr_val.val(), &stats);
