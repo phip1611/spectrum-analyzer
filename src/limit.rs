@@ -75,29 +75,15 @@ impl FrequencyLimit {
         }
     }
 
-    /// Returns the minimum value, panics if it's none.
-    /// Unwrapped version of [`Self::maybe_min`].
-    #[inline]
-    #[must_use]
-    pub const fn min(&self) -> f32 {
-        self.maybe_min().expect("Must contain a value!")
-    }
-
-    /// Returns the maximum value, panics if it's none.
-    /// Unwrapped version of [`Self::maybe_max`].
-    #[inline]
-    #[must_use]
-    pub const fn max(&self) -> f32 {
-        self.maybe_max().expect("Must contain a value!")
-    }
-
     /// Verifies that the frequency limit has sane values and takes the maximum possible
     /// frequency into account.
     pub fn verify(&self, max_detectable_frequency: f32) -> Result<(), FrequencyLimitError> {
         match self {
             Self::All => Ok(()),
             Self::Min(x) | Self::Max(x) => {
-                if *x < 0.0 {
+                if !x.is_finite() {
+                    Err(FrequencyLimitError::NotARegularNumber(*x))
+                } else if *x < 0.0 {
                     Err(FrequencyLimitError::ValueBelowMinimum(*x))
                 } else if *x > max_detectable_frequency {
                     Err(FrequencyLimitError::ValueAboveNyquist(*x))
@@ -121,6 +107,8 @@ impl FrequencyLimit {
 /// Possible errors when creating a [`FrequencyLimit`]-object.
 #[derive(Debug)]
 pub enum FrequencyLimitError {
+    /// The value is `NaN` or infinite.
+    NotARegularNumber(f32),
     /// If the minimum value is below 0. Negative frequencies are not supported.
     ValueBelowMinimum(f32),
     /// If the maximum value is above Nyquist frequency. Nyquist-Frequency is the maximum
@@ -135,6 +123,7 @@ pub enum FrequencyLimitError {
 impl Display for FrequencyLimitError {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         match self {
+            Self::NotARegularNumber(x) => write!(f, "Not a regular number: {x}"),
             Self::ValueBelowMinimum(x) => write!(f, "Value below minimum: {x}"),
             Self::ValueAboveNyquist(x) => write!(f, "Value above Nyquist: {x}"),
             Self::InvalidRange(min, max) => write!(f, "Invalid range: {min} <= x <= {max}"),
@@ -147,6 +136,26 @@ impl Error for FrequencyLimitError {}
 #[cfg(test)]
 mod tests {
     use crate::FrequencyLimit;
+    use crate::limit::FrequencyLimitError;
+
+    #[test]
+    fn test_reject_not_a_number() {
+        for x in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY] {
+            for limit in [
+                FrequencyLimit::Min(x),
+                FrequencyLimit::Max(x),
+                FrequencyLimit::Range(x, x),
+            ] {
+                assert!(
+                    matches!(
+                        limit.verify(22050.0),
+                        Err(FrequencyLimitError::NotARegularNumber(_))
+                    ),
+                    "{limit:?} must be rejected"
+                );
+            }
+        }
+    }
 
     #[test]
     fn test_panic_min_below_minimum() {

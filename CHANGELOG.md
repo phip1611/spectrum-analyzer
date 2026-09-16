@@ -45,6 +45,15 @@
   `SpectrumAnalyzerError::{TooFewSamples,SamplesLengthNotAPowerOfTwo}` in favor
   of `SpectrumAnalyzerError::InvalidLengthOfSamples`. Samples lengths of more
   than 32768 do not panic anymore but return an error.
+- **BREAKING**: `FrequencySpectrum::{freq_val_closest,freq_val_exact}` now return
+  `None` if the value is out of bounds instead of panicking, and `Some` for
+  valid results.
+- **BREAKING** a `NaN` or infinite value in a `FrequencyLimit` is rejected
+  with the new `FrequencyLimitError::NotARegularNumber`. Before, a `NaN`
+  minimum silently behaved like no limit and a `NaN` maximum reported the
+  limit as too narrow
+- **BREAKING** removed `FrequencyLimit::{min,max}`, which panicked for
+  variants without that bound; use `FrequencyLimit::{maybe_min,maybe_max}`
 
 ## 1.9.0 (2026-09-05)
 

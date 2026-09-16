@@ -43,28 +43,34 @@ use alloc::vec::Vec;
 /// [`samples_fft_to_spectrum`]: crate::samples_fft_to_spectrum
 #[derive(Debug)]
 pub struct FrequencySpectrum {
-    /// All (Frequency, FrequencyValue) data pairs sorted by lowest frequency
-    /// to the highest frequency.Vector is sorted from lowest
-    /// frequency to highest and data is normalized/scaled
-    /// according to all applied scaling functions.
+    /// All (Frequency, FrequencyValue) data pairs sorted from lowest to highest
+    /// frequency (in Hz).
+    ///
+    /// The frequency bin refers to the original frequency bin and not
+    /// necessarily to the element in the vector, if there was a
+    /// [`FrequencyLimit`].
+    ///
+    /// The data is normalized/scaled according to all applied scaling
+    /// functions.
+    ///
+    /// [`FrequencyLimit`]: crate::limit::FrequencyLimit
     data: Vec<(Frequency, FrequencyValue)>,
-    /// Frequency resolution of the examined samples in Hertz,
-    /// i.e the frequency steps between elements in the vector
-    /// inside field [`Self::data`].
+    /// Frequency resolution of the examined samples in Hertz, i.e. the
+    /// frequency steps between elements in [`Self::data()`].
     frequency_resolution: f32,
-    /// Number of samples that were analyzed. Might be bigger than the length
-    /// of `data`, if the spectrum was created with a [`crate::limit::FrequencyLimit`] .
+    /// Number of samples that were analyzed. Might be higher than the length
+    /// of `data`, if the spectrum was created with a [`FrequencyLimit`].
+    ///
+    /// [`FrequencyLimit`]: crate::limit::FrequencyLimit
     samples_len: u32,
     /// Average frequency value corresponding to data in
-    /// [`FrequencySpectrum::data`].
+    /// [`FrequencySpectrum::data()`].
     average: FrequencyValue,
-    /// Pair of (frequency, frequency value) where the frequency value is
-    /// **minimal** inside the spectrum.
-    /// Corresponding to data in [`FrequencySpectrum::data`].
+    /// Minimal element in [`FrequencySpectrum::data()`] regarding the
+    /// frequency value.
     min: (Frequency, FrequencyValue),
-    /// Pair of (frequency, frequency value) where the frequency value is
-    /// **maximum** inside the spectrum.
-    /// Corresponding to data in [`FrequencySpectrum::data`].
+    /// Maximal element in [`FrequencySpectrum::data()`] regarding the
+    /// frequency value.
     max: (Frequency, FrequencyValue),
 }
 
@@ -113,7 +119,7 @@ impl FrequencySpectrum {
     /// `SpectrumAnalyzerError::ScalingError` is returned.
     ///
     /// ## Parameters
-    /// * `scaling_fn` See [`crate::scaling::SpectrumScalingFunction`].
+    /// * `scaling_fn` See [`SpectrumScalingFunction`].
     #[inline]
     pub fn apply_scaling_fn(
         &mut self,
@@ -132,9 +138,6 @@ impl FrequencySpectrum {
             n: self.samples_len as f32,
         };
 
-        // Iterate over the whole spectrum and scale each frequency value.
-        // I use a regular for loop instead of for_each(), so that I can
-        // early return a result here
         for (_fr, fr_val) in &mut self.data {
             // scale value
             let scaled_val: f32 = scaling_fn(fr_val.val(), &stats);
@@ -261,7 +264,11 @@ impl FrequencySpectrum {
         }
     }
 
-    /// Returns the value of the given frequency from the spectrum either exactly or approximated.
+    /// Returns the value of the given frequency from the spectrum either
+    /// exactly or approximated.
+    ///
+    /// If the value is out of bounds, the function returns `None`.
+    ///
     /// If `search_fr` is not exactly given in the spectrum, i.e. due to the
     /// [`Self::frequency_resolution`], this function takes the two closest
     /// neighbors/points (A, B), put a linear function through them and calculates
@@ -272,20 +279,11 @@ impl FrequencySpectrum {
     /// not the value a sine wave of exactly `search_fr` would have, because
     /// such a sine wave leaks into the neighboring bins.
     ///
-    /// ## Panics
-    /// If parameter `search_fr` (frequency) is below the lowest or the maximum
-    /// frequency, this function panics! This is because the user provide
-    /// the min/max frequency when the spectrum is created and knows about it.
-    /// This is similar to an intended "out of bounds"-access.
-    ///
     /// ## Parameters
     /// - `search_fr` The frequency of that you want the value in the spectrum.
-    ///
-    /// ## Return
-    /// Either exact value of approximated value, determined by [`Self::frequency_resolution`].
     #[inline]
     #[must_use]
-    pub fn freq_val_exact(&self, search_fr: f32) -> FrequencyValue {
+    pub fn freq_val_exact(&self, search_fr: f32) -> Option<FrequencyValue> {
         // lowest frequency in the spectrum
         let (min_fr, min_fr_val) = self.data[0];
         // highest frequency in the spectrum
@@ -297,19 +295,16 @@ impl FrequencySpectrum {
 
         // Fast return if possible
         if equals_min_fr {
-            return min_fr_val;
+            return Some(min_fr_val);
         }
         if equals_max_fr {
-            return max_fr_val;
+            return Some(max_fr_val);
         }
-        // bounds check
-        if search_fr < min_fr.val() || search_fr > max_fr.val() {
-            panic!(
-                "Frequency {}Hz is out of bounds [{}; {}]!",
-                search_fr,
-                min_fr.val(),
-                max_fr.val()
-            );
+        // bounds check; a NaN search frequency fails every comparison and
+        // therefore lands here as well
+        let in_bounds = search_fr >= min_fr.val() && search_fr <= max_fr.val();
+        if !in_bounds {
+            return None;
         }
 
         // We search for Point C (x=search_fr, y=???) between Point A and Point B iteratively.
@@ -329,7 +324,7 @@ impl FrequencySpectrum {
                 continue;
             }
 
-            return if float_cmp::approx_eq!(f32, point_a_x, search_fr, ulps = 3) {
+            let fr_val = if float_cmp::approx_eq!(f32, point_a_x, search_fr, ulps = 3) {
                 // directly return if possible
                 point_a_y
             } else {
@@ -340,13 +335,17 @@ impl FrequencySpectrum {
                 )
                 .into()
             };
+            return Some(fr_val);
         }
 
-        panic!("Here be dragons");
+        unreachable!("the loop always terminates");
     }
 
-    /// Returns the frequency closest to parameter `search_fr` in the spectrum. For example
-    /// if the spectrum looks like this:
+    /// Returns the frequency closest to parameter `search_fr` in the spectrum.
+    ///
+    /// If the value is out of bounds, the function returns `None`.
+    ///
+    /// For example, if the spectrum looks like this:
     /// ```text
     /// Vector:    [0]      [1]      [2]      [3]
     /// Frequency  100 Hz   200 Hz   300 Hz   400 Hz
@@ -354,18 +353,11 @@ impl FrequencySpectrum {
     /// ```
     /// then `get_frequency_value_closest(320)` will return `(300.0, 0.5)`.
     ///
-    /// ## Panics
-    /// If parameter `search_fr` (frequency) is below the lowest or the maximum
-    /// frequency, this function panics!
-    ///
     /// ## Parameters
     /// - `search_fr` The frequency of that you want the value in the spectrum.
-    ///
-    /// ## Return
-    /// Closest matching point in spectrum, determined by [`Self::frequency_resolution`].
     #[inline]
     #[must_use]
-    pub fn freq_val_closest(&self, search_fr: f32) -> (Frequency, FrequencyValue) {
+    pub fn freq_val_closest(&self, search_fr: f32) -> Option<(Frequency, FrequencyValue)> {
         // lowest frequency in the spectrum
         let (min_fr, min_fr_val) = self.data[0];
         // highest frequency in the spectrum
@@ -377,20 +369,17 @@ impl FrequencySpectrum {
 
         // Fast return if possible
         if equals_min_fr {
-            return (min_fr, min_fr_val);
+            return Some((min_fr, min_fr_val));
         }
         if equals_max_fr {
-            return (max_fr, max_fr_val);
+            return Some((max_fr, max_fr_val));
         }
 
-        // bounds check
-        if search_fr < min_fr.val() || search_fr > max_fr.val() {
-            panic!(
-                "Frequency {}Hz is out of bounds [{}; {}]!",
-                search_fr,
-                min_fr.val(),
-                max_fr.val()
-            );
+        // bounds check; a NaN search frequency fails every comparison and
+        // therefore lands here as well
+        let in_bounds = search_fr >= min_fr.val() && search_fr <= max_fr.val();
+        if !in_bounds {
+            return None;
         }
 
         for two_points in self.data.iter().as_slice().windows(2) {
@@ -407,22 +396,22 @@ impl FrequencySpectrum {
                 continue;
             }
 
-            return if float_cmp::approx_eq!(f32, point_a_x.val(), search_fr, ulps = 3) {
+            let pair = if float_cmp::approx_eq!(f32, point_a_x.val(), search_fr, ulps = 3) {
                 // directly return if possible
                 (point_a_x, point_a_y)
             } else {
                 // absolute difference
                 let delta_to_a = search_fr - point_a_x.val();
-                // let delta_to_b = point_b_x.val() - search_fr;
                 if delta_to_a / self.frequency_resolution < 0.5 {
                     (point_a_x, point_a_y)
                 } else {
                     (point_b_x, point_b_y)
                 }
             };
+            return Some(pair);
         }
 
-        panic!("Here be dragons");
+        unreachable!("the loop always terminates");
     }
 
     /// Returns a sorted [`Vec`] with all value pairs as `f32`.
@@ -556,6 +545,21 @@ mod tests {
     }
 
     #[test]
+    fn test_freq_val_invalid_search_frequency() {
+        let spectrum_vector = vec![
+            (0.0_f32.into(), 5.0_f32.into()),
+            (450.0.into(), 200.0.into()),
+        ];
+        let spectrum =
+            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
+
+        for search_fr in [f32::NAN, f32::INFINITY, f32::NEG_INFINITY, -1.0, 451.0] {
+            assert_eq!(None, spectrum.freq_val_exact(search_fr));
+            assert_eq!(None, spectrum.freq_val_closest(search_fr));
+        }
+    }
+
+    #[test]
     #[allow(clippy::cognitive_complexity)]
     fn test_spectrum_basic() {
         let spectrum = vec![
@@ -659,40 +663,52 @@ mod tests {
 
         // test get frequency exact
         {
-            assert_eq!(5.0, spectrum.freq_val_exact(0.0).val(),);
-            assert_eq!(50.0, spectrum.freq_val_exact(50.0).val(),);
-            assert_eq!(150.0, spectrum.freq_val_exact(150.0).val(),);
-            assert_eq!(100.0, spectrum.freq_val_exact(200.0).val(),);
-            assert_eq!(20.0, spectrum.freq_val_exact(250.0).val(),);
-            assert_eq!(0.0, spectrum.freq_val_exact(300.0).val(),);
-            assert_eq!(100.0, spectrum.freq_val_exact(375.0).val(),);
-            assert_eq!(200.0, spectrum.freq_val_exact(450.0).val(),);
+            assert_eq!(5.0, spectrum.freq_val_exact(0.0).unwrap().val(),);
+            assert_eq!(50.0, spectrum.freq_val_exact(50.0).unwrap().val(),);
+            assert_eq!(150.0, spectrum.freq_val_exact(150.0).unwrap().val(),);
+            assert_eq!(100.0, spectrum.freq_val_exact(200.0).unwrap().val(),);
+            assert_eq!(20.0, spectrum.freq_val_exact(250.0).unwrap().val(),);
+            assert_eq!(0.0, spectrum.freq_val_exact(300.0).unwrap().val(),);
+            assert_eq!(100.0, spectrum.freq_val_exact(375.0).unwrap().val(),);
+            assert_eq!(200.0, spectrum.freq_val_exact(450.0).unwrap().val(),);
+            assert_eq!(None, spectrum.freq_val_exact(2000.0));
         }
 
         // test get frequency closest
         {
-            assert_eq!((0.0.into(), 5.0.into()), spectrum.freq_val_closest(0.0),);
-            assert_eq!((50.0.into(), 50.0.into()), spectrum.freq_val_closest(50.0),);
             assert_eq!(
-                (450.0.into(), 200.0.into()),
-                spectrum.freq_val_closest(450.0),
+                (0.0.into(), 5.0.into()),
+                spectrum.freq_val_closest(0.0).unwrap()
+            );
+            assert_eq!(
+                (50.0.into(), 50.0.into()),
+                spectrum.freq_val_closest(50.0).unwrap()
             );
             assert_eq!(
                 (450.0.into(), 200.0.into()),
-                spectrum.freq_val_closest(448.0),
+                spectrum.freq_val_closest(450.0).unwrap()
             );
             assert_eq!(
                 (450.0.into(), 200.0.into()),
-                spectrum.freq_val_closest(400.0),
+                spectrum.freq_val_closest(448.0).unwrap()
             );
-            assert_eq!((50.0.into(), 50.0.into()), spectrum.freq_val_closest(47.3),);
-            assert_eq!((50.0.into(), 50.0.into()), spectrum.freq_val_closest(51.3),);
+            assert_eq!(
+                (450.0.into(), 200.0.into()),
+                spectrum.freq_val_closest(400.0).unwrap()
+            );
+            assert_eq!(
+                (50.0.into(), 50.0.into()),
+                spectrum.freq_val_closest(47.3).unwrap()
+            );
+            assert_eq!(
+                (50.0.into(), 50.0.into()),
+                spectrum.freq_val_closest(51.3).unwrap()
+            );
         }
     }
 
     #[test]
-    #[should_panic]
-    fn test_spectrum_get_frequency_value_exact_panic_below_min() {
+    fn test_spectrum_get_frequency_value_exact_below_min_return_none() {
         let spectrum_vector = vec![
             (0.0_f32.into(), 5.0_f32.into()),
             (450.0.into(), 200.0.into()),
@@ -701,13 +717,12 @@ mod tests {
         let spectrum =
             FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
 
-        // -1 not included, expect panic
-        spectrum.freq_val_exact(-1.0).val();
+        // -1 not included
+        assert!(spectrum.freq_val_exact(-1.0).is_none());
     }
 
     #[test]
-    #[should_panic]
-    fn test_spectrum_get_frequency_value_exact_panic_below_max() {
+    fn test_spectrum_get_frequency_value_exact_below_max_return_none() {
         let spectrum_vector = vec![
             (0.0_f32.into(), 5.0_f32.into()),
             (450.0.into(), 200.0.into()),
@@ -716,37 +731,8 @@ mod tests {
         let spectrum =
             FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
 
-        // 451 not included, expect panic
-        spectrum.freq_val_exact(451.0).val();
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_spectrum_get_frequency_value_closest_panic_below_min() {
-        let spectrum_vector = vec![
-            (0.0_f32.into(), 5.0_f32.into()),
-            (450.0.into(), 200.0.into()),
-        ];
-
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
-        // -1 not included, expect panic
-        let _ = spectrum.freq_val_closest(-1.0);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_spectrum_get_frequency_value_closest_panic_below_max() {
-        let spectrum_vector = vec![
-            (0.0_f32.into(), 5.0_f32.into()),
-            (450.0.into(), 200.0.into()),
-        ];
-
-        let spectrum =
-            FrequencySpectrum::new(spectrum_vector.clone(), 50.0, spectrum_vector.len() as _);
-
-        // 451 not included, expect panic
-        let _ = spectrum.freq_val_closest(451.0);
+        // 451 not included
+        assert!(spectrum.freq_val_exact(451.0).is_none());
     }
 
     #[test]
