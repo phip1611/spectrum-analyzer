@@ -41,6 +41,10 @@
   from `samples_fft_to_spectrum`
 - **BREAKING** `FrequencySpectrum` no longer implements `Default`; the empty
   spectrum it produced made every getter panic
+- **BREAKING** Removed variants
+  `SpectrumAnalyzerError::{TooFewSamples,SamplesLengthNotAPowerOfTwo}` in favor
+  of `SpectrumAnalyzerError::InvalidLengthOfSamples`. Samples lengths of more
+  than 32768 do not panic anymore but return an error.
 
 ## 1.9.0 (2026-09-05)
 

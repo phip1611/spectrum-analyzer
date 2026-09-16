@@ -223,10 +223,6 @@ mod tests;
 ///         Some(&scale_to_zero_to_one),
 ///  );
 /// ```
-///
-/// ## Panics
-/// When `samples.len()` is bigger than `32768`, the largest transform the
-/// bundled FFT implementation provides.
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
@@ -235,11 +231,8 @@ pub fn samples_fft_to_spectrum(
 ) -> Result<FrequencySpectrum, SpectrumAnalyzerError> {
     // do several checks on input data
     {
-        if samples.len() < 2 {
-            return Err(SpectrumAnalyzerError::TooFewSamples);
-        }
-        if !samples.len().is_power_of_two() {
-            return Err(SpectrumAnalyzerError::SamplesLengthNotAPowerOfTwo);
+        if samples.len() < 2 || !samples.len().is_power_of_two() || samples.len() > 32768 {
+            return Err(SpectrumAnalyzerError::InvalidLengthOfSamples);
         }
         let max_detectable_frequency = sampling_rate as f32 / 2.0;
 
