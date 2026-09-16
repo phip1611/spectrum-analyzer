@@ -100,7 +100,7 @@ fn example__bass_drum_sample() {
         &samples[0..4096],
         sampling_rate,
         "example__mp3-samples__bass_drum__spectrum",
-        FrequencyLimit::Max(5000.0),
+        FrequencyLimit::max(5000.0),
     )
 }
 
@@ -119,7 +119,7 @@ fn example__clap_beat_sample() {
         &samples[0..4096],
         sampling_rate,
         "example__mp3-samples__clap_beat__spectrum",
-        FrequencyLimit::Max(5000.0),
+        FrequencyLimit::max(5000.0),
     )
 }
 

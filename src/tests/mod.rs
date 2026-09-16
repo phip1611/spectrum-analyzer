@@ -93,7 +93,7 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
         let frequency_spectrum = samples_fft_to_spectrum(
             &samples,
             44100,
-            FrequencyLimit::Max(4000.0),
+            FrequencyLimit::max(4000.0),
             Some(&scale_to_zero_to_one),
         )
         .unwrap();
@@ -165,7 +165,7 @@ fn test_spectrum_power() {
     let spectrum_short_window = samples_fft_to_spectrum(
         short_window,
         44100,
-        FrequencyLimit::Max(4000.0),
+        FrequencyLimit::max(4000.0),
         Some(&divide_by_N),
     )
     .unwrap();
@@ -173,7 +173,7 @@ fn test_spectrum_power() {
     let spectrum_long_window = samples_fft_to_spectrum(
         long_window,
         44100,
-        FrequencyLimit::Max(4000.0),
+        FrequencyLimit::max(4000.0),
         Some(&divide_by_N),
     )
     .unwrap();
@@ -226,7 +226,7 @@ fn test_spectrum_frequency_limit_inclusive() {
 
     {
         let spectrum =
-            samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::Max(400.0), None)
+            samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::max(400.0), None)
                 .unwrap();
         assert_eq!(
             spectrum.min_fr(),
@@ -241,7 +241,7 @@ fn test_spectrum_frequency_limit_inclusive() {
     }
     {
         let spectrum =
-            samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::Min(100.0), None)
+            samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::min(100.0), None)
                 .unwrap();
         assert_eq!(
             spectrum.min_fr(),
@@ -258,7 +258,7 @@ fn test_spectrum_frequency_limit_inclusive() {
         let spectrum = samples_fft_to_spectrum(
             &window,
             sampling_rate,
-            FrequencyLimit::Range(412.0, 510.0),
+            FrequencyLimit::range(412.0, 510.0),
             None,
         )
         .unwrap();
@@ -396,7 +396,7 @@ fn test_invalid_input() {
     // test frequency limit gets verified
     let samples = vec![0.0; 4];
     let err =
-        samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::Min(-1.0), None).unwrap_err();
+        samples_fft_to_spectrum(&samples, 44100, FrequencyLimit::max(30_000.0), None).unwrap_err();
     assert!(matches!(
         err,
         SpectrumAnalyzerError::InvalidFrequencyLimit(_)
@@ -405,13 +405,13 @@ fn test_invalid_input() {
     // frequency limits must leave at least two bins after filtering
     let samples = vec![0.0; 8];
     let err =
-        samples_fft_to_spectrum(&samples, 8, FrequencyLimit::Range(1.1, 1.9), None).unwrap_err();
+        samples_fft_to_spectrum(&samples, 8, FrequencyLimit::range(1.1, 1.9), None).unwrap_err();
     assert!(matches!(
         err,
         SpectrumAnalyzerError::FrequencyLimitTooNarrow
     ));
     let err =
-        samples_fft_to_spectrum(&samples, 8, FrequencyLimit::Range(1.0, 1.0), None).unwrap_err();
+        samples_fft_to_spectrum(&samples, 8, FrequencyLimit::range(1.0, 1.0), None).unwrap_err();
     assert!(matches!(
         err,
         SpectrumAnalyzerError::FrequencyLimitTooNarrow
@@ -466,7 +466,7 @@ fn test_divide_by_n_has_effect() {
     let scaled_spectrum_with_limit = samples_fft_to_spectrum(
         &audio_data,
         1000,
-        FrequencyLimit::Max(250.0),
+        FrequencyLimit::max(250.0),
         Some(&divide_by_N),
     )
     .unwrap();

@@ -48,16 +48,16 @@
 - **BREAKING**: `FrequencySpectrum::{freq_val_closest,freq_val_exact}` now return
   `None` if the value is out of bounds instead of panicking, and `Some` for
   valid results.
-- **BREAKING** a `NaN` or infinite value in a `FrequencyLimit` is rejected
-  with the new `FrequencyLimitError::NotARegularNumber`. Before, a `NaN`
-  minimum silently behaved like no limit and a `NaN` maximum reported the
-  limit as too narrow
 - **BREAKING** removed `FrequencyLimit::{min,max}`, which panicked for
   variants without that bound; use `FrequencyLimit::{maybe_min,maybe_max}`
 - **BREAKING** `Frequency` and `FrequencyValue` are no longer the same type:
   a frequency is a `NonNegF32` and a value a `FiniteF32`, so the two can no
   longer be mixed up. Both compare and calculate with `f32` directly, which
   makes `val()` unnecessary in most places
+- **BREAKING** `FrequencyLimit::{Min,Max,Range}` hold a `NonNegF32` instead
+  of an `f32`, so a negative or non-regular limit cannot be built any more.
+  `FrequencyLimitError::{NotARegularNumber,ValueBelowMinimum}` are gone with
+  it, and `FrequencyLimit::{min,max,range}` construct a limit from an `f32`
 
 ## 1.9.0 (2026-09-05)
 
