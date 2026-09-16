@@ -2,72 +2,101 @@
 
 ## Unreleased (yet)
 
-- docs: fixed the frequency resolution formula; it is `sample_rate / N`, not
-  `sample_rate / (N / 2)`
-- docs: explained what the frequency values are and how they relate to the
-  input signal
-- docs: documented the coherent gain of each window function
-- docs: clarified `divide_by_N` and `divide_by_N_sqrt`
-- docs: documented the statistics a scaling function receives
-- fixed `scale_20_times_log10` mapping `0.0` to `0 dB`; values are now
-  clamped to `-100 dB` at minimum
-- docs: the examples recommend `divide_by_N` instead of `divide_by_N_sqrt`
-- **BREAKING** removed `scaling::combined`; chain scaling functions in a
-  closure instead, which also works with closures and captured state
-- **BREAKING** removed `scaling::SpectrumDataStats::median`; no built-in
-  scaling function used it
-- **BREAKING** removed `FrequencySpectrum::median`; with it, the working
-  buffer parameter of `FrequencySpectrum::new` and
-  `FrequencySpectrum::apply_scaling_fn` is gone
-- perf: spectrum creation no longer allocates and scans a working buffer for
-  the median (~20-30% faster, depending on the number of samples)
-- docs: added guidance on which window and which scaling function to pick
-- docs: fixed the swapped descriptions of `FrequencyLimit::Min` and
-  `FrequencyLimit::Max`
-- **BREAKING** removed `FrequencySpectrum::to_map` and
-  `FrequencySpectrum::to_mel_map`; both used `u32` keys, so bins that shared
-  a key silently overwrote each other. Use `FrequencySpectrum::to_vec` or
-  `FrequencySpectrum::data` instead
-- **BREAKING** removed `FrequencySpectrum::mel_val`. These kind of calculations
-  can be done easily outside the crate, for example when accessing the data
-  via `.data()`. Let's keep the spectrum thin and unopioniated.
-- fixed the Hamming and Blackman-Harris windows using the symmetric form
-  (dividing by `N - 1`) while the Hann window uses the periodic one
-  (dividing by `N`). All of them now use the periodic form, which is the
-  right one for FFT analysis; the coefficients change marginally and the
-  coherent gains are now exact
-- docs: explained the periodic and the symmetric form of a window function
-- **BREAKING** `FrequencySpectrum::new` is no longer public; a spectrum comes
-  from `samples_fft_to_spectrum`
-- **BREAKING** `FrequencySpectrum` no longer implements `Default`; the empty
-  spectrum it produced made every getter panic
-- **BREAKING** Removed variants
-  `SpectrumAnalyzerError::{TooFewSamples,SamplesLengthNotAPowerOfTwo}` in favor
-  of `SpectrumAnalyzerError::InvalidLengthOfSamples`. Samples lengths of more
-  than 32768 do not panic anymore but return an error.
-- **BREAKING**: `FrequencySpectrum::{freq_val_closest,freq_val_exact}` now return
-  `None` if the value is out of bounds instead of panicking, and `Some` for
-  valid results.
-- **BREAKING** removed `FrequencyLimit::{min,max}`, which panicked for
-  variants without that bound; use `FrequencyLimit::{maybe_min,maybe_max}`
-- **BREAKING** `Frequency` and `FrequencyValue` are no longer the same type:
-  a frequency is a `NonNegF32` and a value a `FiniteF32`, so the two can no
-  longer be mixed up. Both compare and calculate with `f32` directly, which
-  makes `val()` unnecessary in most places
-- **BREAKING** `FrequencyLimit::{Min,Max,Range}` hold a `NonNegF32` instead
-  of an `f32`, so a negative or non-regular limit cannot be built any more.
-  `FrequencyLimitError::{NotARegularNumber,ValueBelowMinimum}` are gone with
-  it, and `FrequencyLimit::{min,max,range}` construct a limit from an `f32`
-- **BREAKING** `FrequencySpectrum::frequency_resolution` returns a
-  `Frequency` instead of an `f32`
-- **BREAKING** `scaling::SpectrumDataStats::{min,max,average}` are a
-  `FrequencyValue` instead of an `f32`; `n` stays an `f32`, since it is there
-  to divide by
-- **BREAKING** `FrequencyLimitError::{ValueAboveNyquist,InvalidRange}` carry
-  a `NonNegF32` instead of an `f32`, like the limit they come from
+A major release with some breaking changes: the library no longer panics on
+input it can check, and the types say more about the values they carry. Nothing
+about the analysis itself changed, so the numbers you get out stay the same.
+
+Documentation improved a lot.
+
+### Migrating
+
+- The two lookups return an `Option` now, so add a `?` or an `unwrap()`:
+  `spectrum.freq_val_exact(1000.0)` and `freq_val_closest(1000.0)` give
+  `None` for a frequency outside the spectrum instead of panicking.
+- `Frequency` and `FrequencyValue` are different types now. Both compare and
+  calculate with `f32` directly, so `assert!(value > 0.85)` works and most
+  `val()` calls can go.
+- Build a frequency limit with `FrequencyLimit::{min,max,range}` instead of
+  the variants, which hold a `NonNegF32` now.
+- Gone for good: `scaling::combined` (use a closure),
+  `FrequencySpectrum::{median,to_map,to_mel_map,mel_val}` (use `data()` or
+  `to_vec()`), `FrequencyLimit::{min,max}` as getters (use `maybe_min()` and
+  `maybe_max()`), `FrequencySpectrum::new` and its `Default` implementation
+  (a spectrum comes from `samples_fft_to_spectrum`).
+- Errors moved around: `TooFewSamples` and `SamplesLengthNotAPowerOfTwo`
+  became `InvalidLengthOfSamples`, and `InvalidSamplingRate` is new.
+
+### Fewer panics
+
+- **BREAKING** `FrequencySpectrum::{freq_val_exact,freq_val_closest}` return
+  `None` for a frequency outside the spectrum, and for `NaN`, which slipped
+  through the bounds check before
+- **BREAKING** more than 32768 samples is an error instead of a panic
 - **BREAKING** a sampling rate of zero is rejected with the new
-  `SpectrumAnalyzerError::InvalidSamplingRate`. It used to produce a spectrum
-  in which every frequency was `0 Hz`
+  `SpectrumAnalyzerError::InvalidSamplingRate`, instead of producing a
+  spectrum in which every frequency is `0 Hz`
+- **BREAKING** removed `FrequencyLimit::{min,max}`, which panicked for
+  variants without that bound
+- **BREAKING** `FrequencySpectrum::new` is internal and the `Default`
+  implementation is gone; the empty spectrum it produced made every getter
+  panic
+
+### Frequencies and values have their own types
+
+- **BREAKING** a `Frequency` is a `NonNegF32` and a `FrequencyValue` a
+  `FiniteF32`, so the two cannot be mixed up. The difference is real: a
+  frequency is never negative, a value turns negative as soon as
+  `scale_20_times_log10` touches it
+- **BREAKING** `FrequencyLimit::{Min,Max,Range}` hold a `NonNegF32`, which
+  makes a negative or non-regular limit impossible to build.
+  `FrequencyLimitError::{NotARegularNumber,ValueBelowMinimum}` are gone with
+  it
+- **BREAKING** `FrequencySpectrum::frequency_resolution`,
+  `scaling::SpectrumDataStats::{min,max,average}` and
+  `FrequencyLimitError::{ValueAboveNyquist,InvalidRange}` carry those types
+  as well. `SpectrumDataStats::n` stays an `f32`, since it is there to
+  divide by
+
+### A thinner spectrum
+
+- **BREAKING** removed `scaling::combined`; it handed every function the
+  statistics of the unscaled spectrum, so chaining two of them gave wrong
+  results. A closure does the same job correctly
+- **BREAKING** removed `FrequencySpectrum::median` and
+  `SpectrumDataStats::median`; nothing in the library used them
+- **BREAKING** removed `FrequencySpectrum::{to_map,to_mel_map}`; both used
+  `u32` keys, so bins that shared a key silently overwrote each other
+- **BREAKING** removed `FrequencySpectrum::mel_val`; such calculations are
+  easy to do on `data()`, and the spectrum stays thin and unopinionated
+
+### Fixed
+
+- the Hamming and Blackman-Harris windows used the symmetric form (dividing
+  by `N - 1`) while the Hann window used the periodic one (dividing by `N`).
+  All of them use the periodic form now, which is the right one for FFT
+  analysis. The coefficients change marginally and the coherent gains are
+  exact
+- `scale_20_times_log10` mapped `0.0` to `0 dB`, which ranked silence above
+  every quieter bin. Values are clamped to `-100 dB` at minimum now
+- the descriptions of `FrequencyLimit::Min` and `FrequencyLimit::Max` were
+  swapped
+
+### Performance
+
+- spectrum creation no longer allocates and scans a working buffer for the
+  median, which makes it 20-30% faster depending on the number of samples
+
+### Documentation
+
+- explained what the frequency values are and how they relate to the input
+  signal, including the expected range of the samples
+- added guidance on which window function and which scaling function to pick
+- documented the coherent gain of each window, and the difference between the
+  periodic and the symmetric form
+- clarified `divide_by_N` against `divide_by_N_sqrt`, and the statistics a
+  scaling function receives
+- fixed the frequency resolution formula; it is `sample_rate / N`, not
+  `sample_rate / (N / 2)`
 
 ## 1.9.0 (2026-09-05)
 
