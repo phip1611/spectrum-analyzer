@@ -130,8 +130,8 @@ fn test_spectrum_and_visualize_sine_waves_50_1000_3777hz() {
     // test getters match spectrum
     // we use Hann windowed spectrum because the accuracy is much better than
     // with no window!
-    let exact = |fr| spectrum_hann_window.freq_val_exact(fr).unwrap().val();
-    let closest = |fr| spectrum_hann_window.freq_val_closest(fr).unwrap().1.val();
+    let exact = |fr| spectrum_hann_window.freq_val_exact(fr).unwrap();
+    let closest = |fr| spectrum_hann_window.freq_val_closest(fr).unwrap().1;
 
     assert!(exact(50.0) > 0.85);
     assert!(closest(50.0) > 0.85);
@@ -229,12 +229,12 @@ fn test_spectrum_frequency_limit_inclusive() {
             samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::Max(400.0), None)
                 .unwrap();
         assert_eq!(
-            spectrum.min_fr().val(),
+            spectrum.min_fr(),
             0.0,
             "Lower bound frequency must be inclusive!"
         );
         assert_eq!(
-            spectrum.max_fr().val(),
+            spectrum.max_fr(),
             400.0,
             "Upper bound frequency must be inclusive!"
         );
@@ -244,12 +244,12 @@ fn test_spectrum_frequency_limit_inclusive() {
             samples_fft_to_spectrum(&window, sampling_rate, FrequencyLimit::Min(100.0), None)
                 .unwrap();
         assert_eq!(
-            spectrum.min_fr().val(),
+            spectrum.min_fr(),
             100.0,
             "Lower bound frequency must be inclusive!"
         );
         assert_eq!(
-            spectrum.max_fr().val(),
+            spectrum.max_fr(),
             sampling_rate as f32 / 2.0,
             "Upper bound frequency must be inclusive!"
         );
@@ -263,12 +263,12 @@ fn test_spectrum_frequency_limit_inclusive() {
         )
         .unwrap();
         assert_eq!(
-            spectrum.min_fr().val(),
+            spectrum.min_fr(),
             412.0,
             "Lower bound frequency must be inclusive!"
         );
         assert_eq!(
-            spectrum.max_fr().val(),
+            spectrum.max_fr(),
             510.0,
             "Upper bound frequency must be inclusive!"
         );
@@ -290,18 +290,18 @@ fn test_spectrum_nyquist_theorem() {
             .data()
             .iter()
             .map(|x| x.1)
-            .filter(|x| x.val() == 0.0)
+            .filter(|x| *x == 0.0)
             .count(),
         "All frequency values must be exactly zero because the input signal is zero!"
     );
     assert_eq!(
         0.0,
-        spectrum.min_fr().val(),
+        spectrum.min_fr(),
         "Minimum frequency must be 0 Hz (DS Component/DC bias/Gleichwert)"
     );
     assert_eq!(
         44100.0 / 2.0,
-        spectrum.max_fr().val(),
+        spectrum.max_fr(),
         "Maximum frequency must be Nyquist frequency"
     );
 }
@@ -327,38 +327,38 @@ fn test_spectrum_nyquist_theorem2() {
     .unwrap();
     assert_eq!(
         0.0,
-        spectrum.min_fr().val(),
+        spectrum.min_fr(),
         "Maximum frequency must be Nyquist 0 Hz (DS Component/DC bias/Gleichwert)"
     );
     assert_eq!(
         44100.0 / 2.0,
-        spectrum.max_fr().val(),
+        spectrum.max_fr(),
         "Maximum frequency must be Nyquist frequency"
     );
     assert!(
-        spectrum.max().1.val() > 0.99,
+        spectrum.max().1 > 0.99,
         "Nyquist frequency must have a notable peak"
     );
 
     // frequency resolution is: 44100/4096 = ~ 11hz
     assert!(
-        spectrum.freq_val_exact(22049.9).unwrap().val() >= 0.94,
+        spectrum.freq_val_exact(22049.9).unwrap() >= 0.94,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(22049.0).unwrap().val() >= 0.49,
+        spectrum.freq_val_exact(22049.0).unwrap() >= 0.49,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(22035.0).unwrap().val() <= 0.26,
+        spectrum.freq_val_exact(22035.0).unwrap() <= 0.26,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(22000.0).unwrap().val() <= 0.07,
+        spectrum.freq_val_exact(22000.0).unwrap() <= 0.07,
         "Other frequencies must not be part of the spectrum!"
     );
     assert!(
-        spectrum.freq_val_exact(21500.0).unwrap().val() <= 0.01,
+        spectrum.freq_val_exact(21500.0).unwrap() <= 0.01,
         "Other frequencies must not be part of the spectrum!"
     );
 }
@@ -515,7 +515,7 @@ fn test_magnitude_of_on_bin_sine() {
             samples_fft_to_spectrum(&sine, SAMPLING_RATE, FrequencyLimit::All, None).unwrap();
         let (peak_fr, peak_val) = spectrum.max();
         assert!(
-            (peak_fr.val() - frequency).abs() < resolution / 2.0,
+            (peak_fr - frequency).abs() < resolution / 2.0,
             "peak must be at {frequency} Hz, got {peak_fr} Hz"
         );
         assert_close(
