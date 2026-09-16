@@ -25,9 +25,10 @@ SOFTWARE.
 //! spectrum of a digital signal (e.g. audio) using FFT.
 //!
 //! ## Getting started
-//! If you are unsure what to pick, start here. This works for most cases:
-//! take a block of samples, apply a Hann window, and divide the result by the
-//! number of samples.
+//! If you are unsure what to pick, start here. The
+//! [`samples_fft_to_spectrum()`] function is the entry into the library. The
+//! following configuration works for most cases: take a block of samples, apply
+//! a Hann window, and divide the result by the number of samples.
 //!
 //! ```rust
 //! use spectrum_analyzer::scaling::divide_by_N;
@@ -69,12 +70,13 @@ SOFTWARE.
 //! ### Scaling via dynamic closure
 //! ```rust
 //! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
-//! // get data from audio source
+//! // get data from audio source, ideally in range `-1.0..=1.0`
 //! let samples = vec![0.0, 1.1, 5.5, -5.5];
 //! let res = samples_fft_to_spectrum(
 //!         &samples,
 //!         44100,
 //!         FrequencyLimit::All,
+//!         // Create your scaling function as closure on the fly as needed.
 //!         Some(&|val, info| val - info.min),
 //! );
 //! ```
@@ -82,13 +84,14 @@ SOFTWARE.
 //! ```rust
 //! use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
 //! use spectrum_analyzer::scaling::divide_by_N;
-//! // get data from audio source
+//! // get data from audio source, ideally in range `-1.0..=1.0`
 //! let samples = vec![0.0, 1.1, 5.5, -5.5];
 //! let res = samples_fft_to_spectrum(
 //!         &samples,
 //!         44100,
 //!         FrequencyLimit::All,
-//!         // Makes the values independent of the number of samples.
+//!         // Use one of the provided scaling functions. Here, we make the
+//!         // values independent of the number of samples.
 //!         Some(&divide_by_N),
 //! );
 //! ```
@@ -212,28 +215,30 @@ mod tests;
 /// ### Scaling via dynamic closure
 /// ```rust
 /// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
-/// // get data from audio source
+/// // get data from audio source, ideally in range `-1.0..=1.0`
 /// let samples = vec![0.0, 1.1, 5.5, -5.5];
 /// let res = samples_fft_to_spectrum(
 ///         &samples,
 ///         44100,
 ///         FrequencyLimit::All,
+///         // Create your scaling function as closure on the fly as needed.
 ///         Some(&|val, info| val - info.min),
-///  );
+/// );
 /// ```
 /// ### Scaling via static function
 /// ```rust
 /// use spectrum_analyzer::{samples_fft_to_spectrum, FrequencyLimit};
-/// use spectrum_analyzer::scaling::scale_to_zero_to_one;
-/// // get data from audio source
+/// use spectrum_analyzer::scaling::divide_by_N;
+/// // get data from audio source, ideally in range `-1.0..=1.0`
 /// let samples = vec![0.0, 1.1, 5.5, -5.5];
 /// let res = samples_fft_to_spectrum(
 ///         &samples,
 ///         44100,
 ///         FrequencyLimit::All,
-///         Some(&scale_to_zero_to_one),
-///  );
-/// ```
+///         // Use one of the provided scaling functions. Here, we make the
+///         // values independent of the number of samples.
+///         Some(&divide_by_N),
+/// );
 pub fn samples_fft_to_spectrum(
     samples: &[f32],
     sampling_rate: u32,
