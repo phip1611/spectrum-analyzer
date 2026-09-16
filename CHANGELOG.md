@@ -60,6 +60,9 @@
   it, and `FrequencyLimit::{min,max,range}` construct a limit from an `f32`
 - **BREAKING** `FrequencySpectrum::frequency_resolution` returns a
   `Frequency` instead of an `f32`
+- **BREAKING** `scaling::SpectrumDataStats::{min,max,average}` are a
+  `FrequencyValue` instead of an `f32`; `n` stays an `f32`, since it is there
+  to divide by
 
 ## 1.9.0 (2026-09-05)
 

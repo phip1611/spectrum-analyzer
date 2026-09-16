@@ -131,9 +131,9 @@ impl FrequencySpectrum {
         // On the first invocation of this function, these values represent the
         // statistics for the unscaled, hence initial, spectrum.
         let stats = SpectrumDataStats {
-            min: self.min.1.val(),
-            max: self.max.1.val(),
-            average: self.average.val(),
+            min: self.min.1,
+            max: self.max.1,
+            average: self.average,
             // attention! not necessarily `data.len()`!
             n: self.samples_len as f32,
         };
