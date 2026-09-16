@@ -48,6 +48,10 @@
 - **BREAKING**: `FrequencySpectrum::{freq_val_closest,freq_val_exact}` now return
   `None` if the value is out of bounds instead of panicking, and `Some` for
   valid results.
+- **BREAKING** a `NaN` or infinite value in a `FrequencyLimit` is rejected
+  with the new `FrequencyLimitError::NotARegularNumber`. Before, a `NaN`
+  minimum silently behaved like no limit and a `NaN` maximum reported the
+  limit as too narrow
 
 ## 1.9.0 (2026-09-05)
 
