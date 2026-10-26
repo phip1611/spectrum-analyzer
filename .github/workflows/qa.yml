@@ -1,5 +1,15 @@
 name: QA
-on: [merge_group, push, pull_request]
+on:
+  merge_group:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  # Keep a result for every commit on main.
+  cancel-in-progress: ${{ github.event_name != 'push' }}
+
 jobs:
   spellcheck:
     name: Spellcheck
