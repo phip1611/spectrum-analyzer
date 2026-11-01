@@ -180,9 +180,9 @@ checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
 
 [[package]]
 name = "audio-visualizer"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "253b6141a6a732f0427592e3773e095d45edf9cbd6a0d6bc7d62083ac0fb19e2"
+checksum = "c30fef1199ec7d4aa3b218a12bd1d21978f24b430ad291cfb6547289e462a3f4"
 dependencies = [
  "charts-rs",
  "cpal",
